@@ -75,6 +75,8 @@ export default function App() {
   const [isVisitSettingsExpanded, setIsVisitSettingsExpanded] = useState(true);
   const [isCareNudgesExpanded, setIsCareNudgesExpanded] = useState(true);
   const [isDataSourcesExpanded, setIsDataSourcesExpanded] = useState(true);
+  const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
+  const [hoveredNudge, setHoveredNudge] = useState<{patientIndex: number, nudgeIndex: number} | null>(null);
   
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
@@ -144,7 +146,24 @@ export default function App() {
           "BP trending 135/85 (slightly elevated)",
           "Weight 185 lbs (stable from last visit)"
         ]
-      }
+      },
+      careNudges: [
+        {
+          type: "Medication Adjustment",
+          description: "Add GLP-1 agonist (Ozempic) - A1c rising despite metformin adherence.",
+          highlightId: "sarah-labs-recent--0"
+        },
+        {
+          type: "Screening Due",
+          description: "Schedule ophthalmology referral - last eye exam 8 months ago.",
+          highlightId: null
+        },
+        {
+          type: "Blood Pressure",
+          description: "Uptitrate lisinopril to 20mg or add amlodipine - BP 135/85, above goal.",
+          highlightId: "sarah-vitals-0"
+        }
+      ]
     },
     { 
       name: "Robert Chen", 
@@ -550,22 +569,50 @@ export default function App() {
             </div>
             
             {/* Dynamic Sections */}
-            {Object.entries(patients[selectedPatientIndex].sections).map(([sectionTitle, items]) => (
-              <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
-                <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                  <p className="leading-[1.2]">{sectionTitle}</p>
+            {Object.entries(patients[selectedPatientIndex].sections).map(([sectionTitle, items]) => {
+              // Helper to generate highlight IDs for content
+              const getHighlightId = (section: string, itemIdx: number) => {
+                const patientFirstName = patients[selectedPatientIndex].name.split(' ')[0].toLowerCase();
+                const sectionKey = section.toLowerCase().replace(/[^a-z]+/g, '-');
+                return `${patientFirstName}-${sectionKey}-${itemIdx}`;
+              };
+              
+              // Check if any item in this section should be highlighted
+              const hoveredHighlightId = hoveredNudge && 
+                patients[hoveredNudge.patientIndex]?.careNudges?.[hoveredNudge.nudgeIndex]?.highlightId;
+              
+              return (
+                <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                  <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    <p className="leading-[1.2]">{sectionTitle}</p>
+                  </div>
+                  <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                    <ul className="list-disc whitespace-pre-wrap">
+                      {items.map((item, idx) => {
+                        const highlightId = getHighlightId(sectionTitle, idx);
+                        const isHighlighted = hoveredHighlightId === highlightId;
+                        
+                        return (
+                          <li 
+                            key={idx} 
+                            className={idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}
+                            data-highlight-id={highlightId}
+                          >
+                            <span 
+                              className={`leading-[1.4] transition-colors ${
+                                isHighlighted ? 'bg-[#fef3c7] px-[4px] py-[2px] rounded-[4px]' : ''
+                              }`}
+                            >
+                              {item}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
-                <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
-                  <ul className="list-disc whitespace-pre-wrap">
-                    {items.map((item, idx) => (
-                      <li key={idx} className={idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
-                        <span className="leading-[1.4]">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           {/* Bottom Action Bar */}
@@ -735,85 +782,43 @@ export default function App() {
             
             {isCareNudgesExpanded && (
             <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-              {/* Orders */}
-              <div className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full">
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
-                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                    Orders
-                  </p>
-                  <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                    Order [lab / imaging name] to rule out [condition]).
-                  </p>
-                </div>
-                <IconButton 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="close_small" size={16} />}
-                  onClick={() => {}}
-                  aria-label="Dismiss order"
-                  className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                />
-              </div>
-              
-              {/* Treatment Options */}
-              <div className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full">
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
-                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                    Treatment Options
-                  </p>
-                  <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                    Medication name, dosage, and side effects to note.
-                  </p>
-                </div>
-                <IconButton 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="close_small" size={16} />}
-                  onClick={() => {}}
-                  aria-label="Dismiss treatment option"
-                  className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                />
-              </div>
-              
-              {/* Follow Up */}
-              <div className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full">
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
-                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                    Follow Up
-                  </p>
-                  <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                    Patient's value is alarming / trending worse, suggestion on what provider should ask / do in this visit.
-                  </p>
-                </div>
-                <IconButton 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="close_small" size={16} />}
-                  onClick={() => {}}
-                  aria-label="Dismiss follow up"
-                  className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                />
-              </div>
-              
-              {/* Follow Up 2 */}
-              <div className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full">
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
-                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                    Follow Up
-                  </p>
-                  <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                    Progress on symptoms - and what different progress might mean based on patient conditions and test results.
-                  </p>
-                </div>
-                <IconButton 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="close_small" size={16} />}
-                  onClick={() => {}}
-                  aria-label="Dismiss follow up"
-                  className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                />
-              </div>
+              {(patients[selectedPatientIndex].careNudges || []).map((nudge, idx) => {
+                if (dismissedNudges[selectedPatientIndex]?.has(idx)) {
+                  return null;
+                }
+                
+                return (
+                  <div 
+                    key={idx} 
+                    className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
+                    onMouseEnter={() => setHoveredNudge({patientIndex: selectedPatientIndex, nudgeIndex: idx})}
+                    onMouseLeave={() => setHoveredNudge(null)}
+                  >
+                    <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                        {nudge.type}
+                      </p>
+                      <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {nudge.description}
+                      </p>
+                    </div>
+                    <IconButton 
+                      variant="tertiary" 
+                      size="small"
+                      icon={<InlineIcon name="close_small" size={16} />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDismissedNudges(prev => ({
+                          ...prev,
+                          [selectedPatientIndex]: new Set([...(prev[selectedPatientIndex] || []), idx])
+                        }));
+                      }}
+                      aria-label={`Dismiss ${nudge.type}`}
+                      className="shrink-0 text-[color:var(--text-subheading,#666)]"
+                    />
+                  </div>
+                );
+              })}
             </div>
             )}
           </div>
