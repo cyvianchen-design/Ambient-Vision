@@ -579,7 +579,7 @@ export default function Scribes({
                       size="small"
                       icon={<InlineIcon name="edit" size={16} />}
                       onClick={() => {
-                        setEditedContent({ ...editedContent, hpi: allScribes[selectedScribeIndex].hpi });
+                        setEditedContent({ ...editedContent, hpi: allScribes[selectedScribeIndex].hpi.replace(/\{\{(\d+)\}\}/g, '') });
                         setEditingSection('hpi');
                       }}
                       className="text-[color:var(--text-brand,#1132ee)]"
@@ -623,7 +623,7 @@ export default function Scribes({
                 <div 
                   className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
-                    setEditedContent({ ...editedContent, hpi: allScribes[selectedScribeIndex].hpi });
+                    setEditedContent({ ...editedContent, hpi: allScribes[selectedScribeIndex].hpi.replace(/\{\{(\d+)\}\}/g, '') });
                     setEditingSection('hpi');
                   }}
                 >
@@ -679,7 +679,7 @@ export default function Scribes({
                       size="small"
                       icon={<InlineIcon name="edit" size={16} />}
                       onClick={() => {
-                        setEditedContent({ ...editedContent, ros: allScribes[selectedScribeIndex].ros });
+                        setEditedContent({ ...editedContent, ros: allScribes[selectedScribeIndex].ros.replace(/\{\{(\d+)\}\}/g, '') });
                         setEditingSection('ros');
                       }}
                       className="text-[color:var(--text-brand,#1132ee)]"
@@ -723,7 +723,7 @@ export default function Scribes({
                 <div 
                   className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
-                    setEditedContent({ ...editedContent, ros: allScribes[selectedScribeIndex].ros });
+                    setEditedContent({ ...editedContent, ros: allScribes[selectedScribeIndex].ros.replace(/\{\{(\d+)\}\}/g, '') });
                     setEditingSection('ros');
                   }}
                 >
@@ -779,7 +779,7 @@ export default function Scribes({
                       size="small"
                       icon={<InlineIcon name="edit" size={16} />}
                       onClick={() => {
-                        setEditedContent({ ...editedContent, pe: allScribes[selectedScribeIndex].pe });
+                        setEditedContent({ ...editedContent, pe: allScribes[selectedScribeIndex].pe.replace(/\{\{(\d+)\}\}/g, '') });
                         setEditingSection('pe');
                       }}
                       className="text-[color:var(--text-brand,#1132ee)]"
@@ -823,7 +823,7 @@ export default function Scribes({
                 <div 
                   className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
-                    setEditedContent({ ...editedContent, pe: allScribes[selectedScribeIndex].pe });
+                    setEditedContent({ ...editedContent, pe: allScribes[selectedScribeIndex].pe.replace(/\{\{(\d+)\}\}/g, '') });
                     setEditingSection('pe');
                   }}
                 >
@@ -1150,7 +1150,7 @@ export default function Scribes({
               }}
             />
             <div 
-              className="fixed bg-white shadow-lg rounded-[8px] p-[12px] max-w-[320px] z-50 border border-[var(--neutral-200,#ccc)]"
+              className="fixed bg-white shadow-lg rounded-[8px] p-[12px] w-[240px] z-50 border border-[var(--neutral-200,#ccc)]"
               style={{
                 left: `${tooltipPosition.x}px`,
                 top: `${tooltipPosition.y - 4}px`,
