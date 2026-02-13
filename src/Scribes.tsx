@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, IconButton } from './components/Button';
 import { VisitStatus } from './components/Badge';
 import { InlineIcon } from './components/InlineIcon';
@@ -99,6 +99,23 @@ export default function Scribes({
     }
   };
   
+  // Close tooltip on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside citation badge and tooltip
+      if (activeCitation && 
+          !target.closest('[data-citation-badge]') && 
+          !target.closest('[data-citation-tooltip]')) {
+        setActiveCitation(null);
+        setTooltipPosition(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [activeCitation]);
+  
   // Helper to render text with citation numbers
   const renderTextWithCitations = (text: string) => {
     if (selectedView !== 'citation') {
@@ -123,7 +140,8 @@ export default function Scribes({
         
         const badge = (
           <span 
-            key={idx} 
+            key={idx}
+            data-citation-badge
             className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-colors mx-[2px] ${
               isActive 
                 ? 'bg-[var(--text-brand,#1132ee)] text-white' 
@@ -1167,6 +1185,7 @@ export default function Scribes({
               }}
             />
             <div 
+              data-citation-tooltip
               className="fixed bg-white shadow-lg rounded-[8px] p-[12px] w-[240px] z-50 border border-[var(--neutral-200,#ccc)]"
               style={{
                 left: `${tooltipPosition.x}px`,
