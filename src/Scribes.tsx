@@ -96,6 +96,31 @@ export default function Scribes({
     }
   };
   
+  // Helper to render text with citation numbers
+  const renderTextWithCitations = (text: string) => {
+    if (selectedView !== 'citation') {
+      // Remove citation markers when not in citation view
+      return text.replace(/\{\{(\d+)\}\}/g, '');
+    }
+    
+    // Split text by citation markers and render with superscript numbers
+    const parts = text.split(/(\{\{\d+\}\})/);
+    return parts.map((part, idx) => {
+      const match = part.match(/\{\{(\d+)\}\}/);
+      if (match) {
+        return (
+          <sup 
+            key={idx} 
+            className="text-[color:var(--text-brand,#1132ee)] font-bold text-[11px] cursor-pointer hover:underline ml-[2px]"
+          >
+            {match[1]}
+          </sup>
+        );
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  };
+  
   const [scribesByDate, setScribesByDate] = useState([
     {
       date: "Thu, Dec 19 (Today)",
@@ -107,9 +132,23 @@ export default function Scribes({
           duration: "32m 18s",
           chiefComplaint: "Heart Failure",
           room: "Room 301",
-          hpi: "68-year-old male with history of HFrEF (EF 30%) presents for 2-week post-hospitalization follow-up. Recent ADHF admission (10/03-10/07) with volume overload. Patient reports improved dyspnea and decreased lower extremity edema since discharge. Weight down 2.1 kg from discharge. Denies orthopnea, PND. Compliance with low-sodium diet and daily weights. Home BP readings 105-110/65-70.",
-          ros: "Cardiovascular: Reports resolution of dyspnea at rest; can now walk one block without SOB. Denies chest pain, palpitations.\nRespiratory: Clear lungs; no cough.\nGI: Normal appetite; denies nausea.\nGU: Good urine output on current diuretic dose.\nConstitutional: Denies fever, chills.\nMusculoskeletal: Mild residual ankle edema, much improved.",
-          pe: "General: NAD, comfortable.\nVitals: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% RA.\nCardiac: Irregular rhythm; S1, S2 present; 2/6 systolic murmur at apex.\nLungs: Clear to auscultation bilaterally.\nExtremities: 1+ pitting edema bilateral ankles, improved from prior.",
+          hpi: "68-year-old male with history of HFrEF (EF 30%){{1}} presents for 2-week post-hospitalization follow-up. Recent ADHF admission (10/03-10/07){{2}} with volume overload. Patient reports improved dyspnea{{3}} and decreased lower extremity edema since discharge. Weight down 2.1 kg{{4}} from discharge. Denies orthopnea, PND. Compliance with low-sodium diet and daily weights. Home BP readings 105-110/65-70{{5}}.",
+          ros: "Cardiovascular: Reports resolution of dyspnea at rest; can now walk one block without SOB{{6}}. Denies chest pain, palpitations.\nRespiratory: Clear lungs; no cough.\nGI: Normal appetite; denies nausea.\nGU: Good urine output{{7}} on current diuretic dose.\nConstitutional: Denies fever, chills.\nMusculoskeletal: Mild residual ankle edema, much improved{{8}}.",
+          pe: "General: NAD, comfortable.\nVitals: BP 108/68{{9}}, HR 78 (irregular){{10}}, RR 16, O2 sat 97% RA.\nCardiac: Irregular rhythm; S1, S2 present; 2/6 systolic murmur at apex{{11}}.\nLungs: Clear to auscultation bilaterally.\nExtremities: 1+ pitting edema{{12}} bilateral ankles, improved from prior.",
+          citations: [
+            { number: 1, text: "EF 30%", source: "Echocardiogram report, 03/15/2024" },
+            { number: 2, text: "10/03-10/07", source: "Hospital discharge summary" },
+            { number: 3, text: "improved dyspnea", source: "Transcript: 'I can breathe much better now'" },
+            { number: 4, text: "2.1 kg", source: "Home weight log" },
+            { number: 5, text: "105-110/65-70", source: "Home BP monitoring log" },
+            { number: 6, text: "walk one block without SOB", source: "Transcript: 'I can walk to the mailbox without getting short of breath'" },
+            { number: 7, text: "Good urine output", source: "Transcript: 'Urination is normal'" },
+            { number: 8, text: "much improved", source: "Transcript: 'My ankles look so much better'" },
+            { number: 9, text: "BP 108/68", source: "Visit vitals" },
+            { number: 10, text: "HR 78 (irregular)", source: "Visit vitals, ECG" },
+            { number: 11, text: "2/6 systolic murmur at apex", source: "Physical examination" },
+            { number: 12, text: "1+ pitting edema", source: "Physical examination" }
+          ],
           hccItems: [
             { condition: "Heart failure with reduced ejection fraction", meat: [true, false, true, true] },
             { condition: "Chronic atrial fibrillation", meat: [true, true, false, true] },
@@ -518,7 +557,7 @@ export default function Scribes({
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {allScribes[selectedScribeIndex].hpi}
+                      {renderTextWithCitations(allScribes[selectedScribeIndex].hpi)}
                     </p>
                   </div>
                 </div>
@@ -618,7 +657,7 @@ export default function Scribes({
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {allScribes[selectedScribeIndex].ros}
+                      {renderTextWithCitations(allScribes[selectedScribeIndex].ros)}
                     </p>
                   </div>
                 </div>
@@ -718,7 +757,7 @@ export default function Scribes({
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {allScribes[selectedScribeIndex].pe}
+                      {renderTextWithCitations(allScribes[selectedScribeIndex].pe)}
                     </p>
                   </div>
                 </div>
