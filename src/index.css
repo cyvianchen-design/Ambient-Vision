@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Surface colors */
+  --surface-base: white;
+  --surface-default: white;
+  --surface-secondary: #f5f5f5;
+  --surface-1: #f7f7f7;
+  --surface-2: #f2f2f2;
+  --surface-3: #e6e6e6;
+  --surface-semantic-info: #f1f3fe;
+  --surface-transparent-dark-3: rgba(0, 0, 0, 0.03);
+  --surface-transparent-dark-5: rgba(0, 0, 0, 0.05);
+  --surface-transparent-dark-10: rgba(0, 0, 0, 0.1);
+  
+  /* Text colors */
+  --text-default: black;
+  --text-body: #1a1a1a;
+  --text-subheading: #666;
+  --text-placeholder: #808080;
+  --text-disabled: #999;
+  --text-brand: #1132ee;
+  --text-oninverse: white;
+  --text-semantic-success: #479e4c;
+  --text-semantic-danger: #bb1411;
+  
+  /* Shape colors */
+  --shape-outline: rgba(0, 0, 0, 0.1);
+  --shape-brand: #1132ee;
+  --shape-primary: #1a1a1a;
+  --shape-semantic-success: #479e4c;
+  --shape-semantic-danger: #bb1411;
+  
+  /* Brand/Surface colors */
+  --surface-brand: #1132ee;
+  
+  /* Neutral colors */
+  --neutral-200: #ccc;
+  --neutral-700: #4d4d4d;
+  --neutral-800: #333;
+  --neutral-1000: black;
+  
+  /* Orange colors */
+  --orange-200: #ffd699;
+  
+  /* Nav button */
+  --nav-button: rgba(17, 50, 238, 0.12);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Lato', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss07';
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Tailwind utility extensions for exact Figma styles */
+@layer utilities {
+  .content-stretch {
+    align-content: stretch;
+  }
+}
