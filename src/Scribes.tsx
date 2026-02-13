@@ -5,6 +5,7 @@ import { InlineIcon } from './components/InlineIcon';
 import { ButtonGroup } from './components/ButtonGroup';
 import { Tabs } from './components/Tabs';
 import { ChatInput } from './components/Input';
+import { Link } from './components/Link';
 
 // Scribe List Item Component
 const ScribeListItem = ({ 
@@ -78,6 +79,8 @@ export default function Scribes({
   const [activeTab, setActiveTab] = useState<'clinical' | 'summary' | 'codes' | 'transcript'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
   const [selectedView, setSelectedView] = useState<'default' | 'abnormals' | 'citation'>('default');
+  const [activeCitation, setActiveCitation] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number} | null>(null);
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
@@ -103,26 +106,98 @@ export default function Scribes({
       return text.replace(/\{\{(\d+)\}\}/g, '');
     }
     
+    // Get citation data for current scribe
+    const currentScribe = allScribes[selectedScribeIndex];
+    const citations = currentScribe.citations || [];
+    
     // Split text by citation markers and render with inline citation badges
     const parts = text.split(/(\{\{\d+\}\})/);
+    let textBeforeCitation = '';
+    
     return parts.map((part, idx) => {
       const match = part.match(/\{\{(\d+)\}\}/);
       if (match) {
-        return (
+        const citationNum = parseInt(match[1]);
+        const citation = citations.find(c => c.number === citationNum);
+        const isActive = activeCitation === citationNum;
+        const citedText = citation?.citedText || '';
+        
+        // Find the cited text in the accumulated text before this citation
+        const citedTextInContext = textBeforeCitation.slice(-citedText.length);
+        const shouldHighlight = isActive && citedTextInContext.toLowerCase().includes(citedText.toLowerCase());
+        
+        const badge = (
           <span 
             key={idx} 
-            className="inline-flex items-center justify-center bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] font-bold text-[10px] cursor-pointer hover:opacity-80 transition-opacity mx-[2px]"
+            className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-all mx-[2px] ${
+              isActive 
+                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] hover:opacity-80'
+            }`}
             style={{
               width: '14px',
               height: '14px',
               borderRadius: '2px',
               verticalAlign: 'baseline'
             }}
+            onMouseEnter={(e) => {
+              setActiveCitation(citationNum);
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTooltipPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top
+              });
+            }}
+            onMouseLeave={() => {
+              setActiveCitation(null);
+              setTooltipPosition(null);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (activeCitation === citationNum) {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              } else {
+                setActiveCitation(citationNum);
+                const rect = e.currentTarget.getBoundingClientRect();
+                setTooltipPosition({
+                  x: rect.left + rect.width / 2,
+                  y: rect.top
+                });
+              }
+            }}
           >
             {match[1]}
           </span>
         );
+        
+        textBeforeCitation = '';
+        return badge;
       }
+      
+      // Check if this text should be highlighted
+      if (activeCitation && part) {
+        const citation = citations.find(c => c.number === activeCitation);
+        if (citation && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
+          // Highlight the cited text within this part
+          const citedText = citation.citedText;
+          const regex = new RegExp(`(${citedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          const highlighted = part.split(regex).map((segment, segIdx) => {
+            if (segment.toLowerCase() === citedText.toLowerCase()) {
+              return (
+                <span key={`${idx}-${segIdx}`} className="bg-[#f1f3fe] px-[4px] py-[2px] rounded-[4px]">
+                  {segment}
+                </span>
+              );
+            }
+            return <span key={`${idx}-${segIdx}`}>{segment}</span>;
+          });
+          textBeforeCitation += part;
+          return <span key={idx}>{highlighted}</span>;
+        }
+      }
+      
+      textBeforeCitation += part;
       return <span key={idx}>{part}</span>;
     });
   };
@@ -142,18 +217,18 @@ export default function Scribes({
           ros: "Cardiovascular: Reports resolution of dyspnea at rest; can now walk one block without SOB{{6}}. Denies chest pain, palpitations.\nRespiratory: Clear lungs; no cough.\nGI: Normal appetite; denies nausea.\nGU: Good urine output{{7}} on current diuretic dose.\nConstitutional: Denies fever, chills.\nMusculoskeletal: Mild residual ankle edema, much improved{{8}}.",
           pe: "General: NAD, comfortable.\nVitals: BP 108/68{{9}}, HR 78 (irregular){{10}}, RR 16, O2 sat 97% RA.\nCardiac: Irregular rhythm; S1, S2 present; 2/6 systolic murmur at apex{{11}}.\nLungs: Clear to auscultation bilaterally.\nExtremities: 1+ pitting edema{{12}} bilateral ankles, improved from prior.",
           citations: [
-            { number: 1, text: "EF 30%", source: "Echocardiogram report, 03/15/2024" },
-            { number: 2, text: "10/03-10/07", source: "Hospital discharge summary" },
-            { number: 3, text: "improved dyspnea", source: "Transcript: 'I can breathe much better now'" },
-            { number: 4, text: "2.1 kg", source: "Home weight log" },
-            { number: 5, text: "105-110/65-70", source: "Home BP monitoring log" },
-            { number: 6, text: "walk one block without SOB", source: "Transcript: 'I can walk to the mailbox without getting short of breath'" },
-            { number: 7, text: "Good urine output", source: "Transcript: 'Urination is normal'" },
-            { number: 8, text: "much improved", source: "Transcript: 'My ankles look so much better'" },
-            { number: 9, text: "BP 108/68", source: "Visit vitals" },
-            { number: 10, text: "HR 78 (irregular)", source: "Visit vitals, ECG" },
-            { number: 11, text: "2/6 systolic murmur at apex", source: "Physical examination" },
-            { number: 12, text: "1+ pitting edema", source: "Physical examination" }
+            { number: 1, citedText: "EF 30%", quote: "Left ventricular ejection fraction is 30% by visual estimation", source: "Echocardiogram report, 03/15/2024" },
+            { number: 2, citedText: "10/03-10/07", quote: "Patient admitted 10/03/2024 for acute decompensated heart failure and discharged 10/07/2024", source: "Hospital discharge summary, 10/07/2024" },
+            { number: 3, citedText: "improved dyspnea", quote: "I can breathe much better now. I'm not getting winded just walking around the house anymore.", source: "Visit transcript, 00:03:45" },
+            { number: 4, citedText: "2.1 kg", quote: "Starting weight 80.3 kg on 10/07, current weight 78.2 kg", source: "Home weight monitoring log" },
+            { number: 5, citedText: "105-110/65-70", quote: "Daily BP readings: 10/15: 108/66, 10/16: 105/68, 10/17: 110/70, 10/18: 106/65", source: "Home BP monitoring log" },
+            { number: 6, citedText: "walk one block without SOB", quote: "I can walk to the mailbox now without getting short of breath. That's about a block.", source: "Visit transcript, 00:04:12" },
+            { number: 7, citedText: "Good urine output", quote: "Urination is normal. Going about the same as usual, maybe a little more with the water pill.", source: "Visit transcript, 00:06:33" },
+            { number: 8, citedText: "much improved", quote: "My ankles look so much better. The swelling has really gone down a lot.", source: "Visit transcript, 00:05:21" },
+            { number: 9, citedText: "BP 108/68", quote: "Blood pressure 108/68 mmHg", source: "Visit vitals, today" },
+            { number: 10, citedText: "HR 78 (irregular)", quote: "Heart rate 78 bpm, irregularly irregular rhythm consistent with atrial fibrillation", source: "Visit vitals and ECG, today" },
+            { number: 11, citedText: "2/6 systolic murmur at apex", quote: "Grade 2/6 holosystolic murmur best heard at apex, consistent with mitral regurgitation", source: "Physical examination, today" },
+            { number: 12, citedText: "1+ pitting edema", quote: "1+ pitting edema bilateral lower extremities to mid-shin, improved from 3+ at discharge", source: "Physical examination, today" }
           ],
           hccItems: [
             { condition: "Heart failure with reduced ejection fraction", meat: [true, false, true, true] },
@@ -1061,6 +1136,38 @@ export default function Scribes({
           </div>
         </div>
       </div>
+      
+      {/* Citation Tooltip */}
+      {activeCitation && tooltipPosition && (() => {
+        const citation = allScribes[selectedScribeIndex].citations?.find(c => c.number === activeCitation);
+        if (!citation) return null;
+        
+        return (
+          <div 
+            className="fixed bg-white shadow-lg rounded-[8px] p-[12px] max-w-[320px] z-50 border border-[var(--neutral-200,#ccc)]"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y - 10}px`,
+              transform: 'translate(-50%, -100%)'
+            }}
+          >
+            <div className="flex flex-col gap-[8px]">
+              <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] italic">
+                "{citation.quote}"
+              </p>
+              <div className="border-t border-[var(--neutral-200,#ccc)] pt-[8px]">
+                <Link 
+                  label={citation.source}
+                  size="xsmall"
+                  intent="neutral"
+                  showPrefix={false}
+                  showSuffix={false}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
