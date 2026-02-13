@@ -77,6 +77,7 @@ export default function Scribes({
   const [chatInputValue, setChatInputValue] = useState('');
   const [activeTab, setActiveTab] = useState<'clinical' | 'summary' | 'codes' | 'transcript'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
+  const [selectedView, setSelectedView] = useState<'default' | 'abnormals' | 'citation'>('default');
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
@@ -853,8 +854,9 @@ export default function Scribes({
                   { id: 'abnormals', label: 'Abnormals' },
                   { id: 'citation', label: 'Citation' }
                 ]}
-                value="default"
-                onChange={() => {}}
+                value={selectedView}
+                onChange={(id) => setSelectedView(id as 'default' | 'abnormals' | 'citation')}
+                className="w-full"
               />
             )}
             
