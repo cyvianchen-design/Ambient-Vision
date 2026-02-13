@@ -103,18 +103,24 @@ export default function Scribes({
       return text.replace(/\{\{(\d+)\}\}/g, '');
     }
     
-    // Split text by citation markers and render with superscript numbers
+    // Split text by citation markers and render with inline citation badges
     const parts = text.split(/(\{\{\d+\}\})/);
     return parts.map((part, idx) => {
       const match = part.match(/\{\{(\d+)\}\}/);
       if (match) {
         return (
-          <sup 
+          <span 
             key={idx} 
-            className="text-[color:var(--text-brand,#1132ee)] font-bold text-[11px] cursor-pointer hover:underline ml-[2px]"
+            className="inline-flex items-center justify-center bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] font-bold text-[10px] cursor-pointer hover:opacity-80 transition-opacity mx-[2px]"
+            style={{
+              width: '14px',
+              height: '14px',
+              borderRadius: '2px',
+              verticalAlign: 'baseline'
+            }}
           >
             {match[1]}
-          </sup>
+          </span>
         );
       }
       return <span key={idx}>{part}</span>;
