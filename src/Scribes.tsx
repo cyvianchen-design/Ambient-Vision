@@ -120,19 +120,14 @@ export default function Scribes({
         const citationNum = parseInt(match[1]);
         const citation = citations.find(c => c.number === citationNum);
         const isActive = activeCitation === citationNum;
-        const citedText = citation?.citedText || '';
-        
-        // Find the cited text in the accumulated text before this citation
-        const citedTextInContext = textBeforeCitation.slice(-citedText.length);
-        const shouldHighlight = isActive && citedTextInContext.toLowerCase().includes(citedText.toLowerCase());
         
         const badge = (
           <span 
             key={idx} 
-            className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-all mx-[2px] ${
+            className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-colors mx-[2px] ${
               isActive 
                 ? 'bg-[var(--text-brand,#1132ee)] text-white' 
-                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] hover:opacity-80'
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
             }`}
             style={{
               width: '14px',
@@ -147,10 +142,6 @@ export default function Scribes({
                 x: rect.left + rect.width / 2,
                 y: rect.top
               });
-            }}
-            onMouseLeave={() => {
-              setActiveCitation(null);
-              setTooltipPosition(null);
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -175,19 +166,19 @@ export default function Scribes({
         return badge;
       }
       
-      // Check if this text should be highlighted
+      // Check if this text should be highlighted (without shifting layout)
       if (activeCitation && part) {
         const citation = citations.find(c => c.number === activeCitation);
         if (citation && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
-          // Highlight the cited text within this part
+          // Highlight the cited text within this part using background with mark element
           const citedText = citation.citedText;
           const regex = new RegExp(`(${citedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           const highlighted = part.split(regex).map((segment, segIdx) => {
             if (segment.toLowerCase() === citedText.toLowerCase()) {
               return (
-                <span key={`${idx}-${segIdx}`} className="bg-[#f1f3fe] px-[4px] py-[2px] rounded-[4px]">
+                <mark key={`${idx}-${segIdx}`} className="bg-[#f1f3fe] text-inherit" style={{ padding: 0 }}>
                   {segment}
-                </span>
+                </mark>
               );
             }
             return <span key={`${idx}-${segIdx}`}>{segment}</span>;
@@ -630,7 +621,7 @@ export default function Scribes({
                 </div>
               ) : (
                 <div 
-                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
+                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
                     setEditedContent({ ...editedContent, hpi: allScribes[selectedScribeIndex].hpi });
                     setEditingSection('hpi');
@@ -730,7 +721,7 @@ export default function Scribes({
                 </div>
               ) : (
                 <div 
-                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
+                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
                     setEditedContent({ ...editedContent, ros: allScribes[selectedScribeIndex].ros });
                     setEditingSection('ros');
@@ -830,7 +821,7 @@ export default function Scribes({
                 </div>
               ) : (
                 <div 
-                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
+                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
                   onClick={() => {
                     setEditedContent({ ...editedContent, pe: allScribes[selectedScribeIndex].pe });
                     setEditingSection('pe');
@@ -1143,19 +1134,41 @@ export default function Scribes({
         if (!citation) return null;
         
         return (
-          <div 
-            className="fixed bg-white shadow-lg rounded-[8px] p-[12px] max-w-[320px] z-50 border border-[var(--neutral-200,#ccc)]"
-            style={{
-              left: `${tooltipPosition.x}px`,
-              top: `${tooltipPosition.y - 10}px`,
-              transform: 'translate(-50%, -100%)'
-            }}
-          >
-            <div className="flex flex-col gap-[8px]">
-              <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] italic">
-                "{citation.quote}"
-              </p>
-              <div className="border-t border-[var(--neutral-200,#ccc)] pt-[8px]">
+          <>
+            {/* Invisible bridge between badge and tooltip to prevent flickering */}
+            <div
+              className="fixed z-50"
+              style={{
+                left: `${tooltipPosition.x - 20}px`,
+                top: `${tooltipPosition.y - 4}px`,
+                width: '40px',
+                height: '4px',
+                transform: 'translateY(-100%)'
+              }}
+              onMouseEnter={() => {
+                setActiveCitation(activeCitation);
+              }}
+            />
+            <div 
+              className="fixed bg-white shadow-lg rounded-[8px] p-[12px] max-w-[320px] z-50 border border-[var(--neutral-200,#ccc)]"
+              style={{
+                left: `${tooltipPosition.x}px`,
+                top: `${tooltipPosition.y - 4}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+              onMouseEnter={() => {
+                // Keep tooltip open when hovering over it
+                setActiveCitation(activeCitation);
+              }}
+              onMouseLeave={() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }}
+            >
+              <div className="flex flex-col gap-[8px]">
+                <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] italic">
+                  "{citation.quote}"
+                </p>
                 <Link 
                   label={citation.source}
                   size="xsmall"
@@ -1165,7 +1178,7 @@ export default function Scribes({
                 />
               </div>
             </div>
-          </div>
+          </>
         );
       })()}
     </div>
