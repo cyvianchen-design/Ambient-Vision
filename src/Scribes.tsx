@@ -1133,6 +1133,23 @@ export default function Scribes({
         const citation = allScribes[selectedScribeIndex].citations?.find(c => c.number === activeCitation);
         if (!citation) return null;
         
+        // Determine if tooltip should appear above or below
+        const tooltipHeight = 120; // Approximate height
+        const spaceBelow = window.innerHeight - tooltipPosition.y;
+        const showBelow = spaceBelow > tooltipHeight + 50; // 50px buffer
+        
+        const topPosition = showBelow 
+          ? tooltipPosition.y + 14 + 4 // badge height + gap
+          : tooltipPosition.y - 4;
+        
+        const transformValue = showBelow
+          ? 'translate(-50%, 0)'
+          : 'translate(-50%, -100%)';
+        
+        const bridgeTop = showBelow
+          ? tooltipPosition.y + 14
+          : tooltipPosition.y - 4;
+        
         return (
           <>
             {/* Invisible bridge between badge and tooltip to prevent flickering */}
@@ -1140,10 +1157,10 @@ export default function Scribes({
               className="fixed z-50"
               style={{
                 left: `${tooltipPosition.x - 20}px`,
-                top: `${tooltipPosition.y - 4}px`,
+                top: `${bridgeTop}px`,
                 width: '40px',
                 height: '4px',
-                transform: 'translateY(-100%)'
+                transform: showBelow ? 'translateY(0)' : 'translateY(-100%)'
               }}
               onMouseEnter={() => {
                 setActiveCitation(activeCitation);
@@ -1153,8 +1170,8 @@ export default function Scribes({
               className="fixed bg-white shadow-lg rounded-[8px] p-[12px] w-[240px] z-50 border border-[var(--neutral-200,#ccc)]"
               style={{
                 left: `${tooltipPosition.x}px`,
-                top: `${tooltipPosition.y - 4}px`,
-                transform: 'translate(-50%, -100%)'
+                top: `${topPosition}px`,
+                transform: transformValue
               }}
               onMouseEnter={() => {
                 // Keep tooltip open when hovering over it
