@@ -83,15 +83,15 @@ export const Link: React.FC<LinkProps> = ({
       onBlur={() => setIsFocused(false)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`content-stretch flex ${config.gap} items-center relative cursor-pointer transition-colors ${className}`}
+      className={`content-stretch flex flex-wrap ${config.gap} items-center relative cursor-pointer transition-colors ${className}`}
     >
       {showPrefix && (
-        <div className={textColor}>
+        <div className={`${textColor} shrink-0`}>
           <InlineIcon name="hexagon" size={config.iconSize} />
         </div>
       )}
       
-      <p className={`font-['Lato',sans-serif] ${fontWeight} ${lineHeight} not-italic relative shrink-0 ${config.fontSize} ${textColor} ${config.tracking}`} style={{ fontFeatureSettings: "'ss07'" }}>
+      <p className={`font-['Lato',sans-serif] ${fontWeight} ${lineHeight} not-italic relative ${config.fontSize} ${textColor} ${config.tracking}`} style={{ fontFeatureSettings: "'ss07'", wordBreak: 'break-word' }}>
         {label}
       </p>
       
