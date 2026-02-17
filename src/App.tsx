@@ -70,11 +70,11 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'visits' | 'scribes'>('visits');
   const [chatInputValue, setChatInputValue] = useState('');
   const [activeTab, setActiveTab] = useState<'previsit' | 'note'>('previsit');
-  const [rightTab, setRightTab] = useState<'actions' | 'chat'>('actions');
+  const [rightTab, setRightTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
+  const [selectedPatientForScribe, setSelectedPatientForScribe] = useState<string | null>(null);
   const [isVisitSettingsExpanded, setIsVisitSettingsExpanded] = useState(true);
   const [isCareNudgesExpanded, setIsCareNudgesExpanded] = useState(true);
-  const [isDataSourcesExpanded, setIsDataSourcesExpanded] = useState(true);
   const [editingPrechartSection, setEditingPrechartSection] = useState<'subjective' | 'objective' | 'assessment' | 'plan' | null>(null);
   const [editedPrechartContent, setEditedPrechartContent] = useState<{subjective: string; objective: string; assessment: string; plan: string}>({
     subjective: '',
@@ -84,6 +84,7 @@ export default function App() {
   });
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{patientIndex: number, nudgeIndex: number} | null>(null);
+  const [showDismissedCareNudges, setShowDismissedCareNudges] = useState(false);
   const [activeCitation, setActiveCitation] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
@@ -682,24 +683,24 @@ export default function App() {
   const generatePrechartContent = () => {
     const patient = patients[selectedPatientIndex];
     
-    // Subjective: Chief complaint + context from previsit with citations
+    // Subjective: Chief complaint + HPI from previsit data
     let subjective = `Chief Complaint: ${patient.chiefComplaint}\n\n`;
-    subjective += `History of Present Illness:\n[To be documented during visit: onset, duration, character, location, severity, aggravating/alleviating factors, associated symptoms, course since onset]\n\n`;
+    subjective += `History of Present Illness:\n`;
     
-    // Add at a glance with citations
-    subjective += `Context from chart review:\n`;
-    patient.atAGlance.forEach((item, idx) => {
-      // Find citation for this item from patient.citations
+    // Generate HPI from atAGlance and details
+    const hpiItems = [...patient.atAGlance];
+    hpiItems.forEach((item, idx) => {
       const citationNumbers = patient.citations
         ?.filter(c => item.includes(c.citedText))
         .map(c => c.number)
         .sort((a, b) => a - b);
       
       if (citationNumbers && citationNumbers.length > 0) {
-        subjective += `${item} {{${citationNumbers[0]}}}\n`;
+        subjective += `${item} {{${citationNumbers[0]}}}`;
       } else {
-        subjective += `${item}\n`;
+        subjective += item;
       }
+      subjective += ' ';
     });
     
     // Add medical history with citations
@@ -746,10 +747,10 @@ export default function App() {
       });
     }
     
-    // Objective: Vitals + to be documented
+    // Objective: Vitals + ROS/PE
     let objective = '';
     if (patient.sections['Vitals']) {
-      objective += `Pre-visit Vitals:\n`;
+      objective += `Vitals:\n`;
       patient.sections['Vitals'].forEach((item, idx) => {
         const citationNumbers = patient.citations
           ?.filter(c => item.includes(c.citedText))
@@ -764,19 +765,36 @@ export default function App() {
       });
       objective += `\n`;
     }
-    objective += `Review of Systems:\n[To be documented during visit: constitutional, HEENT, cardiovascular, respiratory, GI, GU, musculoskeletal, neurologic, psychiatric, skin]\n\n`;
-    objective += `Physical Examination:\n[To be documented during visit: general appearance, vital signs, relevant system examination based on chief complaint]`;
+    objective += `Review of Systems:\n\n`;
+    objective += `Physical Examination:`;
     
-    // Assessment: To be documented
-    const assessment = `[To be documented during visit: primary diagnosis, differential diagnoses, clinical reasoning based on history and physical examination]`;
+    // Assessment: Generate preliminary assessment based on chief complaint
+    let assessment = '';
+    const cc = patient.chiefComplaint.toLowerCase();
+    if (cc.includes('diabetes')) {
+      assessment = `Type 2 diabetes mellitus, suboptimal control. Will assess glycemic control and screen for complications.`;
+    } else if (cc.includes('back pain')) {
+      assessment = `Acute lower back pain. Will assess for red flag symptoms and determine need for imaging.`;
+    } else if (cc.includes('heart failure')) {
+      assessment = `Chronic systolic heart failure. Will review volume status and medication adherence.`;
+    } else if (cc.includes('migraine') || cc.includes('headache')) {
+      assessment = `Migraine without aura, chronic. Will assess treatment response and consider preventive therapy adjustment.`;
+    } else if (cc.includes('wellness') || cc.includes('preventive')) {
+      assessment = `Annual wellness visit. Will address preventive care and health maintenance.`;
+    } else {
+      assessment = `${patient.chiefComplaint}. Will complete history and physical examination.`;
+    }
     
-    // Plan: Can reference care nudges
-    let plan = `[To be documented during visit:]\n`;
-    plan += `- Diagnostic studies (labs, imaging, etc.)\n`;
-    plan += `- Medications (new, adjusted, or continued)\n`;
-    plan += `- Referrals or consultations\n`;
-    plan += `- Patient education and counseling\n`;
-    plan += `- Follow-up instructions and timeline`;
+    // Plan: Generate based on care nudges and common actions
+    let plan = '';
+    if (patient.careNudges && patient.careNudges.length > 0) {
+      plan += `Considerations:\n`;
+      patient.careNudges.forEach((nudge, idx) => {
+        plan += `- ${nudge.description}\n`;
+      });
+      plan += `\n`;
+    }
+    plan += `Additional management to be determined based on today's evaluation.`;
     
     return { subjective, objective, assessment, plan };
   };
@@ -786,8 +804,8 @@ export default function App() {
     const patient = patients[selectedPatientIndex];
     const citations = patient.citations || [];
     
-    // Split by both citation markers and placeholder brackets
-    const parts = text.split(/(\{\{\d+\}\}|\[.*?\])/g);
+    // Split by citation markers only
+    const parts = text.split(/(\{\{\d+\}\})/g);
     
     return parts.map((part, idx) => {
       // Check if it's a citation marker
@@ -838,11 +856,6 @@ export default function App() {
             {citationMatch[1]}
           </span>
         );
-      }
-      
-      // Check if it's a placeholder bracket
-      if (part.match(/^\[.*\]$/)) {
-        return <span key={idx} style={{ color: '#999', fontStyle: 'italic' }}>{part}</span>;
       }
       
       // Check if this text should be highlighted for citations
@@ -952,11 +965,16 @@ export default function App() {
   // If scribes view is selected, render the Scribes component
   if (currentView === 'scribes') {
     return <Scribes 
-      onNavigateToVisits={() => setCurrentView('visits')} 
+      onNavigateToVisits={() => {
+        setCurrentView('visits');
+        setSelectedPatientForScribe(null);
+      }} 
       chatMessages={chatMessages}
       setChatMessages={setChatMessages}
       rightTab={rightTab}
       setRightTab={setRightTab}
+      patients={patients}
+      selectedPatientName={selectedPatientForScribe}
     />;
   }
 
@@ -1117,7 +1135,15 @@ export default function App() {
                     key={index} 
                     {...patient} 
                     isSelected={index === selectedPatientIndex}
-                    onClick={() => setSelectedPatientIndex(index)}
+                    onClick={() => {
+                      // If patient has a generated scribe, navigate to scribes
+                      if (patient.status === "Generated") {
+                        setSelectedPatientForScribe(patient.name);
+                        setCurrentView('scribes');
+                      } else {
+                        setSelectedPatientIndex(index);
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -1150,27 +1176,29 @@ export default function App() {
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[24px] text-[color:var(--text-default,black)]">
                 {patients[selectedPatientIndex].name}
               </p>
-              <div className="flex flex-[1_0_0]" />
-              {/* Button Group */}
-              <ButtonGroup
-                orientation="horizontal"
-                size="small"
-                options={[
-                  { id: 'previsit', label: 'Previsit' },
-                  { id: 'note', label: 'Prechart' }
-                ]}
-                value={activeTab}
-                onChange={(value) => setActiveTab(value as 'previsit' | 'note')}
-              />
             </div>
             
             {/* Patient Info */}
             <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap">
+              <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{patients[selectedPatientIndex].chiefComplaint}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].age}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].gender}</p></div>
-              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-              <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{patients[selectedPatientIndex].chiefComplaint}</p></div>
+            </div>
+            
+            {/* Tabs */}
+            <div className="w-full">
+              <Tabs
+                variant="primary"
+                tabs={[
+                  { id: 'previsit', label: 'Previsit' },
+                  { id: 'note', label: 'Prechart' }
+                ]}
+                defaultTab={activeTab}
+                onTabChange={(id) => setActiveTab(id as 'previsit' | 'note')}
+                hideBorder={false}
+              />
             </div>
           </div>
           
@@ -1720,10 +1748,11 @@ export default function App() {
                 variant="primary"
                 tabs={[
                   { id: 'actions', label: 'Actions' },
-                  { id: 'chat', label: 'Chat' }
+                  { id: 'assistant', label: 'Assistant' },
+                  { id: 'sources', label: 'Sources' }
                 ]}
                 defaultTab={rightTab}
-                onTabChange={(id) => setRightTab(id as 'actions' | 'chat')}
+                onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
                 hideBorder={true}
               />
             </div>
@@ -1732,8 +1761,115 @@ export default function App() {
         
         {/* Content Area - Scrollable */}
         <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto px-[20px] relative w-full ${viewingDataSource ? 'pt-[20px] pb-[20px]' : 'py-[20px]'}`}>
-          {rightTab === 'chat' ? (
-            /* Chat View */
+          {viewingDataSource ? (
+            /* Data Source View */
+            <>
+              {/* Back Button */}
+              <div className="content-stretch flex items-center relative shrink-0 w-full">
+                <Button
+                  variant="tertiary-neutral"
+                  size="small"
+                  icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
+                  onClick={() => setViewingDataSource(null)}
+                >
+                  Back
+                </Button>
+              </div>
+              
+              {/* Data Source Content */}
+              {dataSourceContent[patients[selectedPatientIndex].name]?.[viewingDataSource] && (
+                <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+                  {/* Source Header */}
+                  <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                    <div 
+                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
+                      style={{
+                        backgroundColor: getDocumentTypeBadgeColor(dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type).bg
+                      }}
+                    >
+                      <p 
+                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                        style={{
+                          color: getDocumentTypeBadgeColor(dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type).text,
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type}
+                      </p>
+                    </div>
+                    <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                      {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].date}
+                    </p>
+                  </div>
+                  
+                  {/* Source Content */}
+                  <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+                    <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
+                      {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].content}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : rightTab === 'sources' ? (
+            /* Sources View */
+            <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
+              {(() => {
+                // Group sources by type
+                const sourcesByType: Record<string, string[]> = {};
+                (patients[selectedPatientIndex].dataSources || []).forEach((source) => {
+                  const sourceData = dataSourceContent[patients[selectedPatientIndex].name]?.[source];
+                  if (sourceData) {
+                    const type = sourceData.type;
+                    if (!sourcesByType[type]) {
+                      sourcesByType[type] = [];
+                    }
+                    sourcesByType[type].push(source);
+                  }
+                });
+                
+                return Object.entries(sourcesByType).map(([type, sources]) => (
+                  <div key={type} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                    {/* Type Badge */}
+                    <div 
+                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
+                      style={{
+                        backgroundColor: getDocumentTypeBadgeColor(type).bg
+                      }}
+                    >
+                      <p 
+                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                        style={{
+                          color: getDocumentTypeBadgeColor(type).text,
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {type}
+                      </p>
+                    </div>
+                    
+                    {/* Sources for this type */}
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full pl-[12px]">
+                      {sources.map((source, idx) => (
+                        <Link 
+                          key={idx}
+                          label={source}
+                          size="medium"
+                          intent="neutral"
+                          showPrefix={false}
+                          showSuffix={false}
+                          onClick={() => {
+                            setViewingDataSource(source);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          ) : rightTab === 'assistant' ? (
+            /* Assistant View */
             <div className="content-stretch flex flex-col gap-[16px] items-start relative w-full">
               {(chatMessages[patients[selectedPatientIndex].name] || []).map((message, idx) => (
                 message.type === 'user' ? (
@@ -1783,55 +1919,6 @@ export default function App() {
                 )
               ))}
             </div>
-          ) : viewingDataSource ? (
-            /* Data Source View */
-            <>
-              {/* Back Button */}
-              <div className="content-stretch flex items-center relative shrink-0 w-full">
-                <Button
-                  variant="tertiary-neutral"
-                  size="small"
-                  icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
-                  onClick={() => setViewingDataSource(null)}
-                >
-                  Back
-                </Button>
-              </div>
-              
-              {/* Data Source Content */}
-              {dataSourceContent[patients[selectedPatientIndex].name]?.[viewingDataSource] && (
-                <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  {/* Source Header */}
-                  <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
-                    <div 
-                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
-                      style={{
-                        backgroundColor: getDocumentTypeBadgeColor(dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type).bg
-                      }}
-                    >
-                      <p 
-                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px] uppercase"
-                        style={{
-                          color: getDocumentTypeBadgeColor(dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type).text
-                        }}
-                      >
-                        {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].type}
-                      </p>
-                    </div>
-                    <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                      {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].date}
-                    </p>
-                  </div>
-                  
-                  {/* Source Content */}
-                  <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
-                    <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
-                      {dataSourceContent[patients[selectedPatientIndex].name][viewingDataSource].content}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </>
           ) : (
             /* Actions View */
             <>
@@ -1915,7 +2002,7 @@ export default function App() {
                 return (
                   <div 
                     key={idx} 
-                    className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
+                    className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
                     onMouseEnter={() => setHoveredNudge({patientIndex: selectedPatientIndex, nudgeIndex: idx})}
                     onMouseLeave={() => setHoveredNudge(null)}
                     onClick={() => {
@@ -1935,59 +2022,87 @@ export default function App() {
                         {nudge.description}
                       </p>
                     </div>
-                    <IconButton 
-                      variant="tertiary" 
-                      size="small"
-                      icon={<InlineIcon name="close_small" size={16} />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDismissedNudges(prev => ({
-                          ...prev,
-                          [selectedPatientIndex]: new Set([...(prev[selectedPatientIndex] || []), idx])
-                        }));
-                      }}
-                      aria-label={`Dismiss ${nudge.type}`}
-                      className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                    />
+                    <div className="absolute top-[4px] right-[4px]">
+                      <IconButton 
+                        variant="tertiary-neutral" 
+                        size="small"
+                        icon={<InlineIcon name="close_small" size={16} />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDismissedNudges(prev => ({
+                            ...prev,
+                            [selectedPatientIndex]: new Set([...(prev[selectedPatientIndex] || []), idx])
+                          }));
+                        }}
+                        aria-label={`Dismiss ${nudge.type}`}
+                        className="text-[#666666] hover:bg-[rgba(0,0,0,0.03)]"
+                      />
+                    </div>
                   </div>
                 );
               })}
-            </div>
-            )}
-          </div>
-          
-          {/* Data Sources Card */}
-          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                Data Sources
-              </p>
-              <IconButton 
-                variant="tertiary" 
-                size="small"
-                icon={<InlineIcon name={isDataSourcesExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
-                onClick={() => setIsDataSourcesExpanded(!isDataSourcesExpanded)}
-                aria-label={isDataSourcesExpanded ? "Collapse data sources" : "Expand data sources"}
-                className="text-[color:var(--text-subheading,#666)]"
-              />
-            </div>
-            
-            {isDataSourcesExpanded && (
-            <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-              {(patients[selectedPatientIndex].dataSources || []).map((source, idx) => (
-                <Link 
-                  key={idx}
-                  label={source}
-                  size="xsmall"
-                  intent="neutral"
-                  showPrefix={false}
-                  showSuffix={false}
-                  onClick={() => {
-                    setViewingDataSource(source);
-                    setRightTab('actions'); // Ensure we're in actions view
-                  }}
-                />
-              ))}
+              
+              {/* Dismissed Care Nudges */}
+              {dismissedNudges[selectedPatientIndex] && dismissedNudges[selectedPatientIndex].size > 0 && (
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                  <div className="flex items-center justify-between w-full">
+                    <p className="font-['Lato',sans-serif] leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                      {dismissedNudges[selectedPatientIndex].size} nudge{dismissedNudges[selectedPatientIndex].size !== 1 ? 's' : ''} dismissed
+                    </p>
+                    <Button
+                      variant="tertiary"
+                      size="small"
+                      onClick={() => setShowDismissedCareNudges(!showDismissedCareNudges)}
+                    >
+                      {showDismissedCareNudges ? 'Hide' : 'View'}
+                    </Button>
+                  </div>
+                  
+                  {showDismissedCareNudges && (
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                      {(patients[selectedPatientIndex].careNudges || []).map((nudge, idx) => {
+                        if (!dismissedNudges[selectedPatientIndex]?.has(idx)) {
+                          return null;
+                        }
+                        
+                        return (
+                          <div 
+                            key={idx} 
+                            className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] shrink-0 w-full opacity-60"
+                          >
+                            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
+                              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                {nudge.type}
+                              </p>
+                              <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                                {nudge.description}
+                              </p>
+                            </div>
+                            <div className="absolute top-[4px] right-[4px]">
+                              <Button
+                                variant="tertiary"
+                                size="small"
+                                onClick={() => {
+                                  setDismissedNudges(prev => {
+                                    const newSet = new Set(prev[selectedPatientIndex]);
+                                    newSet.delete(idx);
+                                    return {
+                                      ...prev,
+                                      [selectedPatientIndex]: newSet
+                                    };
+                                  });
+                                }}
+                              >
+                                Restore
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             )}
           </div>
@@ -2012,8 +2127,8 @@ export default function App() {
               onChange={setChatInputValue}
               onSend={() => {
                 if (chatInputValue.trim()) {
-                  // Switch to chat view and clear data source view
-                  setRightTab('chat');
+                  // Switch to assistant view and clear data source view
+                  setRightTab('assistant');
                   setViewingDataSource(null);
                   // Here you would normally add the message to chat
                   console.log('Send message:', chatInputValue);

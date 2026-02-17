@@ -67,16 +67,20 @@ export default function Scribes({
   chatMessages,
   setChatMessages,
   rightTab,
-  setRightTab
+  setRightTab,
+  patients,
+  selectedPatientName
 }: { 
   onNavigateToVisits?: () => void;
   chatMessages: Record<string, ChatMessage[]>;
   setChatMessages: (messages: Record<string, ChatMessage[]>) => void;
-  rightTab: 'actions' | 'chat';
-  setRightTab: (tab: 'actions' | 'chat') => void;
+  rightTab: 'actions' | 'assistant' | 'sources';
+  setRightTab: (tab: 'actions' | 'assistant' | 'sources') => void;
+  patients: any[];
+  selectedPatientName: string | null;
 }) {
   const [chatInputValue, setChatInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'clinical' | 'summary' | 'codes' | 'transcript'>('clinical');
+  const [activeTab, setActiveTab] = useState<'clinical' | 'codes' | 'transcript' | 'previsit'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
   const [selectedView, setSelectedView] = useState<'default' | 'abnormals' | 'citation'>('default');
   const [activeCitation, setActiveCitation] = useState<number | null>(null);
@@ -84,7 +88,6 @@ export default function Scribes({
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
-  const [isDataSourcesExpanded, setIsDataSourcesExpanded] = useState(true);
   const [editingSection, setEditingSection] = useState<'hpi' | 'ros' | 'pe' | null>(null);
   const [editedContent, setEditedContent] = useState<{hpi: string; ros: string; pe: string}>({
     hpi: '',
@@ -93,7 +96,13 @@ export default function Scribes({
   });
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
+  const [appliedNudges, setAppliedNudges] = useState<Record<number, Record<number, {selectedOptions: string[], appliedText: string}>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{scribeIndex: number, nudgeIndex: number} | null>(null);
+  const [hoveredHighlight, setHoveredHighlight] = useState<{scribeIndex: number, nudgeIndex: number} | null>(null);
+  const [showDismissedNudges, setShowDismissedNudges] = useState(false);
+  const [showAppliedNudges, setShowAppliedNudges] = useState(false);
+  const [nudgeSelections, setNudgeSelections] = useState<Record<string, string[]>>({});
+  const [nudgePreviews, setNudgePreviews] = useState<Record<string, {text: string, location: string, after: string}>>({});
   
   // Helper function to get badge color based on document type
   const getDocumentTypeBadgeColor = (type: string): {bg: string, text: string} => {
@@ -328,9 +337,42 @@ export default function Scribes({
           citations: [],
           hccItems: [],
           nudges: [
-            { type: "Risk Assessment", description: "Document pain scale (1-10) for severity and track response to treatment.", highlightId: "maria-garcia-hpi-pain-severity" },
-            { type: "Documentation", description: "Specify mechanism of injury timing and activity to support acute diagnosis.", highlightId: "maria-garcia-hpi-mechanism" },
-            { type: "Safety", description: "Document absence of red flags: no fever, bowel/bladder changes, saddle anesthesia.", highlightId: "maria-garcia-ros-section" }
+            { 
+              type: "Documentation", 
+              description: "Missing indication of pain location laterality, please select an option to complete your note.",
+              highlightId: "maria-garcia-hpi-mechanism",
+              options: [
+                { id: 'left', label: 'Left', type: 'single-select' },
+                { id: 'right', label: 'Right', type: 'single-select' }
+              ],
+              previewText: (selected: string[]) => selected.length > 0 ? `Pain is primarily on the ${selected[0]} side of the lower back.` : '',
+              insertLocation: 'hpi',
+              insertAfter: 'lower lumbar region.'
+            },
+            { 
+              type: "Risk Assessment", 
+              description: "Select any red flag symptoms present to document in the note.",
+              highlightId: "maria-garcia-ros-section",
+              options: [
+                { id: 'fever', label: 'Fever', type: 'multi-select' },
+                { id: 'bladder', label: 'Bladder dysfunction', type: 'multi-select' },
+                { id: 'bowel', label: 'Bowel dysfunction', type: 'multi-select' },
+                { id: 'saddle', label: 'Saddle anesthesia', type: 'multi-select' },
+                { id: 'weakness', label: 'Lower extremity weakness', type: 'multi-select' },
+                { id: 'trauma', label: 'Recent trauma', type: 'multi-select' }
+              ],
+              previewText: (selected: string[]) => {
+                if (selected.length === 0) return '';
+                const labelMap: Record<string, string> = {
+                  fever: 'fever', bladder: 'bowel or bladder dysfunction', bowel: 'bowel or bladder dysfunction',
+                  saddle: 'saddle anesthesia', weakness: 'lower extremity weakness', trauma: 'history of recent trauma'
+                };
+                return `Red flags present: ${selected.map(s => labelMap[s]).filter((v, i, a) => a.indexOf(v) === i).join(', ')}.`;
+              },
+              insertLocation: 'ros',
+              insertAfter: 'Normal bowel and bladder function.'
+            },
+            { type: "Documentation", description: "Specify mechanism of injury timing and activity to support acute diagnosis.", highlightId: "maria-garcia-hpi-mechanism" }
           ],
           dataSources: [
             "Feb 12, Intake form, Ambient",
@@ -353,7 +395,27 @@ export default function Scribes({
             { condition: "Generalized anxiety disorder", meat: [true, false, true, false] }
           ],
           nudges: [
-            { type: "Documentation", description: "Specify 'intractable' in diagnosis - patient on preventive with limited response, supports higher complexity.", highlightId: "lisa-anderson-note-header" },
+            {
+              type: "Documentation",
+              description: "Document aura characteristics for migraine classification.",
+              highlightId: "lisa-anderson-hpi-sumatriptan",
+              options: [
+                { id: 'visual', label: 'Visual (zigzag lines)', type: 'multi-select' },
+                { id: 'sensory', label: 'Sensory', type: 'multi-select' },
+                { id: 'speech', label: 'Speech disturbance', type: 'multi-select' },
+                { id: 'motor', label: 'Motor weakness', type: 'multi-select' }
+              ],
+              previewText: (selected: string[]) => {
+                if (selected.length === 0) return '';
+                const labelMap: Record<string, string> = {
+                  visual: 'visual aura (zigzag lines)', sensory: 'sensory changes', 
+                  speech: 'speech disturbance', motor: 'motor weakness'
+                };
+                return `Aura symptoms include: ${selected.map(s => labelMap[s]).join(', ')}.`;
+              },
+              insertLocation: 'hpi',
+              insertAfter: 'occasional visual aura (zigzag lines)'
+            },
             { type: "Risk Assessment", description: "Document medication overuse headache screening - sumatriptan 2-3x/week approaching threshold.", highlightId: "lisa-anderson-hpi-sumatriptan" },
             { type: "Billing Compliance", description: "Link anxiety diagnosis to treatment plan - comorbid conditions affect coding.", highlightId: "lisa-anderson-ros-section" }
           ],
@@ -385,9 +447,31 @@ export default function Scribes({
             { condition: "Hyperlipidemia", meat: [true, false, false, true] }
           ],
           nudges: [
+            {
+              type: "Safety",
+              description: "Document diabetic complications screening status.",
+              highlightId: "sarah-johnson-hpi-a1c",
+              options: [
+                { id: 'retinopathy', label: 'Retinopathy screening', type: 'multi-select' },
+                { id: 'nephropathy', label: 'Nephropathy screening', type: 'multi-select' },
+                { id: 'neuropathy', label: 'Neuropathy exam', type: 'multi-select' },
+                { id: 'foot', label: 'Foot exam', type: 'multi-select' }
+              ],
+              previewText: (selected: string[]) => {
+                if (selected.length === 0) return '';
+                const labelMap: Record<string, string> = {
+                  retinopathy: 'eye exam (last 8 months ago, overdue for annual)',
+                  nephropathy: 'renal function (eGFR stable at 72)',
+                  neuropathy: 'neuropathy screening (monofilament sensation intact)',
+                  foot: 'diabetic foot exam (completed today, no ulcers or deformities)'
+                };
+                return `Diabetic complications screening: ${selected.map(s => labelMap[s]).join('; ')}.`;
+              },
+              insertLocation: 'pe',
+              insertAfter: 'monofilament sensation intact.'
+            },
             { type: "Billing Compliance", description: "Consider 'with complications' for diabetes - rising A1c and overdue screening warrant higher specificity.", highlightId: "sarah-johnson-note-header" },
-            { type: "Documentation", description: "Document treatment intensification plan - A1c 7.8% above goal requires medication adjustment.", highlightId: "sarah-johnson-hpi-a1c" },
-            { type: "Safety", description: "Document ophthalmology referral placed - overdue screening is quality measure.", highlightId: "sarah-johnson-note-header" }
+            { type: "Documentation", description: "Document treatment intensification plan - A1c 7.8% above goal requires medication adjustment.", highlightId: "sarah-johnson-hpi-a1c" }
           ],
           dataSources: [
             "Jan 15, Lab results, Athena",
@@ -412,9 +496,29 @@ export default function Scribes({
             { condition: "History of nicotine dependence", meat: [true, false, false, false] }
           ],
           nudges: [
+            {
+              type: "Documentation",
+              description: "Document shared decision-making for PSA screening.",
+              highlightId: "james-wilson-note-header",
+              options: [
+                { id: 'yes', label: 'Patient opts for PSA', type: 'single-select' },
+                { id: 'no', label: 'Patient declines PSA', type: 'single-select' },
+                { id: 'defer', label: 'Defer decision', type: 'single-select' }
+              ],
+              previewText: (selected: string[]) => {
+                if (selected.length === 0) return '';
+                const textMap: Record<string, string> = {
+                  yes: 'PSA Screening: Discussed risks and benefits with patient. Patient understands potential for false positives and downstream testing. Patient opts to proceed with PSA screening today.',
+                  no: 'PSA Screening: Discussed risks and benefits with patient. Patient understands potential for false positives and overdiagnosis. Patient declines PSA screening at this time.',
+                  defer: 'PSA Screening: Discussed risks and benefits with patient. Patient would like additional time to consider. Will revisit at next visit.'
+                };
+                return textMap[selected[0]] || '';
+              },
+              insertLocation: 'pe',
+              insertAfter: 'Abdomen: Soft, non-tender, no masses.'
+            },
             { type: "Documentation", description: "Document colonoscopy order and counseling - preventive care drives quality metrics.", highlightId: "james-wilson-note-header" },
-            { type: "Billing Compliance", description: "Add BMI 28.5 (overweight) to problem list - supports lifestyle counseling billing.", highlightId: "james-wilson-pe-bmi" },
-            { type: "Risk Assessment", description: "Document tobacco cessation counseling - former 30 pack-year smoker qualifies for continued screening.", highlightId: "james-wilson-hpi-smoker" }
+            { type: "Billing Compliance", description: "Add BMI 28.5 (overweight) to problem list - supports lifestyle counseling billing.", highlightId: "james-wilson-pe-bmi" }
           ],
           dataSources: [
             "Jan 20, 2024, Annual wellness visit, Athena",
@@ -428,6 +532,16 @@ export default function Scribes({
   
   // Flatten for easy access by index
   const allScribes = scribesByDate.flatMap(group => group.scribes);
+  
+  // Set the correct scribe index when navigating from a patient
+  useEffect(() => {
+    if (selectedPatientName) {
+      const scribeIndex = allScribes.findIndex(scribe => scribe.name === selectedPatientName);
+      if (scribeIndex !== -1) {
+        setSelectedScribeIndex(scribeIndex);
+      }
+    }
+  }, [selectedPatientName]);
   
   // Function to update scribe content
   const updateScribeContent = (section: 'hpi' | 'ros' | 'pe', content: string) => {
@@ -541,23 +655,82 @@ export default function Scribes({
 
   // Helper to render text with citation numbers and nudge highlighting
   const renderTextWithCitations = (text: string, section: 'hpi' | 'ros' | 'pe') => {
+    // Check if there's a preview for this section
+    const activePreview = Object.entries(nudgePreviews).find(([_, preview]) => preview.location === section);
+    let displayText = text;
+    let insertionPoint = '';
+    
+    if (activePreview) {
+      const [previewKey, preview] = activePreview;
+      // Insert preview text at the appropriate location
+      if (preview.after) {
+        const insertIndex = text.indexOf(preview.after);
+        if (insertIndex !== -1) {
+          insertionPoint = preview.after;
+          displayText = 
+            text.substring(0, insertIndex + preview.after.length) +
+            ' {{PREVIEW_START}}' + preview.text + '{{PREVIEW_END}}' +
+            text.substring(insertIndex + preview.after.length);
+        } else {
+          // Fallback: append at the end
+          displayText = text + '\n\n{{PREVIEW_START}}' + preview.text + '{{PREVIEW_END}}';
+        }
+      } else {
+        displayText = text + '\n\n{{PREVIEW_START}}' + preview.text + '{{PREVIEW_END}}';
+      }
+    }
+    
     // Handle 'none' view - just plain text
     if (selectedView === 'none') {
-      return text.replace(/\{\{(\d+)\}\}/g, '');
+      return displayText.replace(/\{\{(\d+)\}\}/g, '').replace(/\{\{PREVIEW_START\}\}|\{\{PREVIEW_END\}\}/g, '');
     }
     
     const shouldShowCitations = selectedView === 'citation' || selectedView === 'default';
     const shouldShowAbnormals = selectedView === 'abnormals' || selectedView === 'default';
-    const textWithoutCitations = shouldShowCitations ? text : text.replace(/\{\{(\d+)\}\}/g, '');
+    const shouldShowNudgeHighlights = selectedView === 'default';
+    const textWithoutCitations = shouldShowCitations ? displayText : displayText.replace(/\{\{(\d+)\}\}/g, '');
     
     // Check if we need to highlight specific text for nudges
     const isNudgeHovered = hoveredNudge?.scribeIndex === selectedScribeIndex;
+    const isHighlightHovered = hoveredHighlight?.scribeIndex === selectedScribeIndex;
     const highlightMapping = getHighlightMapping();
     let highlightText: string | null = null;
+    let shouldHighlightInsertionPoint = false;
+    let nudgeHighlights: Array<{text: string, nudgeIndex: number}> = [];
+    
+    // In default view, collect all active nudge insertion points for this section
+    if (shouldShowNudgeHighlights) {
+      (currentScribe.nudges || []).forEach((nudge, idx) => {
+        // Skip dismissed and applied nudges
+        if (dismissedNudges[selectedScribeIndex]?.has(idx) || appliedNudges[selectedScribeIndex]?.[idx]) {
+          return;
+        }
+        
+        // If nudge has options and inserts into this section, highlight insertion point
+        if (nudge.options && nudge.options.length > 0 && nudge.insertLocation === section && nudge.insertAfter) {
+          nudgeHighlights.push({text: nudge.insertAfter, nudgeIndex: idx});
+        }
+      });
+    }
     
     if (isNudgeHovered && hoveredNudge) {
       const nudge = currentScribe.nudges?.[hoveredNudge.nudgeIndex];
-      if (nudge?.highlightId) {
+      // If nudge has options, highlight the insertion point
+      if (nudge?.options && nudge.options.length > 0) {
+        if (activePreview) {
+          const [previewKey] = activePreview;
+          const [scribeIdx, nudgeIdx] = previewKey.split('-').map(Number);
+          if (scribeIdx === selectedScribeIndex && nudgeIdx === hoveredNudge.nudgeIndex && insertionPoint) {
+            highlightText = insertionPoint;
+            shouldHighlightInsertionPoint = true;
+          }
+        } else if (nudge.insertAfter) {
+          // Highlight where text will be inserted even if no preview yet
+          highlightText = nudge.insertAfter;
+          shouldHighlightInsertionPoint = true;
+        }
+      } else if (nudge?.highlightId) {
+        // For non-option nudges, use the regular highlight mapping
         highlightText = highlightMapping[nudge.highlightId] || null;
       }
     }
@@ -591,11 +764,31 @@ export default function Scribes({
     // Get citation data for current scribe
     const citations = currentScribe.citations || [];
     
-    // Split text by citation markers and render with inline citation badges
-    const parts = text.split(/(\{\{\d+\}\})/);
+    // Split text by citation markers and preview markers
+    const parts = displayText.split(/(\{\{\d+\}\}|\{\{PREVIEW_START\}\}|\{\{PREVIEW_END\}\})/);
     let textBeforeCitation = '';
+    let inPreview = false;
     
     return parts.map((part, idx) => {
+      // Handle preview markers
+      if (part === '{{PREVIEW_START}}') {
+        inPreview = true;
+        return null;
+      }
+      if (part === '{{PREVIEW_END}}') {
+        inPreview = false;
+        return null;
+      }
+      
+      // If we're in a preview section, render in green
+      if (inPreview) {
+        return (
+          <span key={idx} className="text-[color:var(--text-success,#2f6a32)]">
+            {part}
+          </span>
+        );
+      }
+      
       const match = part.match(/\{\{(\d+)\}\}/);
       if (match && shouldShowCitations) {
         const citationNum = parseInt(match[1]);
@@ -667,80 +860,167 @@ export default function Scribes({
         }
       }
       
-      // Check for nudge highlighting
+      // Check for hovered nudge highlighting
       if (!shouldHighlight && highlightText && part && part.toLowerCase().includes(highlightText.toLowerCase())) {
         shouldHighlight = true;
         highlightTargetText = highlightText;
       }
       
-      // Handle abnormal highlighting
-      if (shouldShowAbnormals && part) {
-        const abnormalPhrases = findAbnormalPhrases(part);
-        if (abnormalPhrases.length > 0) {
-          // Split the part by all abnormal phrases and highlight them
-          let remainingText = part;
-          const segments: JSX.Element[] = [];
-          let segmentIdx = 0;
-          
-          // Sort phrases by position in text
-          const sortedPhrases = abnormalPhrases.sort((a, b) => {
-            return part.indexOf(a.phrase) - part.indexOf(b.phrase);
-          });
-          
-          sortedPhrases.forEach(({ phrase, type }) => {
-            const phraseIndex = remainingText.indexOf(phrase);
-            if (phraseIndex >= 0) {
-              // Add text before the phrase
-              if (phraseIndex > 0) {
-                segments.push(
-                  <span key={`${idx}-${segmentIdx++}`}>
-                    {remainingText.substring(0, phraseIndex)}
-                  </span>
-                );
-              }
-              
-              // Add highlighted phrase
-              const bgColor = type === 'severe' ? '#fee2e2' : '#fef3c7';
-              segments.push(
-                <mark 
-                  key={`${idx}-${segmentIdx++}`} 
-                  className="text-inherit" 
-                  style={{ backgroundColor: bgColor, padding: 0 }}
-                >
-                  {phrase}
-                </mark>
-              );
-              
-              // Update remaining text
-              remainingText = remainingText.substring(phraseIndex + phrase.length);
-            }
-          });
-          
-          // Add any remaining text
-          if (remainingText) {
-            segments.push(<span key={`${idx}-${segmentIdx++}`}>{remainingText}</span>);
+      // Check for default view nudge highlights (insertion points)
+      if (!shouldHighlight && nudgeHighlights.length > 0 && part) {
+        for (const nudgeHighlight of nudgeHighlights) {
+          if (part.toLowerCase().includes(nudgeHighlight.text.toLowerCase())) {
+            shouldHighlight = true;
+            highlightTargetText = nudgeHighlight.text;
+            break;
           }
-          
-          textBeforeCitation += part;
-          return <span key={idx}>{segments}</span>;
         }
       }
       
-      // Handle citation and nudge highlighting
-      if (shouldHighlight && highlightTargetText) {
-        const regex = new RegExp(`(${highlightTargetText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        const highlighted = part.split(regex).map((segment, segIdx) => {
-          if (segment.toLowerCase() === highlightTargetText.toLowerCase()) {
-            return (
-              <mark key={`${idx}-${segIdx}`} className="text-inherit" style={{ backgroundColor: highlightColor, padding: 0 }}>
-                {segment}
-              </mark>
+      // Collect all highlights for this part
+      const allHighlights: Array<{start: number, end: number, color: string, priority: number, nudgeIndex?: number}> = [];
+      
+      // Add abnormal phrase highlights
+      if (shouldShowAbnormals && part) {
+        const abnormalPhrases = findAbnormalPhrases(part);
+        abnormalPhrases.forEach(({ phrase, type }) => {
+          let searchStart = 0;
+          let foundIndex;
+          // Find all occurrences of this phrase
+          while ((foundIndex = part.toLowerCase().indexOf(phrase.toLowerCase(), searchStart)) !== -1) {
+            allHighlights.push({
+              start: foundIndex,
+              end: foundIndex + phrase.length,
+              color: type === 'severe' ? '#fee2e2' : '#fef3c7',
+              priority: 1 // Highest priority for abnormals
+            });
+            searchStart = foundIndex + 1;
+          }
+        });
+      }
+      
+      // Add citation/nudge highlight (for hovered nudge)
+      if (shouldHighlight && highlightTargetText && part && (isNudgeHovered || isHighlightHovered)) {
+        let searchStart = 0;
+        let foundIndex;
+        const searchLower = part.toLowerCase();
+        const targetLower = highlightTargetText.toLowerCase();
+        // Find all occurrences
+        while ((foundIndex = searchLower.indexOf(targetLower, searchStart)) !== -1) {
+          allHighlights.push({
+            start: foundIndex,
+            end: foundIndex + highlightTargetText.length,
+            color: highlightColor,
+            priority: 2,
+            nudgeIndex: hoveredNudge?.nudgeIndex
+          });
+          searchStart = foundIndex + 1;
+        }
+      }
+      
+      // Add default view nudge highlights (insertion points)
+      if (shouldShowNudgeHighlights && nudgeHighlights.length > 0 && part) {
+        nudgeHighlights.forEach(({ text: nudgeText, nudgeIndex }) => {
+          let searchStart = 0;
+          let foundIndex;
+          const searchLower = part.toLowerCase();
+          const targetLower = nudgeText.toLowerCase();
+          // Find all occurrences
+          while ((foundIndex = searchLower.indexOf(targetLower, searchStart)) !== -1) {
+            allHighlights.push({
+              start: foundIndex,
+              end: foundIndex + nudgeText.length,
+              color: highlightColor,
+              priority: 3, // Lower priority than hovered highlights
+              nudgeIndex: nudgeIndex
+            });
+            searchStart = foundIndex + 1;
+          }
+        });
+      }
+      
+      // Apply all highlights
+      if (allHighlights.length > 0) {
+        // Sort by start position, then by priority (higher priority first for overlaps)
+        const sortedHighlights = allHighlights.sort((a, b) => {
+          if (a.start !== b.start) return a.start - b.start;
+          return a.priority - b.priority;
+        });
+        
+        // Merge overlapping highlights (keep higher priority)
+        const mergedHighlights: typeof sortedHighlights = [];
+        sortedHighlights.forEach(highlight => {
+          const overlapping = mergedHighlights.find(h => 
+            (highlight.start >= h.start && highlight.start < h.end) ||
+            (highlight.end > h.start && highlight.end <= h.end) ||
+            (highlight.start <= h.start && highlight.end >= h.end)
+          );
+          
+          if (!overlapping) {
+            mergedHighlights.push(highlight);
+          } else if (highlight.priority < overlapping.priority) {
+            // Replace with higher priority
+            const index = mergedHighlights.indexOf(overlapping);
+            mergedHighlights[index] = highlight;
+          }
+        });
+        
+        // Re-sort by start position
+        mergedHighlights.sort((a, b) => a.start - b.start);
+        
+        // Build segments
+        const segments: JSX.Element[] = [];
+        let currentPos = 0;
+        let segmentIdx = 0;
+        
+        mergedHighlights.forEach(({ start, end, color, nudgeIndex }) => {
+          // Add text before highlight
+          if (start > currentPos) {
+            segments.push(
+              <span key={`${idx}-${segmentIdx++}`}>
+                {part.substring(currentPos, start)}
+              </span>
             );
           }
-          return <span key={`${idx}-${segIdx}`}>{segment}</span>;
+          
+          // Check if this highlight's nudge is being hovered
+          const isThisNudgeHovered = nudgeIndex !== undefined && (
+            (hoveredNudge?.scribeIndex === selectedScribeIndex && hoveredNudge?.nudgeIndex === nudgeIndex) ||
+            (hoveredHighlight?.scribeIndex === selectedScribeIndex && hoveredHighlight?.nudgeIndex === nudgeIndex)
+          );
+          
+          // Darken the color if the nudge is hovered
+          const finalColor = isThisNudgeHovered && color === '#f1f3fe' ? '#d9e0fc' : color;
+          
+          // Add highlighted text with hover handlers
+          segments.push(
+            <mark 
+              key={`${idx}-${segmentIdx++}`} 
+              className="text-inherit cursor-pointer" 
+              style={{ backgroundColor: finalColor, padding: 0, transition: 'background-color 0.15s' }}
+              onMouseEnter={() => {
+                if (nudgeIndex !== undefined) {
+                  setHoveredHighlight({ scribeIndex: selectedScribeIndex, nudgeIndex });
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredHighlight(null);
+              }}
+            >
+              {part.substring(start, end)}
+            </mark>
+          );
+          
+          currentPos = end;
         });
+        
+        // Add remaining text
+        if (currentPos < part.length) {
+          segments.push(<span key={`${idx}-${segmentIdx++}`}>{part.substring(currentPos)}</span>);
+        }
+        
         textBeforeCitation += part;
-        return <span key={idx}>{highlighted}</span>;
+        return <span key={idx}>{segments}</span>;
       }
       
       textBeforeCitation += part;
@@ -935,9 +1215,9 @@ export default function Scribes({
             <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap">
               <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{currentScribe.chiefComplaint}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">Age {currentScribe.age}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.age}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">Sex {currentScribe.gender}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.gender}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.room}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
@@ -951,17 +1231,86 @@ export default function Scribes({
               variant="primary"
               tabs={[
                 { id: 'clinical', label: 'Clinical Note' },
-                { id: 'summary', label: 'After Visit Summary' },
                 { id: 'codes', label: 'ICD10/CPT Codes' },
-                { id: 'transcript', label: 'Transcript' }
+                { id: 'transcript', label: 'Transcript' },
+                { id: 'previsit', label: 'Previsit' }
               ]}
               defaultTab={activeTab}
-              onTabChange={(id) => setActiveTab(id as 'clinical' | 'summary' | 'codes' | 'transcript')}
+              onTabChange={(id) => setActiveTab(id as 'clinical' | 'codes' | 'transcript' | 'previsit')}
+              className="w-full"
             />
           </div>
           
-          {/* Main Content - Clinical Note */}
+          {/* Main Content */}
           <div className="content-stretch flex flex-col items-start max-w-[800px] relative shrink-0 w-full overflow-y-auto flex-1 py-[12px]">
+            {activeTab === 'previsit' ? (
+              /* Previsit Content */
+              (() => {
+                // Find the matching patient
+                const matchingPatient = patients.find(p => p.name === currentScribe.name);
+                if (!matchingPatient) {
+                  return <p className="text-[color:var(--text-subheading,#666)]">No previsit information available</p>;
+                }
+                
+                return (
+                  <>
+                    {/* At a Glance Section */}
+                    <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                      <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                        <p className="leading-[1.2]">At a Glance</p>
+                      </div>
+                      <div className="content-stretch flex flex-col items-start justify-center relative rounded-[8px] shrink-0 w-full">
+                        <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                          <ul className="list-disc whitespace-pre-wrap">
+                            {matchingPatient.atAGlance.map((item: string, idx: number) => (
+                              <li key={idx} className={idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
+                                <span className="leading-[1.4]">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Details Section */}
+                    <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                      <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                        <p className="leading-[1.2]">Details</p>
+                      </div>
+                      <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                        <ul className="list-disc whitespace-pre-wrap">
+                          {matchingPatient.details.map((item: string, idx: number) => (
+                            <li key={idx} className={idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
+                              <span className="leading-[1.4]">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    {/* Dynamic Sections */}
+                    {Object.entries(matchingPatient.sections).map(([sectionTitle, items]: [string, any]) => (
+                      <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                        <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          <p className="leading-[1.2]">{sectionTitle}</p>
+                        </div>
+                        <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                          <ul className="list-disc whitespace-pre-wrap">
+                            {items.map((item: string, idx: number) => (
+                              <li key={idx} className={idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
+                                <span className="leading-[1.4]">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()
+            ) : (
+              /* Clinical Note Content */
+              <>
             {/* Template Name */}
             <div 
               className="content-stretch flex items-center relative shrink-0 w-full pb-[32px] pt-[8px]"
@@ -1306,9 +1655,12 @@ export default function Scribes({
                 </div>
               )}
             </div>
+              </>
+            )}
           </div>
           
-          {/* Bottom Action Bar */}
+          {/* Bottom Action Bar - only show for clinical note */}
+          {activeTab !== 'previsit' && (
           <div className="bg-[var(--surface-base,white)] content-stretch flex items-center gap-[8px] max-w-[800px] pb-[24px] pt-[8px] relative shrink-0 w-full">
             <Button 
               variant="secondary" 
@@ -1327,6 +1679,7 @@ export default function Scribes({
               Sync to EHR
             </Button>
           </div>
+          )}
         </div>
       </div>
       
@@ -1349,10 +1702,11 @@ export default function Scribes({
                 variant="primary"
                 tabs={[
                   { id: 'actions', label: 'Actions' },
-                  { id: 'chat', label: 'Chat' }
+                  { id: 'assistant', label: 'Assistant' },
+                  { id: 'sources', label: 'Sources' }
                 ]}
                 defaultTab={rightTab}
-                onTabChange={(id) => setRightTab(id as 'actions' | 'chat')}
+                onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
                 hideBorder={true}
               />
             </div>
@@ -1361,8 +1715,115 @@ export default function Scribes({
         
         {/* Content Area - Scrollable */}
         <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto px-[20px] relative w-full ${viewingDataSource ? 'pt-[20px] pb-[20px]' : 'py-[20px]'}`}>
-          {rightTab === 'chat' ? (
-            /* Chat View */
+          {viewingDataSource ? (
+            /* Data Source View */
+            <>
+              {/* Back Button */}
+              <div className="content-stretch flex items-center relative shrink-0 w-full">
+                <Button
+                  variant="tertiary-neutral"
+                  size="small"
+                  icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
+                  onClick={() => setViewingDataSource(null)}
+                >
+                  Back
+                </Button>
+              </div>
+              
+              {/* Data Source Content */}
+              {dataSourceContent[currentScribe.name]?.[viewingDataSource] && (
+                <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+                  {/* Source Header */}
+                  <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                    <div 
+                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
+                      style={{
+                        backgroundColor: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).bg
+                      }}
+                    >
+                      <p 
+                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                        style={{
+                          color: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).text,
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {dataSourceContent[currentScribe.name][viewingDataSource].type}
+                      </p>
+                    </div>
+                    <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                      {dataSourceContent[currentScribe.name][viewingDataSource].date}
+                    </p>
+                  </div>
+                  
+                  {/* Source Content */}
+                  <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+                    <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
+                      {dataSourceContent[currentScribe.name][viewingDataSource].content}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : rightTab === 'sources' ? (
+            /* Sources View */
+            <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
+              {(() => {
+                // Group sources by type
+                const sourcesByType: Record<string, string[]> = {};
+                (currentScribe.dataSources || []).forEach((source) => {
+                  const sourceData = dataSourceContent[currentScribe.name]?.[source];
+                  if (sourceData) {
+                    const type = sourceData.type;
+                    if (!sourcesByType[type]) {
+                      sourcesByType[type] = [];
+                    }
+                    sourcesByType[type].push(source);
+                  }
+                });
+                
+                return Object.entries(sourcesByType).map(([type, sources]) => (
+                  <div key={type} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                    {/* Type Badge */}
+                    <div 
+                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
+                      style={{
+                        backgroundColor: getDocumentTypeBadgeColor(type).bg
+                      }}
+                    >
+                      <p 
+                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                        style={{
+                          color: getDocumentTypeBadgeColor(type).text,
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {type}
+                      </p>
+                    </div>
+                    
+                    {/* Sources for this type */}
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full pl-[12px]">
+                      {sources.map((source, idx) => (
+                        <Link 
+                          key={idx}
+                          label={source}
+                          size="medium"
+                          intent="neutral"
+                          showPrefix={false}
+                          showSuffix={false}
+                          onClick={() => {
+                            setViewingDataSource(source);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          ) : rightTab === 'assistant' ? (
+            /* Assistant View */
             <div className="content-stretch flex flex-col gap-[16px] items-start px-[12px] py-[4px] relative w-full">
               {(chatMessages[currentScribe.name] || []).map((message, idx) => (
                 message.type === 'user' ? (
@@ -1412,47 +1873,6 @@ export default function Scribes({
                 )
               ))}
             </div>
-          ) : viewingDataSource ? (
-            /* Data Source View */
-            <>
-              <div className="content-stretch flex items-center relative shrink-0 w-full">
-                <Button variant="tertiary-neutral" size="small" icon={<InlineIcon name="keyboard_arrow_left" size={16} />} onClick={() => setViewingDataSource(null)}>
-                  Back
-                </Button>
-              </div>
-              {dataSourceContent[currentScribe.name]?.[viewingDataSource] && (
-                <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  {/* Source Header */}
-                  <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
-                    <div 
-                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
-                      style={{
-                        backgroundColor: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).bg
-                      }}
-                    >
-                      <p 
-                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px] uppercase"
-                        style={{
-                          color: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).text
-                        }}
-                      >
-                        {dataSourceContent[currentScribe.name][viewingDataSource].type}
-                      </p>
-                    </div>
-                    <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                      {dataSourceContent[currentScribe.name][viewingDataSource].date}
-                    </p>
-                  </div>
-                  
-                  {/* Source Content */}
-                  <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
-                    <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
-                      {dataSourceContent[currentScribe.name][viewingDataSource].content}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </>
           ) : (
             /* Actions View */
             <>
@@ -1511,6 +1931,7 @@ export default function Scribes({
                   <Button 
                     variant="tertiary-neutral" 
                     size="small"
+                    icon={<InlineIcon name="dashboard" size={16} />}
                     onClick={() => {}}
                   >
                     Change Template
@@ -1518,6 +1939,7 @@ export default function Scribes({
                   <Button 
                     variant="tertiary-neutral" 
                     size="small"
+                    icon={<InlineIcon name="sync" size={16} />}
                     onClick={() => {}}
                   >
                     Regenerate
@@ -1527,16 +1949,10 @@ export default function Scribes({
                   <Button 
                     variant="tertiary-neutral" 
                     size="small"
+                    icon={<InlineIcon name="add" size={16} />}
                     onClick={() => {}}
                   >
-                    Archive
-                  </Button>
-                  <Button 
-                    variant="tertiary-neutral" 
-                    size="small"
-                    onClick={() => {}}
-                  >
-                    New Documents
+                    New Letters / Docs
                   </Button>
                 </div>
               </div>
@@ -1562,18 +1978,45 @@ export default function Scribes({
             {isImproveScribeExpanded && (
               <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                 {(currentScribe.nudges || []).map((nudge, idx) => {
-                  if (dismissedNudges[selectedScribeIndex]?.has(idx)) {
+                  if (dismissedNudges[selectedScribeIndex]?.has(idx) || appliedNudges[selectedScribeIndex]?.[idx]) {
                     return null;
                   }
+                  
+                  const nudgeKey = `${selectedScribeIndex}-${idx}`;
+                  const selectedOptions = nudgeSelections[nudgeKey] || [];
+                  const hasOptions = nudge.options && nudge.options.length > 0;
+                  const isSingleSelect = hasOptions && nudge.options[0].type === 'single-select';
+                  const previewText = hasOptions && nudge.previewText ? nudge.previewText(selectedOptions) : '';
+                  
+                  // Check if this nudge is hovered (from nudge or from highlight)
+                  const isThisNudgeHovered = 
+                    (hoveredNudge?.scribeIndex === selectedScribeIndex && hoveredNudge?.nudgeIndex === idx) ||
+                    (hoveredHighlight?.scribeIndex === selectedScribeIndex && hoveredHighlight?.nudgeIndex === idx);
                   
                   return (
                     <div 
                       key={idx} 
-                      className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
+                      className={`border border-[var(--neutral-200,#ccc)] flex flex-col gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] w-full transition-colors ${
+                        hasOptions ? 'hover:bg-[var(--surface-1,#f7f7f7)]' : 'cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]'
+                      } ${
+                        isThisNudgeHovered ? 'bg-[var(--surface-1,#f7f7f7)]' : ''
+                      }`}
                       onMouseEnter={() => setHoveredNudge({scribeIndex: selectedScribeIndex, nudgeIndex: idx})}
                       onMouseLeave={() => setHoveredNudge(null)}
-                      onClick={() => {
-                        if (nudge.highlightId) {
+                      onClick={(e) => {
+                        // Only handle click on the card itself, not on buttons/options
+                        if ((e.target as HTMLElement).closest('button')) {
+                          return;
+                        }
+                        
+                        if (hasOptions && nudge.insertLocation) {
+                          // For nudges with options, scroll to the section where text will be inserted
+                          const sectionId = `${currentScribe.name.toLowerCase().replace(/\s+/g, '-')}-${nudge.insertLocation}-section`;
+                          const element = document.querySelector(`[data-highlight-id="${sectionId}"]`);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        } else if (nudge.highlightId) {
                           const element = document.querySelector(`[data-highlight-id="${nudge.highlightId}"]`);
                           if (element) {
                             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1581,68 +2024,355 @@ export default function Scribes({
                         }
                       }}
                     >
-                      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                      <div className="flex flex-col gap-[4px] items-start w-full">
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                           {nudge.type}
                         </p>
-                        <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
                           {nudge.description}
                         </p>
                       </div>
-                      <IconButton 
-                        variant="tertiary" 
-                        size="small"
-                        icon={<InlineIcon name="close_small" size={16} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDismissedNudges(prev => ({
-                            ...prev,
-                            [selectedScribeIndex]: new Set([...(prev[selectedScribeIndex] || []), idx])
-                          }));
-                        }}
-                        aria-label={`Dismiss ${nudge.type}`}
-                        className="shrink-0 text-[color:var(--text-subheading,#666)]"
-                      />
+                      
+                      {/* Options and Actions */}
+                      {hasOptions && (
+                        <div className="flex flex-col gap-[12px] items-start w-full">
+                          {/* Instruction text */}
+                          <p className="font-['Lato',sans-serif] leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                            {isSingleSelect ? 'Select option to update this note:' : 'Select all applicable options to update this note:'}
+                          </p>
+                          
+                          {/* Options */}
+                          <div className="flex flex-wrap gap-[8px] w-full">
+                            {nudge.options.map((option) => {
+                              const isSelected = selectedOptions.includes(option.id);
+                              return (
+                                <button
+                                  key={option.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    let newSelections: string[];
+                                    if (isSingleSelect) {
+                                      newSelections = [option.id];
+                                      setNudgeSelections(prev => ({
+                                        ...prev,
+                                        [nudgeKey]: newSelections
+                                      }));
+                                    } else {
+                                      newSelections = isSelected
+                                        ? selectedOptions.filter(id => id !== option.id)
+                                        : [...selectedOptions, option.id];
+                                      setNudgeSelections(prev => ({
+                                        ...prev,
+                                        [nudgeKey]: newSelections
+                                      }));
+                                    }
+                                    
+                                    // Update preview in the note
+                                    if (newSelections.length > 0 && nudge.previewText && nudge.insertLocation) {
+                                      const previewText = nudge.previewText(newSelections);
+                                      setNudgePreviews(prev => ({
+                                        ...prev,
+                                        [nudgeKey]: {
+                                          text: previewText,
+                                          location: nudge.insertLocation!,
+                                          after: nudge.insertAfter || ''
+                                        }
+                                      }));
+                                    } else {
+                                      // Clear preview if no selections
+                                      setNudgePreviews(prev => {
+                                        const newPreviews = { ...prev };
+                                        delete newPreviews[nudgeKey];
+                                        return newPreviews;
+                                      });
+                                    }
+                                  }}
+                                  className={`flex items-center justify-center px-[10px] py-[6px] rounded-[6px] transition-colors ${
+                                    isSelected
+                                      ? 'bg-[var(--surface-semantic-info,#f1f3fe)] border border-[var(--shape-brand,#1132ee)] border-solid'
+                                      : 'border border-[var(--neutral-200,#ccc)] border-solid hover:bg-[var(--surface-1,#f7f7f7)]'
+                                  }`}
+                                >
+                                  <p className={`font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] tracking-[0.13px] ${
+                                    isSelected ? 'text-[color:var(--text-brand,#1132ee)]' : 'text-[color:var(--text-subheading,#666)]'
+                                  }`} style={{ fontFeatureSettings: "'ss07'" }}>
+                                    {option.label}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          {selectedOptions.length > 0 && (
+                            <div className="flex gap-[8px] items-center">
+                              <Button
+                                variant="tertiary"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNudgeSelections(prev => {
+                                    const newSelections = { ...prev };
+                                    delete newSelections[nudgeKey];
+                                    return newSelections;
+                                  });
+                                  setNudgePreviews(prev => {
+                                    const newPreviews = { ...prev };
+                                    delete newPreviews[nudgeKey];
+                                    return newPreviews;
+                                  });
+                                }}
+                              >
+                                Reset
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Apply the change to the note
+                                  const preview = nudgePreviews[nudgeKey];
+                                  if (preview && nudge.insertLocation) {
+                                    const section = nudge.insertLocation;
+                                    let currentContent = currentScribe[section];
+                                    
+                                    if (preview.after) {
+                                      const insertIndex = currentContent.indexOf(preview.after);
+                                      if (insertIndex !== -1) {
+                                        currentContent = 
+                                          currentContent.substring(0, insertIndex + preview.after.length) +
+                                          ' ' + preview.text +
+                                          currentContent.substring(insertIndex + preview.after.length);
+                                      } else {
+                                        currentContent += '\n\n' + preview.text;
+                                      }
+                                    } else {
+                                      currentContent += '\n\n' + preview.text;
+                                    }
+                                    
+                                    updateScribeContent(section, currentContent);
+                                    
+                                    // Mark as applied with selected options
+                                    setAppliedNudges(prev => ({
+                                      ...prev,
+                                      [selectedScribeIndex]: {
+                                        ...(prev[selectedScribeIndex] || {}),
+                                        [idx]: {
+                                          selectedOptions: selectedOptions,
+                                          appliedText: preview.text
+                                        }
+                                      }
+                                    }));
+                                    
+                                    // Clear selection and preview
+                                    setNudgeSelections(prev => {
+                                      const newSelections = { ...prev };
+                                      delete newSelections[nudgeKey];
+                                      return newSelections;
+                                    });
+                                    setNudgePreviews(prev => {
+                                      const newPreviews = { ...prev };
+                                      delete newPreviews[nudgeKey];
+                                      return newPreviews;
+                                    });
+                                  }
+                                }}
+                              >
+                                Apply
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="absolute top-[4px] right-[4px]">
+                        <IconButton 
+                          variant="tertiary-neutral" 
+                          size="small"
+                          icon={<InlineIcon name="close_small" size={16} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Clear preview and selections when dismissing
+                            setNudgeSelections(prev => {
+                              const newSelections = { ...prev };
+                              delete newSelections[nudgeKey];
+                              return newSelections;
+                            });
+                            setNudgePreviews(prev => {
+                              const newPreviews = { ...prev };
+                              delete newPreviews[nudgeKey];
+                              return newPreviews;
+                            });
+                            setDismissedNudges(prev => ({
+                              ...prev,
+                              [selectedScribeIndex]: new Set([...(prev[selectedScribeIndex] || []), idx])
+                            }));
+                          }}
+                          aria-label={`Dismiss ${nudge.type}`}
+                          className="text-[#666666] hover:bg-[rgba(0,0,0,0.03)]"
+                        />
+                      </div>
                     </div>
                   );
                 })}
+                
+                {/* Applied Nudges */}
+                {appliedNudges[selectedScribeIndex] && Object.keys(appliedNudges[selectedScribeIndex]).length > 0 && (
+                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <p className="font-['Lato',sans-serif] leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {Object.keys(appliedNudges[selectedScribeIndex]).length} nudge{Object.keys(appliedNudges[selectedScribeIndex]).length !== 1 ? 's' : ''} applied
+                      </p>
+                      <Button
+                        variant="tertiary"
+                        size="small"
+                        onClick={() => setShowAppliedNudges(!showAppliedNudges)}
+                      >
+                        {showAppliedNudges ? 'Hide' : 'View'}
+                      </Button>
+                    </div>
+                    
+                    {showAppliedNudges && (
+                      <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                        {(currentScribe.nudges || []).map((nudge, idx) => {
+                          const appliedData = appliedNudges[selectedScribeIndex]?.[idx];
+                          if (!appliedData) {
+                            return null;
+                          }
+                          
+                          // Get the labels for selected options
+                          const selectedLabels = appliedData.selectedOptions
+                            .map(optionId => nudge.options?.find(opt => opt.id === optionId)?.label)
+                            .filter(Boolean);
+                          
+                          return (
+                            <div 
+                              key={idx} 
+                              className="border border-[var(--neutral-200,#ccc)] flex flex-col gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] w-full opacity-60"
+                            >
+                              <div className="flex flex-col gap-[4px] items-start w-full">
+                                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                  {nudge.type}
+                                </p>
+                                <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                                  {nudge.description}
+                                </p>
+                                {/* Show selected options */}
+                                {selectedLabels.length > 0 && (
+                                  <div className="flex flex-wrap gap-[8px] mt-[4px]">
+                                    {selectedLabels.map((label, labelIdx) => (
+                                      <div
+                                        key={labelIdx}
+                                        className="flex items-center justify-center px-[10px] py-[6px] rounded-[6px] bg-[var(--surface-semantic-info,#f1f3fe)] border border-[var(--shape-brand,#1132ee)] border-solid"
+                                      >
+                                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] tracking-[0.13px] text-[color:var(--text-brand,#1132ee)]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                          {label}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute top-[4px] right-[4px]">
+                                <Button
+                                  variant="tertiary"
+                                  size="small"
+                                  onClick={() => {
+                                    // Remove the applied text from the note
+                                    if (nudge.insertLocation && appliedData.appliedText) {
+                                      const section = nudge.insertLocation;
+                                      let currentContent = currentScribe[section];
+                                      // Remove the applied text (with leading space if present)
+                                      currentContent = currentContent.replace(' ' + appliedData.appliedText, '');
+                                      currentContent = currentContent.replace('\n\n' + appliedData.appliedText, '');
+                                      updateScribeContent(section, currentContent);
+                                    }
+                                    
+                                    // Remove from applied nudges
+                                    setAppliedNudges(prev => {
+                                      const newApplied = { ...prev };
+                                      if (newApplied[selectedScribeIndex]) {
+                                        const updated = { ...newApplied[selectedScribeIndex] };
+                                        delete updated[idx];
+                                        newApplied[selectedScribeIndex] = updated;
+                                      }
+                                      return newApplied;
+                                    });
+                                  }}
+                                >
+                                  Reset
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Dismissed Nudges */}
+                {dismissedNudges[selectedScribeIndex] && dismissedNudges[selectedScribeIndex].size > 0 && (
+                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                  <div className="flex items-center justify-between w-full">
+                    <p className="font-['Lato',sans-serif] leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                      {dismissedNudges[selectedScribeIndex].size} nudge{dismissedNudges[selectedScribeIndex].size !== 1 ? 's' : ''} dismissed
+                    </p>
+                    <Button
+                      variant="tertiary"
+                      size="small"
+                      onClick={() => setShowDismissedNudges(!showDismissedNudges)}
+                    >
+                      {showDismissedNudges ? 'Hide' : 'View'}
+                    </Button>
+                  </div>
+                    
+                    {showDismissedNudges && (
+                      <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                        {(currentScribe.nudges || []).map((nudge, idx) => {
+                          if (!dismissedNudges[selectedScribeIndex]?.has(idx)) {
+                            return null;
+                          }
+                          
+                          return (
+                            <div 
+                              key={idx} 
+                              className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] shrink-0 w-full opacity-60"
+                            >
+                              <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-start min-h-px min-w-px relative">
+                                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                  {nudge.type}
+                                </p>
+                                <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                                  {nudge.description}
+                                </p>
+                              </div>
+                              <div className="absolute top-[4px] right-[4px]">
+                                <Button
+                                  variant="tertiary"
+                                  size="small"
+                                  onClick={() => {
+                                    setDismissedNudges(prev => {
+                                      const newSet = new Set(prev[selectedScribeIndex]);
+                                      newSet.delete(idx);
+                                      return {
+                                        ...prev,
+                                        [selectedScribeIndex]: newSet
+                                      };
+                                    });
+                                  }}
+                                >
+                                  Restore
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          
-          {/* Data Sources Card */}
-          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                Data Sources
-              </p>
-              <IconButton 
-                variant="tertiary" 
-                size="small"
-                icon={<InlineIcon name={isDataSourcesExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
-                onClick={() => setIsDataSourcesExpanded(!isDataSourcesExpanded)}
-                aria-label={isDataSourcesExpanded ? "Collapse data sources" : "Expand data sources"}
-                className="text-[color:var(--text-subheading,#666)]"
-              />
-            </div>
-            
-            {isDataSourcesExpanded && (
-            <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-              {(currentScribe.dataSources || []).map((source, idx) => (
-                <Link 
-                  key={idx}
-                  label={source}
-                  size="xsmall"
-                  intent="neutral"
-                  showPrefix={false}
-                  showSuffix={false}
-                  onClick={() => {
-                    setViewingDataSource(source);
-                    setRightTab('actions');
-                  }}
-                />
-              ))}
-            </div>
             )}
           </div>
             </>
@@ -1666,7 +2396,7 @@ export default function Scribes({
               onChange={setChatInputValue}
               onSend={() => {
                 if (chatInputValue.trim()) {
-                  setRightTab('chat');
+                  setRightTab('assistant');
                   setViewingDataSource(null);
                   console.log('Send message:', chatInputValue);
                   setChatInputValue('');

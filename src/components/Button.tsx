@@ -33,7 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'bg-[var(--shape-primary,#1a1a1a)] text-[var(--text-oninverse,white)] hover:bg-[var(--neutral-800,#333)] active:bg-[var(--neutral-700,#4d4d4d)]',
     secondary: 'border border-[var(--neutral-1000,black)] border-solid bg-transparent text-[var(--text-default,black)] hover:bg-[var(--surface-1,#f7f7f7)] active:bg-[var(--surface-2,#f2f2f2)]',
     tertiary: 'bg-transparent text-[var(--text-brand,#1132ee)] hover:bg-[var(--surface-1,#f7f7f7)] active:bg-[var(--surface-2,#f2f2f2)]',
-    'tertiary-neutral': 'bg-transparent text-[var(--text-default,black)] hover:bg-[var(--surface-1,#f7f7f7)] active:bg-[var(--surface-2,#f2f2f2)]',
+    'tertiary-neutral': 'bg-transparent text-[var(--text-subheading,#666)] hover:bg-[var(--surface-1,#f7f7f7)] active:bg-[var(--surface-2,#f2f2f2)]',
   };
   
   return (
