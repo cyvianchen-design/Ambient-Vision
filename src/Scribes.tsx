@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, IconButton } from './components/Button';
 import { VisitStatus } from './components/Badge';
 import { InlineIcon } from './components/InlineIcon';
@@ -60,6 +60,13 @@ const ScribeListItem = ({
 type ChatMessage = {
   type: 'user' | 'assistant';
   content: string;
+  citations?: {
+    number: number;
+    source: string;
+    quote?: string;
+    isExternal?: boolean;
+    externalUrl?: string;
+  }[];
 };
 
 export default function Scribes({ 
@@ -83,8 +90,8 @@ export default function Scribes({
   const [activeTab, setActiveTab] = useState<'clinical' | 'codes' | 'transcript' | 'previsit'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
   const [selectedView, setSelectedView] = useState<'default' | 'abnormals' | 'citation'>('default');
-  const [activeCitation, setActiveCitation] = useState<number | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number} | null>(null);
+  const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
@@ -95,6 +102,7 @@ export default function Scribes({
     pe: ''
   });
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
+  const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [appliedNudges, setAppliedNudges] = useState<Record<number, Record<number, {selectedOptions: string[], appliedText: string}>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{scribeIndex: number, nudgeIndex: number} | null>(null);
@@ -531,7 +539,7 @@ export default function Scribes({
   ]);
   
   // Flatten for easy access by index
-  const allScribes = scribesByDate.flatMap(group => group.scribes);
+  const allScribes = useMemo(() => scribesByDate.flatMap(group => group.scribes), [scribesByDate]);
   
   // Set the correct scribe index when navigating from a patient
   useEffect(() => {
@@ -541,7 +549,7 @@ export default function Scribes({
         setSelectedScribeIndex(scribeIndex);
       }
     }
-  }, [selectedPatientName]);
+  }, [selectedPatientName, allScribes]);
   
   // Function to update scribe content
   const updateScribeContent = (section: 'hpi' | 'ros' | 'pe', content: string) => {
@@ -1025,6 +1033,150 @@ export default function Scribes({
       
       textBeforeCitation += part;
       return <span key={idx}>{part}</span>;
+    });
+  };
+
+  // Helper to render chat text with citation badges and sentence highlighting
+  const renderChatTextWithCitations = (text: string, citationsData: any[], contextId: string) => {
+    // Split into sentences (basic split on . ! ? followed by space or newline)
+    const sentences: Array<{text: string, start: number, end: number}> = [];
+    const sentenceRegex = /[^.!?\n]+[.!?\n]+|\n+/g;
+    let match;
+    let lastEnd = 0;
+    
+    while ((match = sentenceRegex.exec(text)) !== null) {
+      sentences.push({
+        text: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+      lastEnd = match.index + match[0].length;
+    }
+    
+    // Add any remaining text as a sentence
+    if (lastEnd < text.length) {
+      sentences.push({
+        text: text.slice(lastEnd),
+        start: lastEnd,
+        end: text.length
+      });
+    }
+    
+    // Find which sentence each citation belongs to
+    const citationRegex = /\{\{(\d+)\}\}/g;
+    const citationPositions: Array<{number: number, position: number, sentenceIdx: number}> = [];
+    let citMatch;
+    
+    while ((citMatch = citationRegex.exec(text)) !== null) {
+      const citNum = parseInt(citMatch[1], 10);
+      const position = citMatch.index;
+      const sentenceIdx = sentences.findIndex(s => position >= s.start && position < s.end);
+      citationPositions.push({ number: citNum, position, sentenceIdx });
+    }
+    
+    // Render sentences with highlighting
+    return sentences.map((sentence, idx) => {
+      const sentenceCitations = citationPositions.filter(c => c.sentenceIdx === idx);
+      const isHighlighted = sentenceCitations.some(c => 
+        activeCitation?.id === `${contextId}-${c.number}`
+      );
+      
+      // Render the sentence with citation badges
+      const parts: (string | JSX.Element)[] = [];
+      let lastIndex = 0;
+      const regex = /\{\{(\d+)\}\}/g;
+      let match;
+      const sentenceText = sentence.text;
+      
+      while ((match = regex.exec(sentenceText)) !== null) {
+        const beforeText = sentenceText.slice(lastIndex, match.index);
+        if (beforeText) {
+          parts.push(beforeText);
+        }
+        
+        const citationNum = parseInt(match[1], 10);
+        const citation = citationsData.find(c => c.number === citationNum);
+        const citationId = `${contextId}-${citationNum}`;
+        const isActive = activeCitation?.id === citationId;
+        
+        parts.push(
+          <span
+            key={`citation-${idx}-${citationNum}-${match.index}`}
+            data-citation-badge
+            data-citation-id={citationId}
+            className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
+              isActive 
+                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
+            }`}
+            style={{
+              width: '14px',
+              height: '14px',
+              verticalAlign: 'baseline',
+              marginLeft: '2px',
+              marginRight: '2px'
+            }}
+            onMouseEnter={(e) => {
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                setActiveCitation({ id: citationId, number: citationNum });
+                setTooltipPosition({ 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                const isSame = activeCitation?.id === citationId;
+                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+                setTooltipPosition(isSame ? null : { 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+          >
+            {citationNum}
+          </span>
+        );
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      if (lastIndex < sentenceText.length) {
+        parts.push(sentenceText.slice(lastIndex));
+      }
+      
+      const content = parts.length > 0 ? parts : sentenceText;
+      
+      if (isHighlighted) {
+        return (
+          <mark 
+            key={`sentence-${idx}`} 
+            className="bg-[#f1f3fe] text-inherit" 
+            style={{ padding: 0 }}
+          >
+            {content}
+          </mark>
+        );
+      }
+      
+      return <span key={`sentence-${idx}`}>{content}</span>;
     });
   };
 
@@ -1724,7 +1876,10 @@ export default function Scribes({
                   variant="tertiary-neutral"
                   size="small"
                   icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
-                  onClick={() => setViewingDataSource(null)}
+                  onClick={() => {
+                    setViewingDataSource(null);
+                    setRightTab(previousTab);
+                  }}
                 >
                   Back
                 </Button>
@@ -1813,6 +1968,7 @@ export default function Scribes({
                           showPrefix={false}
                           showSuffix={false}
                           onClick={() => {
+                            setPreviousTab(rightTab);
                             setViewingDataSource(source);
                           }}
                         />
@@ -1839,7 +1995,7 @@ export default function Scribes({
                   /* Assistant Response */
                   <div key={idx} className="content-stretch flex flex-col gap-[12px] items-center justify-center py-[6px] relative shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] text-[color:var(--text-body,#1a1a1a)] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {message.content}
+                      {message.citations ? renderChatTextWithCitations(message.content, message.citations, `chat-${idx}`) : message.content}
                     </p>
                     <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                       <div className="content-stretch flex gap-[8px] h-[28px] items-center relative shrink-0">
@@ -2410,7 +2566,26 @@ export default function Scribes({
       
       {/* Citation Tooltip */}
       {activeCitation && tooltipPosition && (() => {
-        const citation = currentScribe.citations?.find(c => c.number === activeCitation);
+        // Find citation from appropriate context
+        let citation = null;
+        const contextId = activeCitation.id;
+        
+        if (contextId.startsWith('scribe-')) {
+          citation = currentScribe.citations?.find(c => c.number === activeCitation.number);
+        } else if (contextId.startsWith('chat-')) {
+          // Find in chat messages
+          const messages = chatMessages[currentScribe.name] || [];
+          for (const msg of messages) {
+            if (msg.citations) {
+              const found = msg.citations.find(c => c.number === activeCitation.number);
+              if (found) {
+                citation = found;
+                break;
+              }
+            }
+          }
+        }
+        
         if (!citation) return null;
         
         // Determine if tooltip should appear above or below
@@ -2418,13 +2593,26 @@ export default function Scribes({
         const spaceBelow = window.innerHeight - tooltipPosition.y;
         const showBelow = spaceBelow > tooltipHeight + 50; // 50px buffer
         
-        const topPosition = showBelow 
-          ? tooltipPosition.y + 14 + 4 // badge height + gap
-          : tooltipPosition.y - 4;
+        let topPosition: number;
+        let transformValue: string;
         
-        const transformValue = showBelow
-          ? 'translate(-50%, 0)'
-          : 'translate(-50%, -100%)';
+        if (tooltipPosition.alignLeft) {
+          // Position to the left of the badge
+          topPosition = showBelow 
+            ? tooltipPosition.y + 14 + 4 
+            : tooltipPosition.y - 4;
+          transformValue = showBelow
+            ? 'translate(-100%, 0)'
+            : 'translate(-100%, -100%)';
+        } else {
+          // Default center positioning
+          topPosition = showBelow 
+            ? tooltipPosition.y + 14 + 4 
+            : tooltipPosition.y - 4;
+          transformValue = showBelow
+            ? 'translate(-50%, 0)'
+            : 'translate(-50%, -100%)';
+        }
         
         const bridgeTop = showBelow
           ? tooltipPosition.y + 14
@@ -2464,7 +2652,7 @@ export default function Scribes({
               }}
             >
               <div className="flex flex-col gap-[8px]">
-                <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] italic">
+                <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] italic" style={{ wordBreak: 'break-word' }}>
                   "{citation.quote}"
                 </p>
                 <Link 
@@ -2474,8 +2662,12 @@ export default function Scribes({
                   showPrefix={false}
                   showSuffix={false}
                   onClick={() => {
-                    setViewingDataSource(citation.source);
-                    setRightTab('actions');
+                    if (citation.isExternal && citation.externalUrl) {
+                      window.open(citation.externalUrl, '_blank');
+                    } else {
+                      setPreviousTab(rightTab);
+                      setViewingDataSource(citation.source);
+                    }
                     setActiveCitation(null);
                     setTooltipPosition(null);
                   }}

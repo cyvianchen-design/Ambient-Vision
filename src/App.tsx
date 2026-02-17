@@ -64,6 +64,13 @@ const PatientListItem = ({
 type ChatMessage = {
   type: 'user' | 'assistant';
   content: string;
+  citations?: {
+    number: number;
+    source: string;
+    quote?: string;
+    isExternal?: boolean;
+    externalUrl?: string;
+  }[];
 };
 
 export default function App() {
@@ -85,33 +92,104 @@ export default function App() {
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{patientIndex: number, nudgeIndex: number} | null>(null);
   const [showDismissedCareNudges, setShowDismissedCareNudges] = useState(false);
-  const [activeCitation, setActiveCitation] = useState<number | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
+  const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
     "Sarah Johnson": [
       { type: 'user', content: "What should I focus on during this diabetes follow-up visit?" },
-      { type: 'assistant', content: "Key areas to address: (1) Review diet/exercise compliance given the rise in A1c from 7.2% to 7.8%, (2) Consider adjusting metformin dose or adding another agent, (3) Schedule ophthalmology referral as it's been 8 months since last eye exam, (4) Check for peripheral neuropathy symptoms." }
+      { 
+        type: 'assistant', 
+        content: "Key areas to address:\n\n1. Review diet/exercise compliance given the rise in A1c from 7.2%{{1}} to 7.8%{{2}}\n2. Consider treatment intensification - ADA guidelines recommend targeting A1c <7% for most adults{{3}}\n3. Schedule ophthalmology referral as screening is overdue (last exam 8 months ago{{4}})\n4. Assess for diabetic complications including peripheral neuropathy and nephropathy{{5}}",
+        citations: [
+          { number: 1, source: "Jan 28, 2024, Lab results, Athena", quote: "Hemoglobin A1c: 7.2% (Ref: <7.0% for diabetics)" },
+          { number: 2, source: "Today, Lab results, Athena", quote: "Hemoglobin A1c: 7.8% (Ref: <7.0% for diabetics) [Elevated - worsening control]" },
+          { number: 3, source: "ADA Standards of Care in Diabetes 2024", quote: "A reasonable A1c goal for many nonpregnant adults is <7%.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/issue/47/Supplement_1" },
+          { number: 4, source: "Aug 2023, Ophthalmology screening, Athena", quote: "Annual diabetic eye exam completed. No diabetic retinopathy noted." },
+          { number: 5, source: "ADA Standards of Care - Complications", quote: "At least annually, assess for diabetic peripheral neuropathy and assess feet for anatomical abnormalities, skin quality, vascular status.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/article/47/Supplement_1/S231/154002/12-Retinopathy-Neuropathy-and-Foot-Care" }
+        ]
+      },
+      { type: 'user', content: "What medication adjustments should I consider?" },
+      {
+        type: 'assistant',
+        content: "Current regimen: Metformin 1000mg BID{{1}}. Given A1c 7.8%, options include:\n\n1. Increase metformin to 2000mg daily (max dose{{2}})\n2. Add GLP-1 RA - preferred for patients with ASCVD risk{{3}}\n3. Add SGLT2 inhibitor - beneficial for cardiovascular and renal outcomes{{4}}\n\nGiven her cardiovascular risk factors (hypertension, family history), I'd recommend adding empagliflozin or semaglutide{{5}}.",
+        citations: [
+          { number: 1, source: "Current medications, Athena", quote: "Metformin 1000mg BID for diabetes" },
+          { number: 2, source: "Metformin Prescribing Information", quote: "Maximum recommended daily dose is 2000 mg for metformin extended-release.", isExternal: true, externalUrl: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2017/020357s037s039,021202s021s023lbl.pdf" },
+          { number: 3, source: "ADA Pharmacologic Approaches 2024", quote: "In patients with T2D and established ASCVD, a GLP-1 receptor agonist or SGLT2 inhibitor with proven CVD benefit is recommended.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/article/47/Supplement_1/S158/154000/9-Pharmacologic-Approaches-to-Glycemic-Treatment" },
+          { number: 4, source: "EMPA-REG OUTCOME Trial", quote: "SGLT2 inhibitors reduce cardiovascular death and hospitalization for heart failure in patients with type 2 diabetes.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMoa1504720" },
+          { number: 5, source: "Jan 28, 2024, Clinical Note, Athena", quote: "Family history: Father with MI at age 58, mother with type 2 diabetes" }
+        ]
+      }
     ],
     "Robert Chen": [
       { type: 'user', content: "What were the patient's vital signs during the last visit?" },
-      { type: 'assistant', content: "Based on the clinical note, the patient's vital signs were: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% on room air." },
-      { type: 'user', content: "Summarize the cardiac exam findings" },
-      { type: 'assistant', content: "The cardiac exam showed an irregular rhythm with S1 and S2 present, and a 2/6 systolic murmur at the apex. This is consistent with the patient's known atrial fibrillation." }
+      { 
+        type: 'assistant', 
+        content: "Based on the clinical note{{1}}, the patient's vital signs were: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% on room air.",
+        citations: [
+          { number: 1, source: "Last visit note, Athena", quote: "Vitals: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% RA." }
+        ]
+      },
+      { type: 'user', content: "Should I adjust his heart failure medications?" },
+      {
+        type: 'assistant',
+        content: "His current regimen appears well-optimized{{1}}. Key points:\n\n• Furosemide 40mg daily - appropriate given improved volume status{{2}}\n• Carvedilol 12.5mg BID - consider uptitration to target dose of 25mg BID if tolerated{{3}}\n• Lisinopril 20mg daily - good ACE inhibitor dosing\n• Spironolactone 25mg daily - aldosterone antagonist per RALES trial{{4}}\n\nHis 2.1 kg weight loss since discharge{{2}} and improved edema{{5}} suggest good diuretic response. GDMT appears optimized per ACC/AHA guidelines{{6}}.",
+        citations: [
+          { number: 1, source: "Current medications, Athena", quote: "Furosemide 40mg PO daily, Carvedilol 12.5mg PO BID, Lisinopril 20mg PO daily, Spironolactone 25mg PO daily" },
+          { number: 2, source: "Last visit note, Athena", quote: "Weight down 2.1 kg from discharge" },
+          { number: 3, source: "ACC/AHA Heart Failure Guidelines", quote: "Beta-blockers should be titrated to target doses shown to reduce mortality in clinical trials (carvedilol 25 mg BID).", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000757" },
+          { number: 4, source: "RALES Trial", quote: "Spironolactone reduced the risk of death by 30% in patients with severe heart failure.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJM199909023411001" },
+          { number: 5, source: "Last visit note, Athena", quote: "Extremities: 1+ pitting edema bilateral ankles, improved from prior" },
+          { number: 6, source: "2022 ACC/AHA Heart Failure Guidelines", quote: "GDMT for HFrEF includes ACE inhibitor, beta-blocker, mineralocorticoid receptor antagonist, and consideration of SGLT2 inhibitor.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063" }
+        ]
+      }
     ],
     "Maria Garcia": [
       { type: 'user', content: "Should I order imaging for this patient's back pain?" },
-      { type: 'assistant', content: "Based on the previsit information, imaging is not indicated at this time. The patient has no red flags (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer). This appears to be acute mechanical lower back pain. Conservative management with NSAIDs and physical therapy is appropriate. Consider imaging if symptoms persist beyond 4-6 weeks or red flags develop." }
+      { 
+        type: 'assistant', 
+        content: "Based on the previsit information{{1}}, imaging is not indicated at this time. The patient has no red flags{{2}} (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer). \n\nThis appears to be acute mechanical lower back pain. Per ACR Appropriateness Criteria{{3}}, imaging is usually not appropriate for nonspecific acute low back pain without red flags. Conservative management with NSAIDs and physical therapy is the recommended first-line approach{{4}}. Consider imaging if symptoms persist beyond 4-6 weeks or red flags develop.",
+        citations: [
+          { number: 1, source: "Feb 12, Intake form, Ambient", quote: "Chief Complaint: Lower back pain x 4 days. Sharp pain localized to lower lumbar region (L4-L5 area). Pain severity: 7/10 at worst." },
+          { number: 2, source: "Feb 12, Intake form, Ambient", quote: "RED FLAGS ASSESSMENT: No fever, No trauma, No night pain, No history of cancer, No recent weight loss" },
+          { number: 3, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" },
+          { number: 4, source: "NEJM - Low Back Pain Review", quote: "First-line treatment for acute low back pain includes NSAIDs, acetaminophen, and continued activity as tolerated.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMra1614337" }
+        ]
+      }
     ],
     "James Wilson": [
       { type: 'user', content: "What preventive screenings are due for this patient?" },
-      { type: 'assistant', content: "This 55-year-old male is due for: (1) Colonoscopy - first screening (age-appropriate), (2) Lipid panel - last checked 2 years ago, (3) PSA screening discussion (shared decision-making). Also ensure flu vaccine is current." }
+      { 
+        type: 'assistant', 
+        content: "This 55-year-old male is due for:\n\n1. Colonoscopy{{1}} - first screening (age-appropriate per USPSTF guidelines{{2}})\n2. Lipid panel{{3}} - last checked 2 years ago{{4}}\n3. PSA screening discussion (shared decision-making per ACS guidelines{{5}})\n4. Flu vaccine - due this fall season{{1}}\n\nGiven his former smoking history{{6}}, also consider discussing lung cancer screening with low-dose CT if he quit within the last 15 years{{7}}.",
+        citations: [
+          { number: 1, source: "Jan 20, 2024, Annual wellness visit, Athena", quote: "Colonoscopy: Due (age 55, first-time screening per USPSTF guidelines). Flu vaccine: Due this fall season" },
+          { number: 2, source: "USPSTF Colorectal Cancer Screening", quote: "The USPSTF recommends screening for colorectal cancer in all adults aged 45 to 75 years.", isExternal: true, externalUrl: "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening" },
+          { number: 3, source: "Jan 12, 2022, Lab results, Athena", quote: "LDL Cholesterol: 118 mg/dL (Ref: <100) [Slightly elevated]" },
+          { number: 4, source: "Jan 20, 2024, Annual wellness visit, Athena", quote: "Repeat lipid panel due (>2 years since last check)" },
+          { number: 5, source: "ACS PSA Screening Guidelines", quote: "Men aged 55-69 should make an individual decision about PSA screening with their health care provider.", isExternal: true, externalUrl: "https://www.cancer.org/cancer/types/prostate-cancer/detection-diagnosis-staging/acs-recommendations.html" },
+          { number: 6, source: "Jan 20, 2024, Annual wellness visit, Athena", quote: "Former smoker: Quit 2020 (30 pack-year history)" },
+          { number: 7, source: "USPSTF Lung Cancer Screening", quote: "Screen adults aged 50-80 who have a 20 pack-year smoking history and currently smoke or have quit within the past 15 years.", isExternal: true, externalUrl: "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/lung-cancer-screening" }
+        ]
+      }
     ],
     "Lisa Anderson": [
       { type: 'user', content: "The current migraine preventive isn't working well. What are the next options?" },
-      { type: 'assistant', content: "Given limited response to propranolol after 3 months and increasing frequency (4-6 migraine days/month), consider switching to a CGRP inhibitor (e.g., erenumab, fremanezumab, galcanezumab). These have shown superior efficacy for chronic migraines. Also assess for medication overuse headache (using sumatriptan 2-3x/week is approaching threshold). Review trigger management strategies." }
+      { 
+        type: 'assistant', 
+        content: "Given limited response to propranolol after 3 months{{1}} and increasing frequency (4-6 migraine days/month{{2}}), consider switching to a CGRP inhibitor (e.g., erenumab, fremanezumab, galcanezumab). These have shown superior efficacy for chronic migraines{{3}}. \n\nAlso assess for medication overuse headache (using sumatriptan 2-3x/week{{1}} is approaching threshold{{4}}). Review trigger management strategies including sleep hygiene, stress reduction, and dietary modifications{{5}}.",
+        citations: [
+          { number: 1, source: "Current medications, Athena", quote: "Propranolol 80mg daily (started 3 months ago). Sumatriptan 50mg as needed (using 2-3x/week)" },
+          { number: 2, source: "Dec 2025, Neurology visit, Athena", quote: "Migraine frequency: 4-6 days per month, moderate to severe intensity" },
+          { number: 3, source: "AHS CGRP Guidelines for Migraine Prevention", quote: "CGRP monoclonal antibodies are effective and well-tolerated options for migraine prevention, particularly for patients who have failed traditional preventive therapies.", isExternal: true, externalUrl: "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.13853" },
+          { number: 4, source: "ICHD-3 Medication Overuse Headache", quote: "Regular intake of triptans ≥10 days per month for >3 months can lead to medication-overuse headache.", isExternal: true, externalUrl: "https://ichd-3.org/8-headache-attributed-to-a-substance-or-its-withdrawal/8-2-medication-overuse-headache-moh/" },
+          { number: 5, source: "AAN Migraine Prevention Guidelines", quote: "Behavioral interventions including relaxation training, thermal biofeedback, and cognitive behavioral therapy should be considered.", isExternal: true, externalUrl: "https://www.aan.com/Guidelines/home/GetGuidelineContent/578" }
+        ]
+      }
     ]
   });
   
@@ -174,6 +252,31 @@ export default function App() {
         type: "Specialist Report",
         date: "Jun 15, 2023",
         content: "**OPHTHALMOLOGY EXAM**\n\nPatient: Sarah Johnson\n\n**FINDINGS**\nVisual Acuity: 20/20 OU\nNo diabetic retinopathy\nNo macular edema\n\n**PLAN**\nReturn in 12 months for annual screening"
+      },
+      "Jan 28, 2024, Lab results, Athena": {
+        type: "Lab Report",
+        date: "Jan 28, 2024",
+        content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson\nDOB: 03/15/1982\nMRN: 12345678\nDate: 01/28/2024\n\n**METABOLIC PANEL**\nGlucose, Fasting: 142 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.2% [H] (Ref: <7.0% for diabetics)\n\n**INTERPRETATION**\nA1c at target for diabetic patient but trending upward from 7.0% six months ago."
+      },
+      "Today, Lab results, Athena": {
+        type: "Lab Report",
+        date: "Today",
+        content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson\nDate: Today\n\n**METABOLIC PANEL**\nGlucose, Fasting: 145 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.8% [H] (Ref: <7.0% for diabetics) [Elevated - worsening control]\n\n**COMPARISON**\nPrevious A1c (01/28/2024): 7.2%\nTrend: Increasing despite medication adherence\n\n**RECOMMENDATION**\nConsider treatment intensification"
+      },
+      "Aug 2023, Ophthalmology screening, Athena": {
+        type: "Specialist Report",
+        date: "Aug 15, 2023",
+        content: "**OPHTHALMOLOGY SCREENING**\n\nPatient: Sarah Johnson\nDate: 08/15/2023\n\n**COMPREHENSIVE DIABETIC EYE EXAM**\nVisual Acuity: 20/20 OU\nIntraocular Pressure: Normal\nFundoscopic Exam: No diabetic retinopathy noted\nNo macular edema\n\n**ASSESSMENT**\nNo evidence of diabetic eye disease\n\n**PLAN**\nAnnual diabetic eye exam completed. Return in 12 months for follow-up screening."
+      },
+      "Current medications, Athena": {
+        type: "Medication List",
+        date: "Current",
+        content: "**CURRENT MEDICATIONS**\n\nPatient: Sarah Johnson\nLast Updated: Today\n\n**ACTIVE PRESCRIPTIONS**\n\n1. **Metformin 1000mg BID**\n   - Indication: Type 2 Diabetes Mellitus\n   - Prescribed: 10/15/2023\n   - Last Fill: 01/10/2024\n   - Refills: 3 remaining\n\n2. **Atorvastatin 20mg daily**\n   - Indication: Hyperlipidemia\n   - Prescribed: 04/20/2023\n   - Last Fill: 01/15/2024\n   - Refills: 5 remaining\n\n3. **Lisinopril 10mg daily**\n   - Indication: Hypertension\n   - Prescribed: 06/10/2023\n   - Last Fill: 01/12/2024\n   - Refills: 4 remaining"
+      },
+      "Jan 28, 2024, Clinical Note, Athena": {
+        type: "Clinical Note",
+        date: "Jan 28, 2024",
+        content: "**CLINICAL NOTE**\n\nPatient: Sarah Johnson, 42F\nDate: 01/28/2024\nChief Complaint: Diabetes follow-up\n\n**SOCIAL HISTORY**\nFamily History:\n• Father: Myocardial infarction at age 58\n• Mother: Type 2 diabetes diagnosed at age 55\n• No family history of stroke or cancer\n\n**ASSESSMENT**\nType 2 Diabetes - A1c 7.2%, trending upward\nFamilyCVD history increases ASCVD risk\n\n**PLAN**\n• Continue metformin\n• Counsel on diet and exercise\n• Consider adding SGLT2i or GLP-1 RA if A1c continues to rise\n• Return in 3 months"
       }
     },
     "Robert Chen": {
@@ -221,6 +324,16 @@ export default function App() {
         type: "Home Monitoring",
         date: "Feb 11, 2024 - Today",
         content: "**HOME WEIGHT LOG & EXAM FINDINGS**\n\nPatient: Robert Chen\n\n**WEIGHT TREND**\nDischarge (10/20): 80.3 kg\nCurrent: 78.2 kg\nChange: -2.1 kg\n\n**WEIGHT LOG**\n02/11: 78.2 kg\n02/04: 78.3 kg\n01/28: 78.5 kg\n01/21: 78.7 kg\n\n**TODAY'S EXAM FINDINGS**\nExtremities: Trace to 1+ bilateral lower extremity edema (improved from 3+ at discharge)\nLungs: Clear to auscultation bilaterally\nCardiovascular: Irregular rhythm consistent with AFib"
+      },
+      "Last visit note, Athena": {
+        type: "Visit Note",
+        date: "Today",
+        content: "**FOLLOW-UP VISIT NOTE**\n\nPatient: Robert Chen, 68M\nDate: Today\nChief Complaint: 2-week post-hospitalization follow-up for acute decompensated heart failure\n\n**VITAL SIGNS**\nBP: 108/68 mmHg\nHR: 78 bpm (irregular)\nRR: 16 breaths/min\nO2 saturation: 97% on room air\nTemperature: 98.6°F\n\n**PHYSICAL EXAMINATION**\n\nGeneral: No acute distress, comfortable at rest\n\nCardiovascular:\n• Irregular rhythm consistent with atrial fibrillation\n• S1 and S2 present\n• 2/6 holosystolic murmur at apex, radiating to axilla (mitral regurgitation)\n• No S3 or S4 gallop\n• JVP estimated at 8 cm (normal)\n\nRespiratory:\n• Lungs clear to auscultation bilaterally\n• No rales, wheezes, or rhonchi\n• Good air movement throughout\n\nExtremities:\n• 1+ pitting edema bilateral ankles to mid-shin\n• Improved from 3+ at discharge 2 weeks ago\n• Pedal pulses 2+ bilaterally\n• Capillary refill <2 seconds\n\n**ASSESSMENT**\n1. Heart failure with reduced ejection fraction (HFrEF, EF 30%) - improved volume status\n2. Atrial fibrillation - controlled ventricular rate\n3. Chronic kidney disease stage 3b - stable\n\n**WEIGHT TREND**\nDischarge (10/20): 80.3 kg\nToday: 78.2 kg\nChange: -2.1 kg (good diuretic response)\n\n**PLAN**\n• Continue current heart failure regimen\n• Monitor for hypotension and renal function\n• Consider CRT-D evaluation\n• Follow-up in 4 weeks"
+      },
+      "Current medications, Athena": {
+        type: "Medication List",
+        date: "Current",
+        content: "**CURRENT MEDICATIONS**\n\nPatient: Robert Chen\nLast Updated: Today\n\n**ACTIVE PRESCRIPTIONS**\n\n1. **Furosemide 40mg PO daily**\n   - Indication: Heart failure, volume management\n   - Prescribed: 10/20/2024 (at discharge)\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n2. **Carvedilol 12.5mg PO BID**\n   - Indication: Heart failure with reduced EF\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Target dose: 25mg BID (uptitration in progress)\n   - Refills: 3 remaining\n\n3. **Lisinopril 20mg PO daily**\n   - Indication: Heart failure, hypertension\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n4. **Spironolactone 25mg PO daily**\n   - Indication: Heart failure (aldosterone antagonist)\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n5. **Apixaban 5mg PO BID**\n   - Indication: Atrial fibrillation (stroke prevention)\n   - Prescribed: 06/15/2024\n   - Last Fill: 01/10/2024\n   - Refills: 5 remaining\n\n6. **Metformin 1000mg PO BID**\n   - Indication: Type 2 diabetes\n   - Prescribed: 03/20/2023\n   - Last Fill: 12/28/2024\n   - Refills: 4 remaining"
       }
     },
     "Maria Garcia": {
@@ -813,12 +926,14 @@ export default function App() {
       if (citationMatch) {
         const citationNum = parseInt(citationMatch[1]);
         const citation = citations.find(c => c.number === citationNum);
-        const isActive = activeCitation === citationNum;
+        const citationId = `prechart-${citationNum}`;
+        const isActive = activeCitation?.id === citationId;
         
         return (
           <span 
             key={idx}
             data-citation-badge
+            data-citation-id={citationId}
             className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-colors mx-[2px] ${
               isActive 
                 ? 'bg-[var(--text-brand,#1132ee)] text-white' 
@@ -831,24 +946,36 @@ export default function App() {
               verticalAlign: 'baseline'
             }}
             onMouseEnter={(e) => {
-              setActiveCitation(citationNum);
-              const rect = e.currentTarget.getBoundingClientRect();
-              setTooltipPosition({
-                x: rect.left + rect.width / 2,
-                y: rect.top
-              });
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                setActiveCitation({ id: citationId, number: citationNum });
+                setTooltipPosition({
+                  x: rect.left + rect.width / 2,
+                  y: rect.bottom,
+                  alignLeft
+                });
+              }
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (activeCitation === citationNum) {
-                setActiveCitation(null);
-                setTooltipPosition(null);
-              } else {
-                setActiveCitation(citationNum);
+              if (citation) {
                 const rect = e.currentTarget.getBoundingClientRect();
-                setTooltipPosition({
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                const isSame = activeCitation?.id === citationId;
+                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+                setTooltipPosition(isSame ? null : {
                   x: rect.left + rect.width / 2,
-                  y: rect.top
+                  y: rect.bottom,
+                  alignLeft
                 });
               }
             }}
@@ -860,8 +987,8 @@ export default function App() {
       
       // Check if this text should be highlighted for citations
       if (activeCitation && part) {
-        const citation = citations.find(c => c.number === activeCitation);
-        if (citation && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
+        const citation = citations.find(c => c.number === activeCitation.number);
+        if (citation && citation.citedText && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
           const citedText = citation.citedText;
           const regex = new RegExp(`(${citedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           const highlighted = part.split(regex).map((segment, segIdx) => {
@@ -883,7 +1010,7 @@ export default function App() {
   };
 
   // Helper function to render text with citation badges
-  const renderTextWithCitations = (text: string, citationsData: any[]) => {
+  const renderTextWithCitations = (text: string, citationsData: any[], contextId: string = 'previsit') => {
     // Parse text for {{number}} patterns and render citation badges
     const parts: (string | JSX.Element)[] = [];
     let lastIndex = 0;
@@ -898,12 +1025,14 @@ export default function App() {
 
       const citationNum = parseInt(match[1], 10);
       const citation = citationsData.find(c => c.number === citationNum);
-      const isActive = activeCitation === citationNum;
+      const citationId = `${contextId}-${citationNum}`;
+      const isActive = activeCitation?.id === citationId;
 
       parts.push(
         <span
           key={`citation-${citationNum}-${match.index}`}
           data-citation-badge
+          data-citation-id={citationId}
           className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
             isActive 
               ? 'bg-[var(--text-brand,#1132ee)] text-white' 
@@ -919,16 +1048,35 @@ export default function App() {
           onMouseEnter={(e) => {
             if (citation) {
               const rect = e.currentTarget.getBoundingClientRect();
-              setActiveCitation(citationNum);
-              setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
+              const viewportWidth = window.innerWidth;
+              const tooltipWidth = 240;
+              const spaceOnRight = viewportWidth - rect.right;
+              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+              
+              setActiveCitation({ id: citationId, number: citationNum });
+              setTooltipPosition({ 
+                x: rect.left + rect.width / 2, 
+                y: rect.bottom,
+                alignLeft 
+              });
             }
           }}
           onClick={(e) => {
             e.stopPropagation();
             if (citation) {
               const rect = e.currentTarget.getBoundingClientRect();
-              setActiveCitation(activeCitation === citationNum ? null : citationNum);
-              setTooltipPosition(activeCitation === citationNum ? null : { x: rect.left + rect.width / 2, y: rect.bottom });
+              const viewportWidth = window.innerWidth;
+              const tooltipWidth = 240;
+              const spaceOnRight = viewportWidth - rect.right;
+              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+              
+              const isSame = activeCitation?.id === citationId;
+              setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+              setTooltipPosition(isSame ? null : { 
+                x: rect.left + rect.width / 2, 
+                y: rect.bottom,
+                alignLeft 
+              });
             }
           }}
         >
@@ -944,6 +1092,150 @@ export default function App() {
     }
 
     return parts.length > 0 ? parts : text;
+  };
+
+  // Helper to render chat messages with sentence highlighting
+  const renderChatMessageWithCitations = (text: string, citationsData: any[], contextId: string) => {
+    // Split into sentences (basic split on . ! ? followed by space or newline)
+    const sentences: Array<{text: string, start: number, end: number}> = [];
+    const sentenceRegex = /[^.!?\n]+[.!?\n]+|\n+/g;
+    let match;
+    let lastEnd = 0;
+    
+    while ((match = sentenceRegex.exec(text)) !== null) {
+      sentences.push({
+        text: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+      lastEnd = match.index + match[0].length;
+    }
+    
+    // Add any remaining text as a sentence
+    if (lastEnd < text.length) {
+      sentences.push({
+        text: text.slice(lastEnd),
+        start: lastEnd,
+        end: text.length
+      });
+    }
+    
+    // Find which sentence each citation belongs to
+    const citationRegex = /\{\{(\d+)\}\}/g;
+    const citationPositions: Array<{number: number, position: number, sentenceIdx: number}> = [];
+    let citMatch;
+    
+    while ((citMatch = citationRegex.exec(text)) !== null) {
+      const citNum = parseInt(citMatch[1], 10);
+      const position = citMatch.index;
+      const sentenceIdx = sentences.findIndex(s => position >= s.start && position < s.end);
+      citationPositions.push({ number: citNum, position, sentenceIdx });
+    }
+    
+    // Render sentences with highlighting
+    return sentences.map((sentence, idx) => {
+      const sentenceCitations = citationPositions.filter(c => c.sentenceIdx === idx);
+      const isHighlighted = sentenceCitations.some(c => 
+        activeCitation?.id === `${contextId}-${c.number}`
+      );
+      
+      // Render the sentence with citation badges
+      const parts: (string | JSX.Element)[] = [];
+      let lastIndex = 0;
+      const regex = /\{\{(\d+)\}\}/g;
+      let match;
+      const sentenceText = sentence.text;
+      
+      while ((match = regex.exec(sentenceText)) !== null) {
+        const beforeText = sentenceText.slice(lastIndex, match.index);
+        if (beforeText) {
+          parts.push(beforeText);
+        }
+        
+        const citationNum = parseInt(match[1], 10);
+        const citation = citationsData.find(c => c.number === citationNum);
+        const citationId = `${contextId}-${citationNum}`;
+        const isActive = activeCitation?.id === citationId;
+        
+        parts.push(
+          <span
+            key={`citation-${idx}-${citationNum}-${match.index}`}
+            data-citation-badge
+            data-citation-id={citationId}
+            className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
+              isActive 
+                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
+            }`}
+            style={{
+              width: '14px',
+              height: '14px',
+              verticalAlign: 'baseline',
+              marginLeft: '2px',
+              marginRight: '2px'
+            }}
+            onMouseEnter={(e) => {
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                setActiveCitation({ id: citationId, number: citationNum });
+                setTooltipPosition({ 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                const isSame = activeCitation?.id === citationId;
+                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+                setTooltipPosition(isSame ? null : { 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+          >
+            {citationNum}
+          </span>
+        );
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      if (lastIndex < sentenceText.length) {
+        parts.push(sentenceText.slice(lastIndex));
+      }
+      
+      const content = parts.length > 0 ? parts : sentenceText;
+      
+      if (isHighlighted) {
+        return (
+          <mark 
+            key={`sentence-${idx}`} 
+            className="bg-[#f1f3fe] text-inherit" 
+            style={{ padding: 0 }}
+          >
+            {content}
+          </mark>
+        );
+      }
+      
+      return <span key={`sentence-${idx}`}>{content}</span>;
+    });
   };
 
   // Close tooltip on click outside
@@ -1274,11 +1566,11 @@ export default function App() {
                           >
                             {isHighlighted ? (
                               <mark className="bg-[#f1f3fe] text-inherit leading-[1.4]" style={{ padding: 0 }}>
-                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [])}
+                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
                               </mark>
                             ) : (
                               <span className="leading-[1.4]">
-                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [])}
+                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
                               </span>
                             )}
                           </li>
@@ -1649,7 +1941,26 @@ export default function App() {
 
       {/* Citation Tooltip */}
       {activeCitation !== null && tooltipPosition && (() => {
-        const citation = (patients[selectedPatientIndex].citations || []).find(c => c.number === activeCitation);
+        // Find citation from appropriate context
+        let citation = null;
+        const contextId = activeCitation.id;
+        
+        if (contextId.startsWith('previsit-') || contextId.startsWith('prechart-')) {
+          citation = (patients[selectedPatientIndex].citations || []).find(c => c.number === activeCitation.number);
+        } else if (contextId.startsWith('chat-')) {
+          // Find in chat messages
+          const messages = chatMessages[patients[selectedPatientIndex].name] || [];
+          for (const msg of messages) {
+            if (msg.citations) {
+              const found = msg.citations.find(c => c.number === activeCitation.number);
+              if (found) {
+                citation = found;
+                break;
+              }
+            }
+          }
+        }
+        
         if (!citation) return null;
 
         const availableSpaceBelow = window.innerHeight - tooltipPosition.y;
@@ -1659,12 +1970,24 @@ export default function App() {
         let topPosition: number;
         let transformValue: string;
         
-        if (showAbove) {
-          topPosition = tooltipPosition.y - 8;
-          transformValue = 'translate(-50%, -100%)';
+        if (tooltipPosition.alignLeft) {
+          // Position to the left of the badge
+          if (showAbove) {
+            topPosition = tooltipPosition.y - 8;
+            transformValue = 'translate(-100%, -100%)';
+          } else {
+            topPosition = tooltipPosition.y + 8;
+            transformValue = 'translate(-100%, 0)';
+          }
         } else {
-          topPosition = tooltipPosition.y + 8;
-          transformValue = 'translate(-50%, 0)';
+          // Default center positioning
+          if (showAbove) {
+            topPosition = tooltipPosition.y - 8;
+            transformValue = 'translate(-50%, -100%)';
+          } else {
+            topPosition = tooltipPosition.y + 8;
+            transformValue = 'translate(-50%, 0)';
+          }
         }
 
         return (
@@ -1708,7 +2031,7 @@ export default function App() {
                 setTooltipPosition(null);
               }}
             >
-              <p className="font-['Lato',sans-serif] text-[13px] text-[color:var(--text-subheading,#666)] leading-[1.4] italic mb-[8px]">
+              <p className="font-['Lato',sans-serif] text-[13px] text-[color:var(--text-subheading,#666)] leading-[1.4] italic mb-[8px]" style={{ wordBreak: 'break-word' }}>
                 "{citation.quote}"
               </p>
               <Link 
@@ -1718,8 +2041,12 @@ export default function App() {
                 showPrefix={false}
                 showSuffix={false}
                 onClick={() => {
-                  setViewingDataSource(citation.source);
-                  setRightTab('actions');
+                  if (citation.isExternal && citation.externalUrl) {
+                    window.open(citation.externalUrl, '_blank');
+                  } else {
+                    setPreviousTab(rightTab);
+                    setViewingDataSource(citation.source);
+                  }
                   setActiveCitation(null);
                   setTooltipPosition(null);
                 }}
@@ -1770,7 +2097,10 @@ export default function App() {
                   variant="tertiary-neutral"
                   size="small"
                   icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
-                  onClick={() => setViewingDataSource(null)}
+                  onClick={() => {
+                    setViewingDataSource(null);
+                    setRightTab(previousTab);
+                  }}
                 >
                   Back
                 </Button>
@@ -1859,6 +2189,7 @@ export default function App() {
                           showPrefix={false}
                           showSuffix={false}
                           onClick={() => {
+                            setPreviousTab(rightTab);
                             setViewingDataSource(source);
                           }}
                         />
@@ -1885,7 +2216,7 @@ export default function App() {
                   /* Assistant Response */
                   <div key={idx} className="content-stretch flex flex-col gap-[12px] items-center justify-center py-[6px] relative shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] text-[color:var(--text-body,#1a1a1a)] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {message.content}
+                      {message.citations ? renderChatMessageWithCitations(message.content, message.citations, `chat-${idx}`) : message.content}
                     </p>
                     <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                       <div className="content-stretch flex gap-[8px] h-[28px] items-center relative shrink-0">
