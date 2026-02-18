@@ -96,55 +96,69 @@ export default function App() {
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
   const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
+  const [expandedChatSources, setExpandedChatSources] = useState<Set<string>>(new Set());
+  
+  // Reset document view when switching patients
+  useEffect(() => {
+    setViewingDataSource(null);
+    setRightTab('actions');
+  }, [selectedPatientIndex]);
   
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
     "Sarah Johnson": [
-      { type: 'user', content: "What should I focus on during this diabetes follow-up visit?" },
+      { type: 'user', content: "What should I focus on during this knee follow-up visit?" },
       { 
         type: 'assistant', 
-        content: "Key areas to address:\n\n1. Review diet/exercise compliance given the rise in A1c from 7.2%{{1}} to 7.8%{{2}}\n2. Consider treatment intensification - ADA guidelines recommend targeting A1c <7% for most adults{{3}}\n3. Schedule ophthalmology referral as screening is overdue (last exam 8 months ago{{4}})\n4. Assess for diabetic complications including peripheral neuropathy and nephropathy{{5}}",
+        content: "Key areas to address:\n\n1. Assess current pain level and functional status - last visit pain was 6-8/10{{1}}, current intake shows 7-9/10{{2}}\n2. Review imaging showing severe right knee OA (Kellgren-Lawrence Grade 4){{3}} with varus malalignment{{3}}\n3. Discuss surgical candidacy - conservative management has failed (PT minimal benefit, injection only 6 weeks relief){{4}}\n4. Address pre-operative optimization - weight loss goal BMI <35 before TKA{{5}} (current BMI 34.2)\n5. Set realistic expectations for total knee arthroplasty outcomes and recovery timeline{{6}}",
         citations: [
-          { number: 1, source: "Jan 28, 2024, Lab results, Athena", quote: "Hemoglobin A1c: 7.2% (Ref: <7.0% for diabetics)" },
-          { number: 2, source: "Today, Lab results, Athena", quote: "Hemoglobin A1c: 7.8% (Ref: <7.0% for diabetics) [Elevated - worsening control]" },
-          { number: 3, source: "ADA Standards of Care in Diabetes 2024", quote: "A reasonable A1c goal for many nonpregnant adults is <7%.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/issue/47/Supplement_1" },
-          { number: 4, source: "Aug 2023, Ophthalmology screening, Athena", quote: "Annual diabetic eye exam completed. No diabetic retinopathy noted." },
-          { number: 5, source: "ADA Standards of Care - Complications", quote: "At least annually, assess for diabetic peripheral neuropathy and assess feet for anatomical abnormalities, skin quality, vascular status.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/article/47/Supplement_1/S231/154002/12-Retinopathy-Neuropathy-and-Foot-Care" }
+          { number: 1, source: "Oct 20, 2023, Office visit, Athena", quote: "Progressive pain over 2 years, pain 6-8/10 with activity, worse with stairs and prolonged standing" },
+          { number: 2, source: "Feb 12, Intake form, Ambient", quote: "Right knee pain 7/10 at rest, increases to 9/10 with activity. Night pain wakes her from sleep 3-4x/week" },
+          { number: 3, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing, large marginal osteophytes, varus alignment 8 degrees" },
+          { number: 4, source: "Oct 20, 2023, Office visit, Athena", quote: "PT: 8 weeks minimal benefit. Intra-articular corticosteroid injection with 6 weeks relief before return to baseline" },
+          { number: 5, source: "AAHKS Guidelines on Obesity and TKA", quote: "BMI >35 associated with increased complications. Weight optimization recommended before elective total knee arthroplasty.", isExternal: true, externalUrl: "https://www.aaos.org/quality/quality-programs/obesity/" },
+          { number: 6, source: "AAOS Patient Guide - Total Knee Replacement", quote: "Most patients achieve 90-110 degrees of flexion and can return to low-impact activities. Recovery typically 3-6 months.", isExternal: true, externalUrl: "https://orthoinfo.aaos.org/en/treatment/total-knee-replacement/" }
         ]
       },
-      { type: 'user', content: "What medication adjustments should I consider?" },
+      { type: 'user', content: "Should I consider another injection or proceed with surgery discussion?" },
       {
         type: 'assistant',
-        content: "Current regimen: Metformin 1000mg BID{{1}}. Given A1c 7.8%, options include:\n\n1. Increase metformin to 2000mg daily (max dose{{2}})\n2. Add GLP-1 RA - preferred for patients with ASCVD risk{{3}}\n3. Add SGLT2 inhibitor - beneficial for cardiovascular and renal outcomes{{4}}\n\nGiven her cardiovascular risk factors (hypertension, family history), I'd recommend adding empagliflozin or semaglutide{{5}}.",
+        content: "Given the clinical picture, I'd recommend proceeding with surgical discussion:\n\n**Why surgery now:**\n• Severe radiographic OA (KL Grade 4){{1}} with significant functional impairment{{2}}\n• Failed conservative management: PT 8 weeks, injection only 6 weeks relief{{3}}\n• Progressive symptoms despite optimal medical management{{4}}\n\n**Repeat injection considerations:**\nAnother injection may provide temporary relief{{5}}, but given only 6-week benefit last time{{3}}, it's unlikely to change the long-term trajectory. Most guidelines suggest proceeding to arthroplasty when pain is refractory{{6}}.\n\n**Pre-op optimization:**\nPatient is close to goal BMI (34.2, target <35){{7}} and has well-controlled HTN{{8}}, making her a good surgical candidate now.",
         citations: [
-          { number: 1, source: "Current medications, Athena", quote: "Metformin 1000mg BID for diabetes" },
-          { number: 2, source: "Metformin Prescribing Information", quote: "Maximum recommended daily dose is 2000 mg for metformin extended-release.", isExternal: true, externalUrl: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2017/020357s037s039,021202s021s023lbl.pdf" },
-          { number: 3, source: "ADA Pharmacologic Approaches 2024", quote: "In patients with T2D and established ASCVD, a GLP-1 receptor agonist or SGLT2 inhibitor with proven CVD benefit is recommended.", isExternal: true, externalUrl: "https://diabetesjournals.org/care/article/47/Supplement_1/S158/154000/9-Pharmacologic-Approaches-to-Glycemic-Treatment" },
-          { number: 4, source: "EMPA-REG OUTCOME Trial", quote: "SGLT2 inhibitors reduce cardiovascular death and hospitalization for heart failure in patients with type 2 diabetes.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMoa1504720" },
-          { number: 5, source: "Jan 28, 2024, Clinical Note, Athena", quote: "Family history: Father with MI at age 58, mother with type 2 diabetes" }
+          { number: 1, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee Kellgren-Lawrence Grade 4 with severe joint space narrowing, subchondral sclerosis and cyst formation" },
+          { number: 2, source: "Feb 12, Intake form, Ambient", quote: "Difficulty walking >1 block, requires handrail for stairs, stopped recreational walking. Night pain interfering with sleep." },
+          { number: 3, source: "Oct 20, 2023, Office visit, Athena", quote: "Intra-articular corticosteroid injection performed with approximately 6 weeks pain relief before return to baseline" },
+          { number: 4, source: "Feb 12, Intake form, Ambient", quote: "Current meloxicam 15mg daily with limited benefit, glucosamine no clear benefit" },
+          { number: 5, source: "Arthritis & Rheumatology - Corticosteroid Injections", quote: "Intra-articular corticosteroid injections provide short-term pain relief (typically 4-12 weeks) but do not alter disease progression.", isExternal: true, externalUrl: "https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.40398" },
+          { number: 6, source: "AAOS Clinical Practice Guideline - Knee OA", quote: "Total knee arthroplasty is indicated for patients with symptomatic knee OA who have failed nonoperative management.", isExternal: true, externalUrl: "https://www.aaos.org/quality/quality-programs/lower-extremity-programs/osteoarthritis-of-the-knee/" },
+          { number: 7, source: "Feb 12, Today's exam, Ambient", quote: "BMI 34.2. Patient actively working on weight loss through dietary modification." },
+          { number: 8, source: "Jan 8, PCP visit, Athena", quote: "Hypertension well-controlled on lisinopril 20mg daily, most recent BP 128/78" }
         ]
       }
     ],
     "Robert Chen": [
-      { type: 'user', content: "What were the patient's vital signs during the last visit?" },
+      { type: 'user', content: "Is the patient ready to progress to active ROM exercises?" },
       { 
         type: 'assistant', 
-        content: "Based on the clinical note{{1}}, the patient's vital signs were: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% on room air.",
+        content: "Yes, at 6 weeks post-op the patient is ready to advance. Current status:\n\n• Excellent healing - incisions well-healed, no complications{{1}}\n• Good passive ROM: Forward flexion 110°, abduction 80°{{2}}\n• Minimal pain (2-4/10) with exercises{{3}}\n• Completed passive ROM phase per protocol{{4}}\n\nStandard rotator cuff repair protocols{{5}} support advancing to active-assisted ROM at 6-8 weeks. His double-row repair{{6}} was reported as stable with good tissue quality{{6}}, which supports progression.",
         citations: [
-          { number: 1, source: "Last visit note, Athena", quote: "Vitals: BP 108/68, HR 78 (irregular), RR 16, O2 sat 97% RA." }
+          { number: 1, source: "Physical examination, today", quote: "All portal sites well-healed with minimal scarring. No erythema, no drainage, no warmth" },
+          { number: 2, source: "PT progress note, 02/05/2024", quote: "Range of motion (passive): Forward flexion 110 degrees, abduction 80 degrees, external rotation 30 degrees. Measurements taken with patient supine to ensure true passive motion" },
+          { number: 3, source: "Visit transcript, 00:02:30", quote: "Pain is much better now. Just 2 out of 10 at rest, maybe 4 out of 10 during PT" },
+          { number: 4, source: "PT progress note, 02/05/2024", quote: "Current phase: Passive range of motion exercises. Attending 3x per week. No active ROM until surgeon clearance at 6-week visit" },
+          { number: 5, source: "AAOS Rotator Cuff Repair Rehabilitation", quote: "Active-assisted ROM typically begins at 6-8 weeks post-operatively, progressing to active ROM by 8-10 weeks.", isExternal: true, externalUrl: "https://orthoinfo.aaos.org/en/recovery/rotator-cuff-tears-surgical-treatment-options/" },
+          { number: 6, source: "Operative report, 01/03/2024", quote: "Double-row technique with 4 anchors. Excellent tissue quality, repair under minimal tension. Stable repair with good tissue approximation." }
         ]
       },
-      { type: 'user', content: "Should I adjust his heart failure medications?" },
+      { type: 'user', content: "Can I clear him to return to work?" },
       {
         type: 'assistant',
-        content: "His current regimen appears well-optimized{{1}}. Key points:\n\n• Furosemide 40mg daily - appropriate given improved volume status{{2}}\n• Carvedilol 12.5mg BID - consider uptitration to target dose of 25mg BID if tolerated{{3}}\n• Lisinopril 20mg daily - good ACE inhibitor dosing\n• Spironolactone 25mg daily - aldosterone antagonist per RALES trial{{4}}\n\nHis 2.1 kg weight loss since discharge{{2}} and improved edema{{5}} suggest good diuretic response. GDMT appears optimized per ACC/AHA guidelines{{6}}.",
+        content: "Yes, he can return to modified duty desk work. Here's my assessment:\n\n**Occupation:** Software engineer (desk job){{1}} - primarily typing/computer work\n\n**Current status:**\n• 6 weeks post-op with good healing{{2}}\n• Minimal pain{{3}}\n\n**Return to work restrictions:**\n• Modified duty appropriate now per typical post-op guidelines{{4}}\n• No lifting >5 lbs with right arm\n• No reaching overhead or behind back\n• Frequent position changes/breaks recommended\n• Continue PT 3x/week\n• Full duty clearance: ~12 weeks post-op or when strength returns{{4}}",
         citations: [
-          { number: 1, source: "Current medications, Athena", quote: "Furosemide 40mg PO daily, Carvedilol 12.5mg PO BID, Lisinopril 20mg PO daily, Spironolactone 25mg PO daily" },
-          { number: 2, source: "Last visit note, Athena", quote: "Weight down 2.1 kg from discharge" },
-          { number: 3, source: "ACC/AHA Heart Failure Guidelines", quote: "Beta-blockers should be titrated to target doses shown to reduce mortality in clinical trials (carvedilol 25 mg BID).", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000757" },
-          { number: 4, source: "RALES Trial", quote: "Spironolactone reduced the risk of death by 30% in patients with severe heart failure.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJM199909023411001" },
-          { number: 5, source: "Last visit note, Athena", quote: "Extremities: 1+ pitting edema bilateral ankles, improved from prior" },
-          { number: 6, source: "2022 ACC/AHA Heart Failure Guidelines", quote: "GDMT for HFrEF includes ACE inhibitor, beta-blocker, mineralocorticoid receptor antagonist, and consideration of SGLT2 inhibitor.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063" }
+          { number: 1, source: "Visit transcript, 00:06:45", quote: "I'd really like to know when I can go back to work. I'm on medical leave right now" },
+          { number: 2, source: "Physical examination, today", quote: "All portal sites well-healed with minimal scarring. No erythema, no drainage, no warmth" },
+          { number: 3, source: "Visit transcript, 00:02:30", quote: "Pain is much better now. Just 2 out of 10 at rest, maybe 4 out of 10 during PT" },
+          { number: 4, source: "AAOS - Returning to Work After Shoulder Surgery", quote: "Desk work can typically resume 4-6 weeks after rotator cuff repair with restrictions. Full duty return depends on strength recovery, typically 3-4 months.", isExternal: true, externalUrl: "https://orthoinfo.aaos.org/en/recovery/activities-after-rotator-cuff-repair/" }
         ]
       }
     ],
@@ -154,8 +168,8 @@ export default function App() {
         type: 'assistant', 
         content: "Based on the previsit information{{1}}, imaging is not indicated at this time. The patient has no red flags{{2}} (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer). \n\nThis appears to be acute mechanical lower back pain. Per ACR Appropriateness Criteria{{3}}, imaging is usually not appropriate for nonspecific acute low back pain without red flags. Conservative management with NSAIDs and physical therapy is the recommended first-line approach{{4}}. Consider imaging if symptoms persist beyond 4-6 weeks or red flags develop.",
         citations: [
-          { number: 1, source: "Feb 12, Intake form, Ambient", quote: "Chief Complaint: Lower back pain x 4 days. Sharp pain localized to lower lumbar region (L4-L5 area). Pain severity: 7/10 at worst." },
-          { number: 2, source: "Feb 12, Intake form, Ambient", quote: "RED FLAGS ASSESSMENT: No fever, No trauma, No night pain, No history of cancer, No recent weight loss" },
+          { number: 1, source: "Visit transcript, 00:00:45", quote: "My back has been killing me for the past 4 days. It started after I helped my son move some furniture" },
+          { number: 2, source: "ROS documentation, today", quote: "Constitutional: Denies fever, chills, night sweats. Neurologic: No numbness, no tingling, no weakness. GU: Normal bowel and bladder function" },
           { number: 3, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" },
           { number: 4, source: "NEJM - Low Back Pain Review", quote: "First-line treatment for acute low back pain includes NSAIDs, acetaminophen, and continued activity as tolerated.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMra1614337" }
         ]
@@ -178,16 +192,19 @@ export default function App() {
       }
     ],
     "Lisa Anderson": [
-      { type: 'user', content: "The current migraine preventive isn't working well. What are the next options?" },
+      { type: 'user', content: "Is an MRI necessary for this meniscal tear?" },
       { 
         type: 'assistant', 
-        content: "Given limited response to propranolol after 3 months{{1}} and increasing frequency (4-6 migraine days/month{{2}}), consider switching to a CGRP inhibitor (e.g., erenumab, fremanezumab, galcanezumab). These have shown superior efficacy for chronic migraines{{3}}. \n\nAlso assess for medication overuse headache (using sumatriptan 2-3x/week{{1}} is approaching threshold{{4}}). Review trigger management strategies including sleep hygiene, stress reduction, and dietary modifications{{5}}.",
+        content: "Based on the clinical examination, an MRI is appropriate to confirm the diagnosis before planning treatment:\n\n**Strong clinical indicators:**\n• Classic history for meniscal injury{{1}} - gradual onset during running, medial joint line pain\n• Positive McMurray test{{2}} and positive Thessaly test{{3}} - high specificity for medial meniscus tear\n• Mechanical symptoms: clicking{{4}} and occasional giving way{{5}}\n\n**MRI utility:**\nWhile clinical diagnosis is highly suggestive{{6}}, MRI will:\n• Confirm tear location and morphology (horizontal vs vertical, displaced vs non-displaced){{7}}\n• Assess for associated pathology (cartilage damage, bone marrow edema)\n• Guide treatment decision (repair vs meniscectomy candidacy){{7}}\n• Important for young, active patient where repair is preferred if tear pattern is suitable{{8}}",
         citations: [
-          { number: 1, source: "Current medications, Athena", quote: "Propranolol 80mg daily (started 3 months ago). Sumatriptan 50mg as needed (using 2-3x/week)" },
-          { number: 2, source: "Dec 2025, Neurology visit, Athena", quote: "Migraine frequency: 4-6 days per month, moderate to severe intensity" },
-          { number: 3, source: "AHS CGRP Guidelines for Migraine Prevention", quote: "CGRP monoclonal antibodies are effective and well-tolerated options for migraine prevention, particularly for patients who have failed traditional preventive therapies.", isExternal: true, externalUrl: "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.13853" },
-          { number: 4, source: "ICHD-3 Medication Overuse Headache", quote: "Regular intake of triptans ≥10 days per month for >3 months can lead to medication-overuse headache.", isExternal: true, externalUrl: "https://ichd-3.org/8-headache-attributed-to-a-substance-or-its-withdrawal/8-2-medication-overuse-headache-moh/" },
-          { number: 5, source: "AAN Migraine Prevention Guidelines", quote: "Behavioral interventions including relaxation training, thermal biofeedback, and cognitive behavioral therapy should be considered.", isExternal: true, externalUrl: "https://www.aan.com/Guidelines/home/GetGuidelineContent/578" }
+          { number: 1, source: "Visit transcript, 00:01:45", quote: "I've been having pain in my left knee for about 3 weeks now. The pain started about 3 weeks ago." },
+          { number: 2, source: "Physical examination, today", quote: "McMurray test: **POSITIVE** for medial meniscus - reproduces medial joint line pain and palpable click with valgus stress and external rotation" },
+          { number: 3, source: "Physical examination, today", quote: "Thessaly test: **POSITIVE** - reproduction of medial joint line pain with internal rotation at 20 degrees of knee flexion" },
+          { number: 4, source: "Visit transcript, 00:04:00", quote: "Sometimes I feel a click or pop when I bend and straighten my knee." },
+          { number: 5, source: "Visit transcript, 00:04:40", quote: "A couple times my knee has felt like it was going to give out, but it hasn't fully." },
+          { number: 6, source: "AAOS Clinical Practice Guideline - Meniscal Injury", quote: "Clinical examination combined with patient history can suggest meniscal pathology, but MRI is recommended for definitive diagnosis.", isExternal: true, externalUrl: "https://www.aaos.org/quality/quality-programs/lower-extremity-programs/meniscus/" },
+          { number: 7, source: "JBJS - MRI for Meniscal Tears", quote: "MRI is highly accurate (sensitivity 93%, specificity 88%) for detecting meniscal tears and characterizing tear patterns critical for surgical planning.", isExternal: true, externalUrl: "https://journals.lww.com/jbjsjournal/Abstract/2003/07000/The_Accuracy_of_MRI_in_the_Diagnosis_of_Meniscal.1.aspx" },
+          { number: 8, source: "Arthroscopy Journal - Meniscal Repair", quote: "Young patients (<30) with traumatic tears are ideal repair candidates if tear morphology is appropriate (vertical, peripheral location).", isExternal: true, externalUrl: "https://www.arthroscopyjournal.org/article/S0749-8063(18)30001-5/fulltext" }
         ]
       }
     ]
@@ -213,127 +230,67 @@ export default function App() {
   // Data source content for each patient
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
     "Sarah Johnson": {
-      "Jan 15, Lab results, Athena": {
-        type: "Lab Report",
-        date: "Jan 15, 2024",
-        content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson\nDOB: 03/15/1982\nMRN: 12345678\n\n**METABOLIC PANEL**\nGlucose, Fasting: 145 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.8% [H] (Ref: <5.7%)\nPrevious A1c (10/15/2023): 7.2%\n\n**LIPID PANEL**\nTotal Cholesterol: 195 mg/dL\nLDL Cholesterol: 95 mg/dL\nHDL Cholesterol: 48 mg/dL\nTriglycerides: 125 mg/dL\n\n**RENAL FUNCTION**\nCreatinine: 0.9 mg/dL\neGFR: 72 mL/min/1.73m²"
-      },
-      "Feb 11, Home BP monitor, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024",
-        content: "**BLOOD PRESSURE LOG**\n\nPatient: Sarah Johnson\nDate Range: 01/28/2024 - 02/11/2024\n\n**AVERAGE READINGS**\nMorning: 135/85 mmHg\nEvening: 132/82 mmHg\nTotal Readings: 14\nGoal: <130/80 mmHg\n\n02/11: 134/84\n02/10: 137/86\n02/09: 133/83\n02/08: 136/85\n02/07: 135/84"
-      },
-      "Feb 11, Home scale, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024",
-        content: "**WEIGHT LOG**\n\nPatient: Sarah Johnson\n\n02/11: 185 lbs\n02/04: 185 lbs\n01/28: 185 lbs\n01/21: 186 lbs\n01/14: 185 lbs\n\nTrend: Stable"
-      },
-      "Oct 15, 2023, Follow-up visit, Athena": {
-        type: "Clinical Note",
-        date: "Oct 15, 2023",
-        content: "**FOLLOW-UP VISIT**\n\nPatient: Sarah Johnson, 42F\nChief Complaint: Diabetes follow-up\n\n**CURRENT MEDICATIONS**\n• Metformin 1000mg BID\n• Atorvastatin 20mg daily\n• Lisinopril 10mg daily\n\n**ASSESSMENT**\nType 2 Diabetes - A1c 7.2%\nHypertension - controlled\nHyperlipidemia - at goal\n\n**PLAN**\n• Continue medications\n• Annual foot exam completed\n• Schedule ophthalmology\n• Return in 3 months"
-      },
-      "Jun 15, 2023, Eye exam, Athena": {
-        type: "Specialist Report",
-        date: "Jun 15, 2023",
-        content: "**OPHTHALMOLOGY EXAM**\n\nPatient: Sarah Johnson\n\n**FINDINGS**\nVisual Acuity: 20/20 OU\nNo diabetic retinopathy\nNo macular edema\n\n**PLAN**\nReturn in 12 months for annual screening"
-      },
-      "Oct 15, 2023, Follow-up visit note, Athena": {
-        type: "Clinical Note",
-        date: "Oct 15, 2023",
-        content: "**FOLLOW-UP VISIT**\n\nPatient: Sarah Johnson, 42F\nChief Complaint: Diabetes follow-up\n\n**CURRENT MEDICATIONS**\n• Metformin 1000mg BID\n• Atorvastatin 20mg daily\n• Lisinopril 10mg daily\n\n**ASSESSMENT**\nType 2 Diabetes - A1c 7.2%\nHypertension - controlled\nHyperlipidemia - at goal\n\n**PLAN**\n• Continue medications\n• Annual foot exam completed\n• Schedule ophthalmology\n• Return in 3 months"
-      },
-      "Feb 11, Home monitoring, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024",
-        content: "**HOME MONITORING DATA**\n\nPatient: Sarah Johnson\nDate Range: 01/28/2024 - 02/11/2024\n\n**BLOOD PRESSURE LOG**\nMorning Average: 135/85 mmHg\nEvening Average: 132/82 mmHg\nTotal Readings: 14\nGoal: <130/80 mmHg\n\n**WEIGHT LOG**\nCurrent: 185 lbs\nTrend: Stable\n\n**SUMMARY**\nBlood pressure trending slightly above goal. Weight stable."
-      },
-      "Jun 15, 2023, Ophthalmology report, Athena": {
-        type: "Specialist Report",
-        date: "Jun 15, 2023",
-        content: "**OPHTHALMOLOGY EXAM**\n\nPatient: Sarah Johnson\n\n**FINDINGS**\nVisual Acuity: 20/20 OU\nNo diabetic retinopathy\nNo macular edema\n\n**PLAN**\nReturn in 12 months for annual screening"
-      },
-      "Jan 28, 2024, Lab results, Athena": {
-        type: "Lab Report",
-        date: "Jan 28, 2024",
-        content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson\nDOB: 03/15/1982\nMRN: 12345678\nDate: 01/28/2024\n\n**METABOLIC PANEL**\nGlucose, Fasting: 142 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.2% [H] (Ref: <7.0% for diabetics)\n\n**INTERPRETATION**\nA1c at target for diabetic patient but trending upward from 7.0% six months ago."
-      },
-      "Today, Lab results, Athena": {
-        type: "Lab Report",
-        date: "Today",
-        content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson\nDate: Today\n\n**METABOLIC PANEL**\nGlucose, Fasting: 145 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.8% [H] (Ref: <7.0% for diabetics) [Elevated - worsening control]\n\n**COMPARISON**\nPrevious A1c (01/28/2024): 7.2%\nTrend: Increasing despite medication adherence\n\n**RECOMMENDATION**\nConsider treatment intensification"
-      },
-      "Aug 2023, Ophthalmology screening, Athena": {
-        type: "Specialist Report",
-        date: "Aug 15, 2023",
-        content: "**OPHTHALMOLOGY SCREENING**\n\nPatient: Sarah Johnson\nDate: 08/15/2023\n\n**COMPREHENSIVE DIABETIC EYE EXAM**\nVisual Acuity: 20/20 OU\nIntraocular Pressure: Normal\nFundoscopic Exam: No diabetic retinopathy noted\nNo macular edema\n\n**ASSESSMENT**\nNo evidence of diabetic eye disease\n\n**PLAN**\nAnnual diabetic eye exam completed. Return in 12 months for follow-up screening."
-      },
-      "Current medications, Athena": {
-        type: "Medication List",
-        date: "Current",
-        content: "**CURRENT MEDICATIONS**\n\nPatient: Sarah Johnson\nLast Updated: Today\n\n**ACTIVE PRESCRIPTIONS**\n\n1. **Metformin 1000mg BID**\n   - Indication: Type 2 Diabetes Mellitus\n   - Prescribed: 10/15/2023\n   - Last Fill: 01/10/2024\n   - Refills: 3 remaining\n\n2. **Atorvastatin 20mg daily**\n   - Indication: Hyperlipidemia\n   - Prescribed: 04/20/2023\n   - Last Fill: 01/15/2024\n   - Refills: 5 remaining\n\n3. **Lisinopril 10mg daily**\n   - Indication: Hypertension\n   - Prescribed: 06/10/2023\n   - Last Fill: 01/12/2024\n   - Refills: 4 remaining"
-      },
-      "Jan 28, 2024, Clinical Note, Athena": {
-        type: "Clinical Note",
-        date: "Jan 28, 2024",
-        content: "**CLINICAL NOTE**\n\nPatient: Sarah Johnson, 42F\nDate: 01/28/2024\nChief Complaint: Diabetes follow-up\n\n**SOCIAL HISTORY**\nFamily History:\n• Father: Myocardial infarction at age 58\n• Mother: Type 2 diabetes diagnosed at age 55\n• No family history of stroke or cancer\n\n**ASSESSMENT**\nType 2 Diabetes - A1c 7.2%, trending upward\nFamilyCVD history increases ASCVD risk\n\n**PLAN**\n• Continue metformin\n• Counsel on diet and exercise\n• Consider adding SGLT2i or GLP-1 RA if A1c continues to rise\n• Return in 3 months"
-      }
-    },
-    "Robert Chen": {
-      "Oct 20, Hospital discharge summary, Athena": {
-        type: "Hospital Discharge",
-        date: "Oct 20, 2024",
-        content: "**DISCHARGE SUMMARY**\n\nPatient: Robert Chen, 68M\nAdmission: 10/03/2024\nDischarge: 10/20/2024\n\n**DIAGNOSIS**\nAcute decompensated heart failure\n\n**HOSPITAL COURSE**\nAdmitted with volume overload. IV diuresis initiated with good response. Weight decreased from 80.3kg to 78.2kg.\n\n**DISCHARGE MEDICATIONS**\n• Metoprolol succinate 25mg BID\n• Bumetanide 2mg daily\n• Entresto 24/26mg BID\n• Spironolactone 12.5mg daily\n\n**FOLLOW-UP**\n2 weeks with cardiology"
-      },
-      "Oct 15, Lab results, Athena": {
-        type: "Lab Report",
-        date: "Oct 15, 2024",
-        content: "**LABORATORY REPORT**\n\nPatient: Robert Chen\n\n**RENAL FUNCTION**\nCreatinine: 1.9 mg/dL\neGFR: 39 mL/min/1.73m²\nPotassium: 4.7 mmol/L\nSodium: 138 mmol/L\n\n**CARDIAC MARKERS**\nNT-proBNP: 1350 pg/mL\n(Prior 10/03: 2200 pg/mL)"
-      },
-      "Oct 7, Echocardiogram, Athena": {
-        type: "Diagnostic Report",
-        date: "Oct 7, 2024",
-        content: "**ECHOCARDIOGRAM**\n\nPatient: Robert Chen\n\n**FINDINGS**\nLVEF: 30% (visual estimate)\nPrior (03/24): 35%\nMild mitral regurgitation\nLBBB QRS duration: 152ms\n\n**IMPRESSION**\nSevere LV systolic dysfunction\nMeets criteria for CRT-D"
-      },
-      "Sep 25, Lab results, Athena": {
-        type: "Lab Report",
-        date: "Sep 25, 2024",
-        content: "**LAB RESULTS**\n\nPatient: Robert Chen\n\n**METABOLIC**\nHemoglobin A1c: 7.4%"
-      },
-      "May 10, Lab results, Athena": {
-        type: "Lab Report",
-        date: "May 10, 2024",
-        content: "**LAB RESULTS**\n\nPatient: Robert Chen\n\n**LIPID PANEL**\nLDL Cholesterol: 62 mg/dL"
-      },
       "Feb 12, Today's exam, Ambient": {
         type: "Visit Note",
         date: "Feb 12, 2024",
-        content: "**VISIT NOTE**\n\nPatient: Robert Chen\n\n**VITALS**\nO2 saturation: 96% on room air\n\n**EXAM**\nGeneral: NAD, comfortable\nLungs: Clear bilaterally\nExtremities: Trace-1+ edema"
+        content: "**OFFICE VISIT - ORTHOPEDIC SURGERY**\n\nPatient: Sarah Johnson, 62F\nDate: 02/12/2024\nChief Complaint: Right knee pain follow-up\n\n**VITAL SIGNS**\nBP: 132/78 mmHg\nHR: 74 bpm\nWeight: 210 lbs\nHeight: 5'4\"\nBMI: 34.2\n\n**PHYSICAL EXAMINATION**\n\nRight Knee:\n• Inspection: Moderate effusion, varus alignment (approximately 8 degrees)\n• Palpation: Tenderness to palpation at medial joint line and medial femoral condyle\n• Range of Motion: 5-110 degrees (limited by pain at terminal flexion)\n• Crepitus: Significant crepitus throughout ROM\n• Ligamentous: Stable to varus/valgus stress\n• Neurovascular: Intact\n\nLeft Knee:\n• Inspection: No effusion, neutral alignment\n• ROM: 0-125 degrees\n• Mild crepitus present\n\n**GAIT**\nAntalgic gait favoring right lower extremity"
       },
-      "Feb 11, Home BP monitor, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024",
-        content: "**HOME BP LOG**\n\nPatient: Robert Chen\n\n**2-WEEK AVERAGE**\nBP: 108/68 mmHg\nHR: 65-72 bpm (irregular)\n\nREADINGS:\n02/11: 108/68, HR 68\n02/10: 106/65, HR 72\n02/09: 110/70, HR 65\n02/08: 105/68, HR 70"
+      "Feb 12, Intake form, Ambient": {
+        type: "Intake Form",
+        date: "Feb 12, 2024",
+        content: "**PATIENT INTAKE FORM**\n\nPatient: Sarah Johnson\nDate: 02/12/2024\n\n**CHIEF COMPLAINT**\nRight knee pain and stiffness, progressively worsening\n\n**PAIN ASSESSMENT**\n• Right knee: 7/10 at rest, 9/10 with activity\n• Left knee: 4/10, manageable\n• Night pain: Yes, interferes with sleep\n• Location: Medial > lateral right knee\n\n**FUNCTIONAL LIMITATIONS**\n• Difficulty walking more than 1 block\n• Stairs very painful, requires handrail\n• Unable to kneel or squat\n• Difficulty with prolonged standing\n• Has stopped recreational walking\n\n**PREVIOUS TREATMENTS TRIED**\n• Physical therapy: 8 weeks, minimal benefit\n• Cortisone injection (October 2023): 6 weeks relief\n• NSAIDs (meloxicam): daily use, limited benefit\n• Glucosamine/chondroitin: no clear benefit\n• Weight loss attempts: ongoing\n\n**GOALS**\n• Improve pain and function\n• Return to walking for exercise\n• Able to play with grandchildren"
       },
-      "Feb 11, Home weight log, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024",
-        content: "**WEIGHT LOG**\n\nPatient: Robert Chen\n\nDischarge (10/20): 80.3kg\nCurrent: 78.2kg\nChange: -2.1kg\n\nDAILY WEIGHTS:\n02/11: 78.2kg\n02/10: 78.3kg\n02/09: 78.4kg"
+      "Jan 10, X-ray bilateral knees, Athena": {
+        type: "Imaging",
+        date: "Jan 10, 2024",
+        content: "**RADIOLOGY REPORT - BILATERAL KNEE X-RAYS**\n\nPatient: Sarah Johnson\nDOB: 05/22/1962\nMRN: SJ-445678\nExam Date: 01/10/2024\nStudy: Bilateral knee radiographs (AP, lateral, sunrise views)\n\n**TECHNIQUE**\nStanding AP, lateral, and sunrise views of both knees obtained.\n\n**FINDINGS**\n\nRIGHT KNEE:\n• Joint space: Severe narrowing of medial compartment (<2mm)\n• Osteophytes: Large marginal osteophytes at medial and lateral tibiofemoral joint\n• Subchondral changes: Severe sclerosis of medial tibial plateau and femoral condyle\n• Cysts: Subchondral cyst formation noted in medial tibial plateau\n• Alignment: Varus alignment approximately 8 degrees\n• Patellofemoral: Moderate degenerative changes\n• Kellgren-Lawrence Grade: 4\n\nLEFT KNEE:\n• Joint space: Moderate narrowing of medial and lateral compartments\n• Osteophytes: Moderate marginal osteophytes\n• Subchondral changes: Mild-moderate sclerosis\n• Alignment: Neutral\n• Kellgren-Lawrence Grade: 2-3\n\n**IMPRESSION**\n1. Severe tricompartmental osteoarthritis of right knee (Kellgren-Lawrence Grade 4) with varus malalignment\n2. Moderate osteoarthritis of left knee (Kellgren-Lawrence Grade 2-3)\n\nRecommendation: Clinical correlation advised. Severe degenerative changes right knee consistent with end-stage osteoarthritis."
       },
-      "Feb 11, Home weight log + Today's exam, Uploaded": {
-        type: "Home Monitoring",
-        date: "Feb 11, 2024 - Today",
-        content: "**HOME WEIGHT LOG & EXAM FINDINGS**\n\nPatient: Robert Chen\n\n**WEIGHT TREND**\nDischarge (10/20): 80.3 kg\nCurrent: 78.2 kg\nChange: -2.1 kg\n\n**WEIGHT LOG**\n02/11: 78.2 kg\n02/04: 78.3 kg\n01/28: 78.5 kg\n01/21: 78.7 kg\n\n**TODAY'S EXAM FINDINGS**\nExtremities: Trace to 1+ bilateral lower extremity edema (improved from 3+ at discharge)\nLungs: Clear to auscultation bilaterally\nCardiovascular: Irregular rhythm consistent with AFib"
+      "Jan 8, PCP visit, Athena": {
+        type: "Clinical Note",
+        date: "Jan 8, 2024",
+        content: "**PRIMARY CARE VISIT**\n\nPatient: Sarah Johnson, 62F\nDate: 01/08/2024\nChief Complaint: Routine follow-up, medication refills\n\n**CURRENT MEDICATIONS**\n• Lisinopril 20mg daily (Hypertension)\n• Meloxicam 15mg daily (Osteoarthritis)\n\n**VITAL SIGNS**\nBP: 128/78 mmHg\nWeight: 210 lbs\n\n**ASSESSMENT & PLAN**\n1. Hypertension - well-controlled on current regimen\n   - Continue lisinopril 20mg daily\n   - Home BP monitoring\n\n2. Obesity (BMI 34.2)\n   - Discussed weight loss importance, especially with upcoming knee surgery consideration\n   - Referred to nutritionist\n   - Goal: Lose 10-15 lbs before surgery\n\n3. Osteoarthritis - severe right knee\n   - Continue meloxicam\n   - Following with orthopedics\n   - Clearance given for elective surgery if indicated"
       },
-      "Last visit note, Athena": {
+      "Oct 20, 2023, Office visit, Athena": {
+        type: "Clinical Note",
+        date: "Oct 20, 2023",
+        content: "**ORTHOPEDIC OFFICE VISIT**\n\nPatient: Sarah Johnson, 62F\nDate: 10/20/2023\nChief Complaint: Bilateral knee pain, worse on right\n\n**HISTORY OF PRESENT ILLNESS**\nPatient presents with progressive bilateral knee pain over past 2 years, significantly worse on the right. Reports pain 6/10 at rest, 8-9/10 with activity. Difficulty with stairs, prolonged standing, and walking >2 blocks. Night pain present. Has tried PT, NSAIDs with limited benefit. Previous cortisone injection to right knee (6 months ago) provided only 2-3 weeks relief.\n\n**PHYSICAL EXAMINATION**\n• Right knee: Moderate effusion, palpable osteophytes, ROM 5-110° with crepitus and pain, varus alignment\n• Left knee: Mild crepitus, ROM 0-125°\n\n**IMAGING**\nX-ray bilateral knees (10/20/2023):\n• Right: Kellgren-Lawrence Grade 3-4 osteoarthritis\n• Left: Kellgren-Lawrence Grade 2-3 osteoarthritis\n\n**PROCEDURE PERFORMED**\nIntra-articular corticosteroid injection, right knee\n• Kenalog 40mg + 1% lidocaine 3mL\n• Medial approach, superolateral portal\n• Aspiration: 5mL straw-colored fluid (sent for analysis - non-inflammatory)\n• Injection performed under sterile technique\n• No complications\n\n**ASSESSMENT**\n1. Severe right knee osteoarthritis (Kellgren-Lawrence Grade 3-4)\n2. Moderate left knee osteoarthritis (Grade 2-3)\n\n**PLAN**\n• Continue NSAIDs (meloxicam 15mg daily)\n• Continue PT for strengthening\n• Discussed surgical options including total knee arthroplasty\n• Patient wishes to defer surgery at this time\n• Follow up in 3 months to reassess\n• If injection benefit <3 months, consider surgery\n\n**SURGICAL DISCUSSION**\nDiscussed risks, benefits, and alternatives of total knee arthroplasty including:\n• Expected outcomes and recovery timeline\n• Risks: infection, blood clots, stiffness, persistent pain\n• Importance of weight optimization (current BMI 35)\n• Realistic expectations\nPatient expressed understanding but wants to try conservative management first."
+      }
+    },
+    "Robert Chen": {
+      "Feb 12, Today's visit, Ambient": {
         type: "Visit Note",
-        date: "Today",
-        content: "**FOLLOW-UP VISIT NOTE**\n\nPatient: Robert Chen, 68M\nDate: Today\nChief Complaint: 2-week post-hospitalization follow-up for acute decompensated heart failure\n\n**VITAL SIGNS**\nBP: 108/68 mmHg\nHR: 78 bpm (irregular)\nRR: 16 breaths/min\nO2 saturation: 97% on room air\nTemperature: 98.6°F\n\n**PHYSICAL EXAMINATION**\n\nGeneral: No acute distress, comfortable at rest\n\nCardiovascular:\n• Irregular rhythm consistent with atrial fibrillation\n• S1 and S2 present\n• 2/6 holosystolic murmur at apex, radiating to axilla (mitral regurgitation)\n• No S3 or S4 gallop\n• JVP estimated at 8 cm (normal)\n\nRespiratory:\n• Lungs clear to auscultation bilaterally\n• No rales, wheezes, or rhonchi\n• Good air movement throughout\n\nExtremities:\n• 1+ pitting edema bilateral ankles to mid-shin\n• Improved from 3+ at discharge 2 weeks ago\n• Pedal pulses 2+ bilaterally\n• Capillary refill <2 seconds\n\n**ASSESSMENT**\n1. Heart failure with reduced ejection fraction (HFrEF, EF 30%) - improved volume status\n2. Atrial fibrillation - controlled ventricular rate\n3. Chronic kidney disease stage 3b - stable\n\n**WEIGHT TREND**\nDischarge (10/20): 80.3 kg\nToday: 78.2 kg\nChange: -2.1 kg (good diuretic response)\n\n**PLAN**\n• Continue current heart failure regimen\n• Monitor for hypotension and renal function\n• Consider CRT-D evaluation\n• Follow-up in 4 weeks"
+        date: "Feb 12, 2024",
+        content: "**6-WEEK POST-OPERATIVE VISIT**\n\nPatient: Robert Chen, 58M\nDate: 02/12/2024\nProcedure: Right shoulder arthroscopic rotator cuff repair (01/03/2024)\n\n**SUBJECTIVE**\nPatient reports doing well overall. Pain well-controlled, 2/10 at rest, 4/10 with PT. Sleeping better, able to lie on left side. Sling discontinued 2 weeks ago per PT. No numbness, tingling, or signs of infection. Attending PT 3x/week.\n\n**PHYSICAL EXAMINATION**\n\nInspection:\n• Surgical portals: Well-healed, no erythema, warmth, or drainage\n• Minimal scarring\n• Very mild glenohumeral effusion (expected)\n\nPalpation:\n• No tenderness over surgical sites\n• No warmth or signs of infection\n\nRange of Motion (Passive):\n• Forward flexion: 110°\n• Abduction: 80°\n• External rotation: 30°\n• Internal rotation: To sacrum\n• All measurements limited by guarding, not pain\n\nStrength:\n• Deferred at this timepoint to protect repair\n\nNeurovascular:\n• Axillary nerve: Deltoid sensation intact\n• Radial/median/ulnar nerves: Intact\n• Capillary refill <2 seconds\n• Radial pulse 2+\n\n**ASSESSMENT**\n6 weeks status post arthroscopic rotator cuff repair, progressing well per protocol\n\n**PLAN**\n1. Advance to active-assisted ROM exercises\n2. Continue PT 3x/week\n3. Wean off tramadol, continue acetaminophen PRN\n4. Clear for modified duty work (desk work, no lifting >5 lbs, no reaching overhead)\n5. Return to clinic in 6 weeks\n6. Formal strength testing at 12 weeks post-op"
       },
-      "Current medications, Athena": {
-        type: "Medication List",
-        date: "Current",
-        content: "**CURRENT MEDICATIONS**\n\nPatient: Robert Chen\nLast Updated: Today\n\n**ACTIVE PRESCRIPTIONS**\n\n1. **Furosemide 40mg PO daily**\n   - Indication: Heart failure, volume management\n   - Prescribed: 10/20/2024 (at discharge)\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n2. **Carvedilol 12.5mg PO BID**\n   - Indication: Heart failure with reduced EF\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Target dose: 25mg BID (uptitration in progress)\n   - Refills: 3 remaining\n\n3. **Lisinopril 20mg PO daily**\n   - Indication: Heart failure, hypertension\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n4. **Spironolactone 25mg PO daily**\n   - Indication: Heart failure (aldosterone antagonist)\n   - Prescribed: 10/20/2024\n   - Last Fill: 10/20/2024\n   - Refills: 3 remaining\n\n5. **Apixaban 5mg PO BID**\n   - Indication: Atrial fibrillation (stroke prevention)\n   - Prescribed: 06/15/2024\n   - Last Fill: 01/10/2024\n   - Refills: 5 remaining\n\n6. **Metformin 1000mg PO BID**\n   - Indication: Type 2 diabetes\n   - Prescribed: 03/20/2023\n   - Last Fill: 12/28/2024\n   - Refills: 4 remaining"
+      "Feb 12, Intake form, Ambient": {
+        type: "Intake Form",
+        date: "Feb 12, 2024",
+        content: "**POST-OPERATIVE INTAKE FORM**\n\nPatient: Robert Chen\nDate: 02/12/2024\nSurgery Date: 01/03/2024 (6 weeks ago)\nProcedure: Right shoulder arthroscopic rotator cuff repair\n\n**CURRENT SYMPTOMS**\n• Pain: 2/10 at rest, 4/10 with PT exercises\n• Sleep: Improved, can lie on left side\n• Sling use: Discontinued 2 weeks ago\n\n**COMPLICATIONS SCREENING**\n• No numbness or tingling in arm/hand\n• No signs of infection (no fever, redness, drainage)\n• No new swelling\n• No concerning symptoms\n\n**PHYSICAL THERAPY**\n• Started: 2 weeks post-op\n• Frequency: 3x per week\n• Current phase: Passive ROM\n• Compliance: Excellent, doing home exercises daily\n• Therapist notes good progress\n\n**MEDICATIONS**\n• Tramadol 50mg: 1-2 tablets/day (mainly before PT)\n• Acetaminophen 1000mg TID: Regular use\n• Lisinopril 10mg daily: Continuing\n\n**WORK STATUS**\n• Occupation: Software engineer (desk job)\n• Currently: On medical leave\n• Concerns: Ready to return but needs clearance\n• Employer: Requesting return-to-work note with restrictions\n\n**GOALS**\n• Return to work soon\n• Continue improving ROM\n• Reduce pain medication use"
+      },
+      "Feb 5, PT progress note, Athena": {
+        type: "Therapy Note",
+        date: "Feb 5, 2024",
+        content: "**PHYSICAL THERAPY PROGRESS NOTE**\n\nPatient: Robert Chen\nDOB: 08/15/1966\nDiagnosis: S/P right rotator cuff repair (01/03/2024)\nSession: Week 5 post-op, Session #9\n\n**SUBJECTIVE**\nPatient reports pain 3-4/10 during exercises, manageable. Sleeping better. Discontinued sling use at home per last visit. Compliant with home exercise program.\n\n**OBJECTIVE**\n\nRange of Motion (Passive):\n• Forward flexion: 110° (goal 140° by 8 weeks)\n• Abduction: 80° (goal 120° by 8 weeks)\n• External rotation (arm at side): 30° (goal 45° by 8 weeks)\n• Internal rotation: To sacrum\n\nMeasurements performed supine to ensure true passive motion. Patient demonstrates good relaxation during stretching.\n\n**INTERVENTIONS**\n• Passive ROM exercises: Pulleys, wand exercises, therapist-assisted stretching\n• Scapular stabilization: Isometric exercises initiated\n• Gentle pendulum exercises\n• Modalities: Ice post-treatment\n• Education: Sleeping positions, activity modifications\n\n**ASSESSMENT**\nPatient progressing well within expected timeline for 5 weeks post-op. Good compliance with protocol. No active ROM permitted until cleared by surgeon (typically 6-8 weeks).\n\n**PLAN**\n• Continue 3x/week therapy\n• Progress passive ROM as tolerated\n• Add gentle active-assisted ROM pending surgeon clearance at 6-week visit\n• Prepare for strengthening phase (weeks 8-12)\n\nNext visit: 02/08/2024"
+      },
+      "Jan 17, 2-week post-op visit, Athena": {
+        type: "Clinical Note",
+        date: "Jan 17, 2024",
+        content: "**2-WEEK POST-OPERATIVE VISIT**\n\nPatient: Robert Chen, 58M\nDate: 01/17/2024\nSurgery Date: 01/03/2024\nProcedure: Arthroscopic rotator cuff repair, right shoulder\n\n**SUBJECTIVE**\nPatient reports pain 4-5/10, improved from immediate post-op. Using narcotics 3-4x/day. Sleeping in recliner. Compliant with sling use and pendulum exercises only.\n\n**OBJECTIVE**\n\nInspection:\n• Incisions: All portal sites clean, dry, intact\n• Mild steri-strip residue, no erythema\n• Mild glenohumeral effusion (expected)\n\nPalpation:\n• No warmth, no drainage\n• Minimal tenderness over surgical sites\n\nNeurovascular:\n• Axillary nerve function: Deltoid sensation intact (critical finding)\n• Radial/median/ulnar nerves: Intact\n• Vascular: Radial pulse 2+, capillary refill <2 seconds\n\nRange of Motion:\n• Not formally assessed (too early, protecting repair)\n• Patient able to perform gentle pendulum exercises without difficulty\n\n**ASSESSMENT**\n2 weeks status post arthroscopic rotator cuff repair, healing well without complications\n\n**PLAN**\n1. Continue sling immobilization for 4 more weeks (total 6 weeks)\n2. Start formal physical therapy this week - passive ROM protocol\n3. Continue pain medications as prescribed\n4. Cleared to remove steri-strips\n5. Return to clinic in 4 weeks (6-week post-op visit)\n6. Call immediately for: fever, increased redness/drainage, new numbness\n\n**RESTRICTIONS**\n• No active ROM until 6 weeks\n• No lifting with right arm\n• No reaching behind back\n• Continue sling use except for hygiene and PT"
+      },
+      "Jan 3, Operative report, Athena": {
+        type: "Operative Report",
+        date: "Jan 3, 2024",
+        content: "**OPERATIVE REPORT**\n\nPatient: Robert Chen\nDOB: 08/15/1966\nMRN: RC-887654\nDate of Surgery: 01/03/2024\nSurgeon: Dr. [Attending Orthopedic Surgeon]\n\nPREOPERATIVE DIAGNOSIS:\nFull-thickness rotator cuff tear, right shoulder\n\nPOSTOPERATIVE DIAGNOSIS:\n1. Large full-thickness tear of supraspinatus tendon (2.5cm)\n2. High-grade partial-thickness tear of infraspinatus tendon (>50%)\n\nPROCEDURE PERFORMED:\nArthroscopic rotator cuff repair, right shoulder with double-row suture anchor technique\n\nANESTHESIA:\nGeneral anesthesia with interscalene block\n\nCOMPLICATIONS:\nNone\n\nEBL: <50mL\n\nINDICATIONS:\n58-year-old male with chronic right shoulder pain and MRI-confirmed full-thickness rotator cuff tear failing conservative management for 6 months. Patient presents for arthroscopic repair.\n\nFINDINGS:\n• Supraspinatus tendon: Full-thickness tear measuring approximately 2.5cm in anteroposterior dimension, retracted to glenoid rim\n• Infraspinatus tendon: High-grade partial-thickness articular-side tear (>50% thickness)\n• Subscapularis: Intact\n• Long head biceps tendon: Intact, no significant fraying\n• Labrum: Intact\n• Articular cartilage: Grade 2 changes (superficial fibrillation)\n• Subacromial space: Moderate bursitis\n\nPROCEDURE DESCRIPTION:\nPatient positioned in beach chair. Standard posterior, lateral, and anterior portals established. Diagnostic arthroscopy performed confirming rotator cuff tear as above.\n\nSubacromial bursectomy performed for visualization. Rotator cuff tear identified and mobilized. Footprint on greater tuberosity prepared with shaver and burr.\n\nDouble-row rotator cuff repair technique:\n• Medial row: Two 5.5mm PEEK anchors placed at medial aspect of footprint\n• Sutures passed through tendon in mattress configuration\n• Tendon reduced to footprint with good tissue quality\n• Lateral row: Two 4.75mm knotless anchors placed at lateral footprint\n• Repair under minimal tension with excellent coverage\n\nFinal inspection showed stable repair with good tissue approximation. No neurovascular complications.\n\nPOSTOPERATIVE PLAN:\n• Sling immobilization with abduction pillow x 6 weeks\n• Pendulum exercises only for first 2 weeks\n• Physical therapy to begin week 2 - passive ROM protocol\n• Pain management: Tramadol, acetaminophen\n• Follow-up: 2 weeks for wound check, 6 weeks for ROM progression\n• No active ROM until 6-8 weeks post-op\n• Anticipated return to full activities: 4-6 months"
+      },
+      "Dec 20, 2023, Pre-operative visit, Athena": {
+        type: "Clinical Note",
+        date: "Dec 20, 2023",
+        content: "**PRE-OPERATIVE EVALUATION**\n\nPatient: Robert Chen, 58M\nDate: 12/20/2023\nScheduled Procedure: Right shoulder arthroscopic rotator cuff repair (01/03/2024)\n\n**HISTORY**\nPatient with chronic right shoulder pain x 18 months, initially treated conservatively with PT and cortisone injection with temporary relief. MRI confirms full-thickness supraspinatus tear. Patient desires surgical repair to return to activities.\n\n**OCCUPATION**\nSoftware engineer - desk work, significant computer use\n\n**MEDICAL CLEARANCE**\n• PCP clearance obtained\n• EKG: Normal sinus rhythm\n• Labs: Within normal limits\n• Hypertension: Well-controlled on lisinopril\n\n**SURGICAL PLAN DISCUSSED**\n• Arthroscopic rotator cuff repair\n• Expected hospital stay: Outpatient/same-day discharge\n• Anesthesia: General with interscalene nerve block\n• Estimated surgical time: 90-120 minutes\n\n**POST-OPERATIVE EXPECTATIONS**\n• Sling immobilization: 6 weeks\n• Physical therapy: Starting week 2\n• Return to desk work: 4-6 weeks (modified duty)\n• Return to full activities: 4-6 months\n\n**RISKS DISCUSSED**\n• Infection (<1%)\n• Stiffness (10-15%)\n• Re-tear (10-30% depending on size)\n• Nerve injury (<1%)\n• Persistent pain\n• Need for revision surgery\n\nPatient verbalized understanding and provided informed consent."
+      },
+      "Dec 15, 2023, PCP visit, Athena": {
+        type: "Clinical Note",
+        date: "Dec 15, 2023",
+        content: "**PRE-OPERATIVE CLEARANCE**\n\nPatient: Robert Chen, 58M\nDate: 12/15/2023\nReason: Surgical clearance for right shoulder rotator cuff repair\n\n**CURRENT MEDICATIONS**\n• Lisinopril 10mg daily\n\n**MEDICAL HISTORY**\n• Hypertension - well-controlled\n• No diabetes, no cardiac disease\n• No prior surgeries\n\n**PHYSICAL EXAMINATION**\nVitals: BP 128/76, HR 72, RR 14\nCardiac: RRR, no murmurs\nLungs: Clear bilaterally\nGeneral: Good surgical candidate\n\n**ASSESSMENT**\n58-year-old male with well-controlled hypertension, good general health\n\n**CLEARANCE**\nMedically cleared for elective orthopedic surgery under general anesthesia\n\n**RECOMMENDATIONS**\n• Continue lisinopril through surgery\n• No additional testing needed\n• Follow up post-operatively PRN"
       }
     },
     "Maria Garcia": {
@@ -387,162 +344,209 @@ export default function App() {
   const patients = [
     { 
       name: "Sarah Johnson", 
-      age: 42, 
+      age: 62, 
       gender: "F", 
       time: "9:00 am", 
       status: "In Queue", 
-      chiefComplaint: "Diabetes Follow-up",
+      chiefComplaint: "Right Knee Pain",
       atAGlance: [
-        "Type 2 Diabetes (diagnosed 2019); recent A1c 7.8% (above target); patient reports good medication adherence.",
-        "Next step → review diet/exercise compliance; consider adjusting metformin dose; schedule ophthalmology referral."
+        "Bilateral knee OA (R>L); progressive pain and stiffness; conservative management failing; significant functional limitation.",
+        "Next step → review recent imaging; discuss total knee arthroplasty options; assess readiness for surgery."
       ],
       details: [
-        "3-month diabetes follow-up",
-        "Type 2 DM / Hyperlipidemia / HTN"
+        "Follow-up for knee osteoarthritis",
+        "Bilateral knee OA (R>L) / HTN / Obesity"
       ],
       sections: {
-        "Labs (Recent)": [
-          "A1c 7.8% ↑ (from 7.2% 3mo ago); FBG 145 mg/dL {{1}}",
-          "LDL 95 mg/dL (on target); HDL 48 mg/dL {{2}}",
-          "Creatinine 0.9 mg/dL (eGFR 72) - stable {{3}}"
+        "Last Visit Summary": [
+          "Patient presented 3 months ago for bilateral knee pain. {{1}}",
+          "X-rays showed advanced osteoarthritis (Kellgren-Lawrence Grade 3-4) worse on right. {{2}}",
+          "Tried cortisone injection to right knee with temporary relief (6 weeks). {{3}}",
+          "Discussed surgical options but patient wanted to try more conservative management first. {{4}}",
+          "Started on PT and oral NSAIDs. Plan was to follow up in 3 months to reassess. {{18}}"
+        ],
+        "Pain & Function": [
+          "Right knee pain 7/10 at rest, 9/10 with activity {{5}}",
+          "Difficulty walking >1 block; stairs very painful {{6}}",
+          "Night pain interfering with sleep {{19}}",
+          "Left knee mild pain (4/10) - manageable for now {{7}}"
+        ],
+        "Imaging": [
+          "X-ray (Jan 10): Right knee - severe joint space narrowing, large osteophytes, subchondral sclerosis {{8}}",
+          "Left knee - moderate OA changes (KL Grade 2-3) {{9}}"
+        ],
+        "Physical Exam (Last Visit)": [
+          "Right knee: Moderate effusion, crepitus with ROM, ROM 5-110° {{10}}",
+          "Varus alignment, tenderness at medial joint line {{20}}",
+          "Left knee: Mild crepitus, ROM 0-125° {{11}}"
+        ],
+        "Prior Treatments": [
+          "PT x 8 weeks - minimal benefit {{12}}",
+          "Cortisone injection (Oct 2023) - 6 weeks relief {{21}}",
+          "NSAIDs (meloxicam 15mg daily), glucosamine - ongoing {{13}}"
         ],
         "Current Medications": [
-          "Metformin 1000mg BID {{4}}",
-          "Atorvastatin 20mg daily {{5}}",
-          "Lisinopril 10mg daily {{6}}"
+          "Meloxicam 15mg daily {{22}}",
+          "Lisinopril 20mg daily (HTN) {{14}}",
+          "Tylenol PRN {{15}}"
         ],
-        "Vitals": [
-          "BP trending 135/85 (slightly elevated) {{7}}",
-          "Weight 185 lbs (stable from last visit) {{8}}"
-        ],
-        "Screening & Referrals": [
-          "Last ophthalmology exam: 8 months ago (annual screening due) {{9}}",
-          "Foot exam due today {{10}}",
-          "eGFR stable - monitor annually {{11}}"
+        "Comorbidities": [
+          "HTN - well controlled on lisinopril {{23}}",
+          "BMI 34 (obesity) - weight loss attempts ongoing {{16}}",
+          "No diabetes, no cardiac disease {{17}}"
         ]
       },
       citations: [
-        { number: 1, citedText: "A1c and FBG", quote: "Hemoglobin A1c: 7.8% (prior 7.2% three months ago), Fasting blood glucose: 145 mg/dL", source: "Jan 15, Lab results, Athena" },
-        { number: 2, citedText: "lipids", quote: "LDL cholesterol: 95 mg/dL, HDL cholesterol: 48 mg/dL", source: "Jan 15, Lab results, Athena" },
-        { number: 3, citedText: "renal function", quote: "Serum creatinine: 0.9 mg/dL, eGFR: 72 mL/min (stable)", source: "Jan 15, Lab results, Athena" },
-        { number: 4, citedText: "metformin", quote: "Metformin 1000mg BID for diabetes management", source: "Oct 15, 2023, Follow-up visit note, Athena" },
-        { number: 5, citedText: "atorvastatin", quote: "Atorvastatin 20mg daily for hyperlipidemia", source: "Oct 15, 2023, Follow-up visit note, Athena" },
-        { number: 6, citedText: "lisinopril", quote: "Lisinopril 10mg daily for hypertension", source: "Oct 15, 2023, Follow-up visit note, Athena" },
-        { number: 7, citedText: "blood pressure", quote: "Home BP average: 135/85 mmHg (last 2 weeks)", source: "Feb 11, Home monitoring, Uploaded" },
-        { number: 8, citedText: "weight", quote: "Weight: 185 lbs (stable from last visit)", source: "Feb 11, Home monitoring, Uploaded" },
-        { number: 9, citedText: "eye exam", quote: "Comprehensive diabetic eye examination completed 06/15/2023. No diabetic retinopathy noted. Annual screening due.", source: "Jun 15, 2023, Ophthalmology report, Athena" },
-        { number: 10, citedText: "foot exam", quote: "Annual diabetic foot exam due per ADA guidelines", source: "Oct 15, 2023, Follow-up visit note, Athena" },
-        { number: 11, citedText: "eGFR monitoring", quote: "Continue annual eGFR monitoring for diabetic nephropathy screening", source: "Oct 15, 2023, Follow-up visit note, Athena" }
+        { number: 1, citedText: "visit reason", quote: "Follow-up Visit - October 20, 2023. Chief Complaint: Bilateral knee pain, worse on right. History: Progressive pain over 2 years, worse with stairs and prolonged standing.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 2, citedText: "imaging findings", quote: "X-ray bilateral knees (10/20/2023) showing Kellgren-Lawrence Grade 3-4 osteoarthritis right knee, Grade 2-3 left knee.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 3, citedText: "injection performed", quote: "Intra-articular corticosteroid injection to right knee performed. Patient experienced approximately 6 weeks of pain relief before symptoms returned to baseline.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 4, citedText: "treatment plan", quote: "Discussed surgical options including total knee arthroplasty but patient wishes to defer surgery at this time.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 5, citedText: "pain severity", quote: "Right knee pain 7/10 at rest, increases to 9/10 with activity such as walking or climbing stairs.", source: "Feb 12, Intake form, Ambient" },
+        { number: 6, citedText: "functional limitation", quote: "Patient reports significant functional limitation - difficulty walking more than one block, requires handrail for stairs, and has stopped recreational walking due to pain", source: "Feb 12, Intake form, Ambient" },
+        { number: 7, citedText: "left knee pain", quote: "Left knee pain 4/10, managed with current medications, not limiting function at this time", source: "Feb 12, Intake form, Ambient" },
+        { number: 8, citedText: "right knee imaging", quote: "Right knee AP, lateral, and sunrise views: Severe joint space narrowing of medial compartment, large marginal osteophytes, subchondral sclerosis, and cyst formation. Kellgren-Lawrence Grade 4. Varus alignment approximately 8 degrees.", source: "Jan 10, X-ray bilateral knees, Athena" },
+        { number: 9, citedText: "left knee imaging", quote: "Left knee AP, lateral, and sunrise views: Moderate joint space narrowing, moderate osteophyte formation, mild subchondral sclerosis. Kellgren-Lawrence Grade 2-3. Alignment neutral.", source: "Jan 10, X-ray bilateral knees, Athena" },
+        { number: 10, citedText: "right knee exam", quote: "Right knee examination: Moderate effusion present, crepitus with passive range of motion, ROM 5-110 degrees (limited by pain)", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 11, citedText: "left knee exam", quote: "Left knee examination: Mild crepitus with range of motion, ROM 0-125 degrees, no effusion, minimal tenderness", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 12, citedText: "prior treatments", quote: "Physical therapy: 8 weeks of strengthening and ROM exercises completed, minimal pain relief noted.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 13, citedText: "NSAIDs", quote: "Current medications: Meloxicam 15mg daily for osteoarthritis pain, glucosamine/chondroitin supplement", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 14, citedText: "hypertension", quote: "Hypertension well-controlled on lisinopril 20mg daily, most recent BP 128/78", source: "Jan 8, PCP visit, Athena" },
+        { number: 15, citedText: "acetaminophen", quote: "Acetaminophen 1000mg taken as needed for breakthrough pain", source: "Feb 12, Intake form, Ambient" },
+        { number: 16, citedText: "BMI", quote: "Height 5'4\", Weight 210 lbs, BMI 34.2. Patient actively working on weight loss through dietary modification.", source: "Feb 12, Today's exam, Ambient" },
+        { number: 17, citedText: "medical history", quote: "Past medical history: Hypertension (controlled). No diabetes mellitus, no coronary artery disease, no prior surgeries.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 18, citedText: "treatment plan continued", quote: "Continue NSAIDs and PT for strengthening. Follow up in 3 months to reassess symptoms and functional status.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 19, citedText: "night pain", quote: "Reports night pain that wakes her from sleep approximately 3-4 times per week.", source: "Feb 12, Intake form, Ambient" },
+        { number: 20, citedText: "right knee alignment", quote: "Right knee examination: varus alignment, tenderness to palpation at medial joint line and medial femoral condyle", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 21, citedText: "injection relief", quote: "Intra-articular corticosteroid injection performed with approximately 6 weeks of pain relief before symptoms returned to baseline.", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 22, citedText: "meloxicam", quote: "Meloxicam 15mg daily for osteoarthritis pain", source: "Oct 20, 2023, Office visit, Athena" },
+        { number: 23, citedText: "BP control", quote: "Hypertension well-controlled on lisinopril 20mg daily, most recent BP 128/78", source: "Jan 8, PCP visit, Athena" }
       ],
       dataSources: [
-        "Jan 15, Lab results, Athena",
-        "Feb 11, Home BP monitor, Uploaded",
-        "Feb 11, Home scale, Uploaded",
-        "Oct 15, 2023, Follow-up visit, Athena",
-        "Jun 15, 2023, Eye exam, Athena"
+        "Feb 12, Today's exam, Ambient",
+        "Feb 12, Intake form, Ambient",
+        "Jan 10, X-ray bilateral knees, Athena",
+        "Jan 8, PCP visit, Athena",
+        "Oct 20, 2023, Office visit, Athena"
       ],
       careNudges: [
         {
-          type: "Medication Adjustment",
-          description: "Add GLP-1 agonist (Ozempic) - A1c rising despite metformin adherence.",
-          highlightId: "sarah-labs-recent-0"
+          type: "Surgical Consultation",
+          description: "Discuss total knee arthroplasty - conservative management failing, severe OA on imaging.",
+          highlightId: "sarah-pain-function-0"
         },
         {
-          type: "Screening Due",
-          description: "Schedule ophthalmology referral - last eye exam 8 months ago.",
-          highlightId: "sarah-screening-referrals-0"
+          type: "Pre-operative Optimization",
+          description: "Weight loss goal BMI <35 before TKA - currently BMI 34.2, discuss timeline.",
+          highlightId: "sarah-comorbidities-1"
         },
         {
-          type: "Blood Pressure",
-          description: "Uptitrate lisinopril to 20mg or add amlodipine - BP 135/85, above goal.",
-          highlightId: "sarah-vitals-0"
+          type: "Repeat Injection",
+          description: "Consider repeat cortisone injection if patient wants to defer surgery further.",
+          highlightId: "sarah-prior-treatments-1"
         }
       ]
     },
     { 
       name: "Robert Chen", 
-      age: 68, 
+      age: 58, 
       gender: "M", 
       time: "9:30 am", 
-      status: "Generated", 
-      chiefComplaint: "Heart Failure",
+      status: "In Queue", 
+      chiefComplaint: "Right Shoulder Post-Op",
       atAGlance: [
-        "Recovering post-ADHF; good diuretic response; renal reserve adequate.",
-        "Next step → complete GDMT and device evaluation; monitor for hypotension or renal shift."
+        "6 weeks post-op right rotator cuff repair; good early healing; ROM progressing per protocol; minimal pain.",
+        "Next step → advance PT to active ROM; discuss return to work timeline; confirm healing on exam."
       ],
       details: [
-        "2 wk post-HF hospitalization (10/03–10/07)",
-        "HFrEF 30% / ischemic cardiomyopathy / AF / CKD 3b / T2DM"
+        "6-week post-op visit - rotator cuff repair",
+        "S/P R shoulder RC repair (supraspinatus, infraspinatus) / HTN"
       ],
       sections: {
-        "Heart Function": [
-          "EF 30% ↓ (from 35% 03/24); mild MR; LBBB 152 ms → meets CRT criteria {{1}}",
-          "No device yet {{2}}"
+        "Last Visit Summary": [
+          "Patient underwent arthroscopic rotator cuff repair on January 3rd. {{1}}",
+          "Intraoperative findings showed large full-thickness tear of supraspinatus (2.5cm) and partial-thickness tear of infraspinatus. {{2}}",
+          "Repaired with double-row technique using 4 anchors. {{3}}",
+          "Surgery uncomplicated, placed in sling with abduction pillow. {{1}}",
+          "Started on pain medications and instructed on pendulum exercises only for first 2 weeks. {{4}}",
+          "PT to begin at 2 weeks post-op, follow-up scheduled for 6 weeks. {{4}}"
         ],
-        "Volume & Weight": [
-          "80.3 kg → 78.2 kg (–2.1 kg); mild ankle edema; lungs clear → near dry weight {{3}}"
+        "Surgical Details": [
+          "Procedure: Arthroscopic rotator cuff repair (1/3/24) {{1}}",
+          "Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial) {{2}}",
+          "Repair: Double-row technique, 4 suture anchors {{3}}",
+          "No complications intraoperatively {{1}}"
         ],
-        "Renal / Labs": [
-          "Cr 1.9 mg/dL (eGFR 39); K 4.7, Na 138 → safe for MRA and SGLT2 start {{4}}",
-          "NT-proBNP 2200 → 1350 ↓ (improving) {{5}}",
-          "A1c 7.4 (09/25) {{6}}; LDL 62 (05/25) {{7}}"
+        "Current Symptoms": [
+          "Pain 2/10 at rest, 4/10 with PT exercises {{5}}",
+          "Sleeping better - able to lie on left side {{5}}",
+          "Sling discontinued 2 weeks ago per PT {{6}}",
+          "No numbness, tingling, or signs of infection {{7}}"
         ],
-        "Vitals": [
-          "Home BP ~108/68 (low-normal). Monitor closely during GDMT uptitration {{8}}",
-          "HR 65-72 (controlled AF on metoprolol) {{9}}",
-          "O2 sat 96% on room air {{10}}"
+        "Physical Therapy Progress": [
+          "PT started week 2 - passive ROM protocol {{8}}",
+          "Current ROM: Forward flexion 110°, abduction 80° (passive) {{9}}",
+          "No active ROM yet - per protocol {{8}}",
+          "Scapular strengthening exercises initiated {{8}}"
+        ],
+        "Physical Exam (Last Visit)": [
+          "Incisions well-healed, no erythema or drainage {{10}}",
+          "Minimal shoulder effusion {{10}}",
+          "Supraspinatus strength: not tested (too early) {{11}}",
+          "Neurovascular intact - axillary nerve function preserved {{11}}"
         ],
         "Current Medications": [
-          "Metoprolol 25mg BID; Bumex 2mg daily {{11}}",
-          "Entresto 24/26mg BID; Spironolactone 12.5mg daily {{12}}",
-          "Anticoagulation: Not documented (AFib present, CHA₂DS₂-VASc 5) {{13}}"
+          "Tramadol 50mg Q6H PRN (rarely using now) {{12}}",
+          "Lisinopril 10mg daily (HTN) {{13}}",
+          "Tylenol 1000mg TID with PT {{14}}"
+        ],
+        "Return to Work": [
+          "Occupation: Software engineer (desk job) {{15}}",
+          "Currently out of work - can type but limited by positioning {{15}}",
+          "Interested in return to work timeline {{16}}"
         ]
       },
       citations: [
-        { number: 1, citedText: "cardiac function", quote: "LVEF 30% by visual estimation (prior 35% on 03/24), mild mitral regurgitation, LBBB QRS duration 152ms - meets CRT-D criteria", source: "Oct 7, Echocardiogram, Athena" },
-        { number: 2, citedText: "device status", quote: "No ICD/CRT device at time of discharge", source: "Oct 20, Hospital discharge summary, Athena" },
-        { number: 3, citedText: "weight and volume", quote: "Discharge weight 80.3kg (10/20), current weight 78.2kg (-2.1kg). Exam: trace-1+ bilateral lower extremity edema, lungs clear to auscultation", source: "Feb 11, Home weight log + Today's exam, Uploaded" },
-        { number: 4, citedText: "renal and electrolytes", quote: "Creatinine 1.9 mg/dL (eGFR 39), Potassium 4.7 mmol/L, Sodium 138 mmol/L", source: "Oct 15, Lab results, Athena" },
-        { number: 5, citedText: "NT-proBNP", quote: "NT-proBNP 1350 pg/mL (down from 2200 pg/mL on admission 10/03)", source: "Oct 15, Lab results, Athena" },
-        { number: 6, citedText: "A1c", quote: "Hemoglobin A1c: 7.4%", source: "Sep 25, Lab results, Athena" },
-        { number: 7, citedText: "lipids", quote: "LDL cholesterol: 62 mg/dL", source: "May 10, Lab results, Athena" },
-        { number: 8, citedText: "blood pressure", quote: "Average home BP: 108/68 mmHg (last 2 weeks)", source: "Feb 11, Home BP monitor, Uploaded" },
-        { number: 9, citedText: "heart rate", quote: "Average HR: 65-72 bpm (irregularly irregular rhythm consistent with atrial fibrillation)", source: "Feb 11, Home BP monitor, Uploaded" },
-        { number: 10, citedText: "oxygen saturation", quote: "O2 saturation 96% on room air", source: "Feb 12, Today's exam, Ambient" },
-        { number: 11, citedText: "metoprolol and bumex", quote: "Discharge medications: Metoprolol succinate 25mg BID for heart rate control, Bumetanide 2mg daily for diuresis", source: "Oct 20, Hospital discharge summary, Athena" },
-        { number: 12, citedText: "entresto and spironolactone", quote: "Discharge medications: Entresto 24/26mg BID (ARNI for HFrEF), Spironolactone 12.5mg daily (MRA)", source: "Oct 20, Hospital discharge summary, Athena" },
-        { number: 13, citedText: "anticoagulation", quote: "Anticoagulation status not documented in discharge summary. Patient has atrial fibrillation with CHA₂DS₂-VASc score of 5.", source: "Oct 20, Hospital discharge summary, Athena" }
+        { number: 1, citedText: "procedure and outcome", quote: "Operative Report - January 3, 2024. Procedure: Arthroscopic rotator cuff repair, right shoulder. Surgery uncomplicated. No complications noted intraoperatively.", source: "Jan 3, Operative report, Athena" },
+        { number: 2, citedText: "tear characteristics", quote: "Intraoperative findings: Large full-thickness tear of supraspinatus tendon measuring 2.5cm in anteroposterior dimension. Infraspinatus with high-grade partial-thickness articular-side tear (>50% thickness).", source: "Jan 3, Operative report, Athena" },
+        { number: 3, citedText: "repair technique", quote: "Rotator cuff repaired using double-row technique with medial row of two anchors and lateral row of two anchors. Excellent tissue quality, repair under minimal tension.", source: "Jan 3, Operative report, Athena" },
+        { number: 4, citedText: "post-op plan", quote: "Postoperative Plan: Sling immobilization with abduction pillow x 6 weeks. Pendulum exercises only for first 2 weeks. Physical therapy to begin week 2 for passive ROM. Follow-up in 6 weeks.", source: "Jan 3, Operative report, Athena" },
+        { number: 5, citedText: "current pain", quote: "Pain level: 2/10 at rest, increases to 4/10 during physical therapy exercises. Reports significant improvement from immediate post-operative period. Sleep quality improved, able to lie on contralateral side without waking.", source: "Feb 12, Intake form, Ambient" },
+        { number: 6, citedText: "sling use", quote: "Sling discontinued approximately 2 weeks ago per physical therapy recommendations. Patient reports feeling more comfortable without sling at this point.", source: "Feb 12, Intake form, Ambient" },
+        { number: 7, citedText: "complications screening", quote: "No numbness or tingling in right arm or hand. No signs of infection - incisions well-healed without erythema, warmth, or drainage. No fever or chills.", source: "Feb 12, Intake form, Ambient" },
+        { number: 8, citedText: "PT protocol", quote: "Physical therapy initiated at 2 weeks post-operative per protocol. Current phase: Passive range of motion exercises including pulleys, wand exercises, and therapist-assisted stretching. Scapular stabilization exercises initiated. No active ROM permitted until cleared by surgeon. Attending PT 3x per week.", source: "Feb 5, PT progress note, Athena" },
+        { number: 9, citedText: "ROM measurements", quote: "Range of motion assessment (passive): Forward flexion 110 degrees, abduction 80 degrees, external rotation 30 degrees, internal rotation limited to sacrum. Measurements taken with patient supine to ensure true passive motion.", source: "Feb 5, PT progress note, Athena" },
+        { number: 10, citedText: "incision healing", quote: "Inspection of surgical incisions: All portal sites well-healed with minimal scarring. No erythema, no drainage, no warmth. Very mild effusion of glenohumeral joint, expected at this timepoint.", source: "Jan 17, 2-week post-op visit, Athena" },
+        { number: 11, citedText: "strength and neuro", quote: "Strength testing deferred at this early timepoint to protect repair. Neurovascular examination: Axillary nerve function intact (deltoid sensation preserved), radial/median/ulnar nerves intact. Capillary refill <2 seconds, radial pulse 2+.", source: "Jan 17, 2-week post-op visit, Athena" },
+        { number: 12, citedText: "tramadol use", quote: "Current pain management: Tramadol 50mg every 6 hours as needed. Patient reports using only 1-2 tablets per day, primarily before physical therapy sessions.", source: "Feb 12, Intake form, Ambient" },
+        { number: 13, citedText: "blood pressure medication", quote: "Hypertension managed with lisinopril 10mg daily, blood pressure well-controlled", source: "Dec 15, 2023, PCP visit, Athena" },
+        { number: 14, citedText: "acetaminophen", quote: "Acetaminophen 1000mg three times daily, taken regularly with physical therapy sessions for pain control", source: "Feb 12, Intake form, Ambient" },
+        { number: 15, citedText: "occupation", quote: "Occupation: Software engineer, primarily desk work involving computer use. Currently on medical leave.", source: "Dec 20, 2023, Pre-operative visit, Athena" },
+        { number: 16, citedText: "work concerns", quote: "Patient inquiring about timeline for return to work. Reports he can type with right hand but positioning at desk is uncomfortable. Employer requesting return-to-work note with restrictions if applicable.", source: "Feb 12, Intake form, Ambient" }
       ],
       dataSources: [
-        "Oct 20, Hospital discharge summary, Athena",
-        "Oct 15, Lab results, Athena",
-        "Oct 7, Echocardiogram, Athena",
-        "Sep 25, Lab results, Athena",
-        "May 10, Lab results, Athena",
-        "Feb 12, Today's exam, Ambient",
-        "Feb 11, Home BP monitor, Uploaded",
-        "Feb 11, Home weight log, Uploaded"
+        "Feb 12, Today's visit, Ambient",
+        "Feb 12, Intake form, Ambient",
+        "Feb 5, PT progress note, Athena",
+        "Jan 17, 2-week post-op visit, Athena",
+        "Jan 3, Operative report, Athena",
+        "Dec 20, 2023, Pre-operative visit, Athena",
+        "Dec 15, 2023, PCP visit, Athena"
       ],
       careNudges: [
         {
-          type: "Device Referral",
-          description: "Refer to EP for CRT-D - EF 30%, LBBB 152ms, meets criteria.",
-          highlightId: "robert-heart-function-0"
+          type: "PT Progression",
+          description: "Advance to active-assisted ROM - patient at 6 weeks, progressing well per protocol.",
+          highlightId: "robert-physical-therapy-progress-1"
         },
         {
-          type: "GDMT Optimization",
-          description: "Start dapagliflozin 10mg daily - eGFR 39, safe to initiate.",
-          highlightId: "robert-renal-labs-0"
+          type: "Return to Work",
+          description: "Clear for modified duty desk work - can return with restrictions (no lifting, reaching).",
+          highlightId: "robert-return-to-work-1"
         },
         {
-          type: "Medication Titration",
-          description: "Uptitrate Entresto to 49/51mg BID - BP stable at 108/68.",
-          highlightId: "robert-vitals-0"
-        },
-        {
-          type: "Anticoagulation",
-          description: "Verify anticoagulation for AFib - CHA₂DS₂-VASc 5.",
-          highlightId: "robert-current-medications-2"
+          type: "Pain Management",
+          description: "Wean off tramadol - pain well-controlled with minimal narcotic use.",
+          highlightId: "robert-current-symptoms-0"
         }
       ]
     },
@@ -551,7 +555,7 @@ export default function App() {
       age: 35, 
       gender: "F", 
       time: "10:00 am", 
-      status: "Generated", 
+      status: "In Queue", 
       chiefComplaint: "Lower Back Pain",
       atAGlance: [
         "Acute lower back pain x 4 days; no red flags for serious pathology; likely musculoskeletal strain.",
@@ -562,50 +566,57 @@ export default function App() {
         "No chronic conditions; otherwise healthy"
       ],
       sections: {
+        "Last Visit Summary": [
+          "Patient established care 6 months ago for annual wellness visit. {{1}}",
+          "Physical exam was unremarkable, no chronic medical conditions identified. {{1}}",
+          "Vitals were within normal limits, patient reported regular exercise and healthy diet. {{1}}",
+          "Counseled on preventive care and scheduled follow-up in 12 months. {{1}}"
+        ],
         "Pain Characteristics": [
-          "Sharp, localized to lower lumbar region (L4-L5 area) {{1}}",
-          "Pain 7/10 at worst, improves with rest {{2}}",
-          "No radiation to legs; no numbness or tingling {{3}}"
+          "Sharp, localized to lower lumbar region (L4-L5 area) {{2}}",
+          "Pain 7/10 at worst, improves with rest {{3}}",
+          "No radiation to legs; no numbness or tingling {{4}}"
         ],
         "Mechanism": [
-          "Started after helping move furniture 4 days ago {{4}}",
-          "Gradual onset, worsened over 24 hours {{4}}"
+          "Started after helping move furniture 4 days ago {{5}}",
+          "Gradual onset, worsened over 24 hours {{5}}"
         ],
         "Red Flags": [
-          "No fever, no bowel/bladder dysfunction {{5}}",
-          "No trauma, no night pain {{5}}",
-          "No history of cancer or recent weight loss {{5}}"
+          "No fever, no bowel/bladder dysfunction {{6}}",
+          "No trauma, no night pain {{6}}",
+          "No history of cancer or recent weight loss {{6}}"
         ],
         "Physical Exam": [
-          "Normal gait; negative straight leg raise bilaterally {{6}}",
-          "Tenderness over paraspinal muscles L3-L5 {{7}}",
-          "Full ROM with mild discomfort; no neurological deficits {{8}}"
+          "Normal gait; negative straight leg raise bilaterally {{7}}",
+          "Tenderness over paraspinal muscles L3-L5 {{8}}",
+          "Full ROM with mild discomfort; no neurological deficits {{9}}"
         ],
         "Vitals": [
-          "BP 118/72; HR 76; Temp 98.4°F {{9}}",
-          "No signs of systemic illness {{9}}"
+          "BP 118/72; HR 76; Temp 98.4°F {{10}}",
+          "No signs of systemic illness {{10}}"
         ],
         "Current Medications": [
-          "None (takes occasional ibuprofen OTC) {{10}}"
+          "None (takes occasional ibuprofen OTC) {{11}}"
         ],
         "Treatment Plan": [
-          "Conservative management indicated - no red flags present {{11}}",
-          "Physical therapy referral recommended for core strengthening {{11}}",
-          "Follow-up in 2 weeks if no improvement {{11}}"
+          "Conservative management indicated - no red flags present {{12}}",
+          "Physical therapy referral recommended for core strengthening {{12}}",
+          "Follow-up in 2 weeks if no improvement {{12}}"
         ]
       },
       citations: [
-        { number: 1, citedText: "pain location", quote: "Sharp pain localized to lower lumbar region, L4-L5 area", source: "Feb 12, Intake form, Ambient" },
-        { number: 2, citedText: "pain severity", quote: "Pain severity 7/10 at worst, improves with rest", source: "Feb 12, Intake form, Ambient" },
-        { number: 3, citedText: "radiation", quote: "No radiation to legs, no numbness or tingling", source: "Feb 12, Intake form, Ambient" },
-        { number: 4, citedText: "mechanism", quote: "Started after helping move furniture 4 days ago, gradual onset, worsened over first 24 hours", source: "Feb 12, Intake form, Ambient" },
-        { number: 5, citedText: "red flags", quote: "No fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer or recent weight loss", source: "Feb 12, Intake form, Ambient" },
-        { number: 6, citedText: "gait and SLR", quote: "Normal gait, negative straight leg raise test bilaterally", source: "Feb 12, Today's visit, Ambient" },
-        { number: 7, citedText: "tenderness", quote: "Tenderness over paraspinal muscles L3-L5", source: "Feb 12, Today's visit, Ambient" },
-        { number: 8, citedText: "ROM and neuro", quote: "Full range of motion with mild discomfort, no neurological deficits", source: "Feb 12, Today's visit, Ambient" },
-        { number: 9, citedText: "vitals", quote: "Vitals: BP 118/72, HR 76, Temp 98.4°F. General: Well-appearing, no acute distress, no signs of systemic illness", source: "Feb 12, Today's visit, Ambient" },
-        { number: 10, citedText: "medications", quote: "Current medications: None. Takes occasional ibuprofen OTC as needed.", source: "Feb 12, Intake form, Ambient" },
-        { number: 11, citedText: "assessment and plan", quote: "Assessment: Acute mechanical low back pain, no red flags present. Plan: Conservative management with NSAIDs, physical therapy referral for core strengthening, follow-up in 2 weeks if no improvement.", source: "Feb 12, Today's visit, Ambient" }
+        { number: 1, citedText: "prior visit summary", quote: "Annual wellness visit. Chief Complaint: Routine health maintenance. History: Patient is a 35-year-old female, no chronic medical conditions. Physical Examination: General: Well-appearing, no acute distress. Vitals: BP 120/75, HR 72, RR 16, Temp 98.6°F. Cardiovascular: Regular rate and rhythm, no murmurs. Respiratory: Clear to auscultation bilaterally. Abdomen: Soft, non-tender. Assessment and Plan: Healthy 35-year-old female presenting for wellness visit. Continues regular exercise and maintains healthy diet. Counseled on age-appropriate health maintenance including annual gynecologic care. No concerns at this time. Follow-up in 12 months.", source: "Aug 10, 2023, Annual wellness visit, Athena" },
+        { number: 2, citedText: "pain location", quote: "Sharp pain localized to lower lumbar region, L4-L5 area", source: "Feb 12, Intake form, Ambient" },
+        { number: 3, citedText: "pain severity", quote: "Pain severity 7/10 at worst, improves with rest", source: "Feb 12, Intake form, Ambient" },
+        { number: 4, citedText: "radiation", quote: "No radiation to legs, no numbness or tingling", source: "Feb 12, Intake form, Ambient" },
+        { number: 5, citedText: "mechanism", quote: "Started after helping move furniture 4 days ago, gradual onset, worsened over first 24 hours", source: "Feb 12, Intake form, Ambient" },
+        { number: 6, citedText: "red flags", quote: "No fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer or recent weight loss", source: "Feb 12, Intake form, Ambient" },
+        { number: 7, citedText: "gait and SLR", quote: "Normal gait, negative straight leg raise test bilaterally", source: "Feb 12, Today's visit, Ambient" },
+        { number: 8, citedText: "tenderness", quote: "Tenderness over paraspinal muscles L3-L5", source: "Feb 12, Today's visit, Ambient" },
+        { number: 9, citedText: "ROM and neuro", quote: "Full range of motion with mild discomfort, no neurological deficits", source: "Feb 12, Today's visit, Ambient" },
+        { number: 10, citedText: "vitals", quote: "Vitals: BP 118/72, HR 76, Temp 98.4°F. General: Well-appearing, no acute distress, no signs of systemic illness", source: "Feb 12, Today's visit, Ambient" },
+        { number: 11, citedText: "medications", quote: "Current medications: None. Takes occasional ibuprofen OTC as needed.", source: "Feb 12, Intake form, Ambient" },
+        { number: 12, citedText: "assessment and plan", quote: "Assessment: Acute mechanical low back pain, no red flags present. Plan: Conservative management with NSAIDs, physical therapy referral for core strengthening, follow-up in 2 weeks if no improvement.", source: "Feb 12, Today's visit, Ambient" }
       ],
       dataSources: [
         "Feb 12, Intake form, Ambient",
@@ -640,36 +651,44 @@ export default function App() {
         "HTN (well-controlled) / former smoker (quit 2020)"
       ],
       sections: {
+        "Last Visit Summary": [
+          "Patient presented in January 2024 for annual wellness visit. {{1}}",
+          "Hypertension continues to be well-controlled on lisinopril 20mg daily, BP was 126/76. {{1}}",
+          "Patient quit smoking in 2020 and has maintained tobacco-free status. {{1}}",
+          "Discussed importance of age-appropriate health screenings. {{1}}",
+          "Patient remains active with regular walking, plan was to schedule colonoscopy. {{1}}"
+        ],
         "Preventive Care Due": [
-          "Colonoscopy (age 55 - first screening due) {{1}}",
-          "Lipid panel (last checked 2 years ago) {{2}}",
-          "Consider PSA discussion {{3}}"
+          "Colonoscopy (age 55 - first screening due) {{2}}",
+          "Lipid panel (last checked 2 years ago) {{3}}",
+          "Consider PSA discussion {{4}}"
         ],
         "Current Medications": [
-          "Lisinopril 20mg daily {{4}}",
-          "Aspirin 81mg daily {{5}}"
+          "Lisinopril 20mg daily {{5}}",
+          "Aspirin 81mg daily {{6}}"
         ],
         "Vitals": [
-          "BP 128/78 (well controlled) {{6}}",
-          "BMI 28.5 (overweight) {{7}}",
-          "Weight stable {{7}}"
+          "BP 128/78 (well controlled) {{7}}",
+          "BMI 28.5 (overweight) {{8}}",
+          "Weight stable {{8}}"
         ],
         "Health Maintenance": [
-          "Flu vaccine due (fall) {{8}}",
-          "Tdap up to date {{9}}",
-          "Continue current medications {{4}}"
+          "Flu vaccine due (fall) {{9}}",
+          "Tdap up to date {{10}}",
+          "Continue current medications {{5}}"
         ]
       },
       citations: [
-        { number: 1, citedText: "colonoscopy", quote: "55-year-old male, due for first-time colorectal cancer screening with colonoscopy per USPSTF guidelines", source: "Jan 20, 2024, Annual wellness visit, Athena" },
-        { number: 2, citedText: "lipid panel", quote: "Last lipid panel: 01/12/2022 (Total cholesterol 195, LDL 118, HDL 52, TG 125) - repeat due", source: "Jan 12, 2022, Lab results, Athena" },
-        { number: 3, citedText: "PSA", quote: "Discuss prostate cancer screening (PSA) - patient age 55, no documented family history", source: "Jan 20, 2024, Annual wellness visit, Athena" },
-        { number: 4, citedText: "lisinopril", quote: "Current medications: Lisinopril 20mg daily for hypertension, continue current regimen", source: "Jan 20, 2024, Annual wellness visit, Athena" },
-        { number: 5, citedText: "aspirin", quote: "Aspirin 81mg daily for cardiovascular prevention", source: "Jan 20, 2024, Annual wellness visit, Athena" },
-        { number: 6, citedText: "blood pressure", quote: "BP 128/78 mmHg - well controlled on current antihypertensive", source: "Feb 12, Today's visit, Ambient" },
-        { number: 7, citedText: "weight and BMI", quote: "Weight 210 lbs (stable), Height 5'11\", BMI 28.5 (overweight)", source: "Feb 12, Today's visit, Ambient" },
-        { number: 8, citedText: "flu vaccine", quote: "Influenza vaccine due this fall season", source: "Jan 20, 2024, Annual wellness visit, Athena" },
-        { number: 9, citedText: "Tdap", quote: "Tdap administered 05/2021, up to date", source: "Jan 20, 2024, Annual wellness visit, Athena" }
+        { number: 1, citedText: "prior annual visit summary", quote: "Annual Wellness Visit - January 20, 2024. Chief Complaint: Health maintenance. History: 55-year-old male with history of hypertension, well-controlled on lisinopril 20mg daily. Former smoker, quit in 2020, continues to be tobacco-free. Physical Examination: Vitals: BP 126/76, HR 74, BMI 28.2. General: Well-appearing, no acute distress. Cardiovascular: Regular rate and rhythm. Respiratory: Clear bilaterally. Assessment: Hypertension, well-controlled. Former tobacco use disorder, in remission. Plan: Continue lisinopril 20mg daily, aspirin 81mg daily for cardiovascular prevention. Discussed age-appropriate health screenings including colonoscopy. Patient to schedule with GI for first-time colorectal screening. Continue regular physical activity. Follow-up in 12 months.", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 2, citedText: "colonoscopy", quote: "55-year-old male, due for first-time colorectal cancer screening with colonoscopy per USPSTF guidelines", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 3, citedText: "lipid panel", quote: "Last lipid panel: 01/12/2022 (Total cholesterol 195, LDL 118, HDL 52, TG 125) - repeat due", source: "Jan 12, 2022, Lab results, Athena" },
+        { number: 4, citedText: "PSA", quote: "Discuss prostate cancer screening (PSA) - patient age 55, no documented family history", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 5, citedText: "lisinopril", quote: "Current medications: Lisinopril 20mg daily for hypertension, continue current regimen", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 6, citedText: "aspirin", quote: "Aspirin 81mg daily for cardiovascular prevention", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 7, citedText: "blood pressure", quote: "BP 128/78 mmHg - well controlled on current antihypertensive", source: "Feb 12, Today's visit, Ambient" },
+        { number: 8, citedText: "weight and BMI", quote: "Weight 210 lbs (stable), Height 5'11\", BMI 28.5 (overweight)", source: "Feb 12, Today's visit, Ambient" },
+        { number: 9, citedText: "flu vaccine", quote: "Influenza vaccine due this fall season", source: "Jan 20, 2024, Annual wellness visit, Athena" },
+        { number: 10, citedText: "Tdap", quote: "Tdap administered 05/2021, up to date", source: "Jan 20, 2024, Annual wellness visit, Athena" }
       ],
       careNudges: [
         {
@@ -704,7 +723,7 @@ export default function App() {
       age: 28, 
       gender: "F", 
       time: "11:00 am", 
-      status: "Generated", 
+      status: "In Queue", 
       chiefComplaint: "Migraine Headaches",
       atAGlance: [
         "Chronic migraines; current preventive therapy showing limited benefit; significant impact on daily function.",
@@ -715,49 +734,57 @@ export default function App() {
         "Migraines / Anxiety"
       ],
       sections: {
+        "Last Visit Summary": [
+          "Patient presented in January for migraine follow-up after starting propranolol 3 months prior. {{1}}",
+          "Reported 3-4 migraine days per month, down from 6-8 before starting preventive therapy. {{1}}",
+          "Patient continued to use sumatriptan for acute treatment with good response. {{1}}",
+          "Triggers identified include stress, poor sleep, and hormonal fluctuations. {{1}}",
+          "Discussed medication adherence and lifestyle modifications, plan was to continue current regimen and reassess in 6 weeks. {{1}}"
+        ],
         "Headache Pattern": [
-          "4-6 migraine days per month (up from 3-4) {{1}}",
-          "Moderate to severe intensity; typically unilateral {{2}}",
-          "Associated with photophobia, nausea, occasionally visual aura {{3}}"
+          "4-6 migraine days per month (up from 3-4) {{2}}",
+          "Moderate to severe intensity; typically unilateral {{3}}",
+          "Associated with photophobia, nausea, occasionally visual aura {{4}}"
         ],
         "Current Medications": [
-          "Preventive: Propranolol 80mg daily x 3 months {{4}}",
-          "Acute: Sumatriptan 100mg (using 2-3x/week) {{5}}",
-          "Sertraline 50mg daily (for anxiety) {{6}}"
+          "Preventive: Propranolol 80mg daily x 3 months {{5}}",
+          "Acute: Sumatriptan 100mg (using 2-3x/week) {{6}}",
+          "Sertraline 50mg daily (for anxiety) {{7}}"
         ],
         "Treatment Response": [
-          "Limited response to current preventive regimen {{7}}",
-          "Frequency increasing despite propranolol {{1}}",
-          "Sumatriptan effective but using frequently {{5}}"
+          "Limited response to current preventive regimen {{8}}",
+          "Frequency increasing despite propranolol {{2}}",
+          "Sumatriptan effective but using frequently {{6}}"
         ],
         "Triggers": [
-          "Stress, poor sleep, skipping meals {{8}}",
-          "Hormonal fluctuation (perimenstrual) {{9}}",
-          "Bright lights, strong odors {{8}}"
+          "Stress, poor sleep, skipping meals {{9}}",
+          "Hormonal fluctuation (perimenstrual) {{10}}",
+          "Bright lights, strong odors {{9}}"
         ],
         "Vitals": [
-          "BP 108/70; HR 58 (on beta-blocker) {{10}}",
-          "Weight stable {{11}}"
+          "BP 108/70; HR 58 (on beta-blocker) {{11}}",
+          "Weight stable {{12}}"
         ],
         "Impact": [
-          "Missing work 1-2 days per month {{12}}",
-          "Significant effect on quality of life {{12}}",
-          "Patient interested in more effective prevention {{12}}"
+          "Missing work 1-2 days per month {{13}}",
+          "Significant effect on quality of life {{13}}",
+          "Patient interested in more effective prevention {{13}}"
         ]
       },
       citations: [
-        { number: 1, citedText: "frequency", quote: "Migraine frequency increased to 4-6 days/month (was 3-4 at last visit)", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 2, citedText: "intensity", quote: "Moderate to severe intensity, typically unilateral", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 3, citedText: "associated symptoms", quote: "Associated with photophobia, nausea, occasionally visual aura", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 4, citedText: "propranolol", quote: "Started preventive therapy: Propranolol 80mg daily. Follow up in 3 months to assess response.", source: "Oct 15, 2023, Neurology consult, Athena" },
-        { number: 5, citedText: "sumatriptan", quote: "Continue acute therapy: Sumatriptan 100mg PRN. Patient using 2-3x/week, effective but frequent use approaching medication overuse threshold.", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 6, citedText: "sertraline", quote: "Continue Sertraline 50mg daily for comorbid anxiety disorder", source: "Oct 15, 2023, Neurology consult, Athena" },
-        { number: 7, citedText: "treatment response", quote: "Limited response to propranolol after 3 months of therapy", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 8, citedText: "lifestyle triggers", quote: "Triggers: stress, poor sleep, skipping meals, bright lights, strong odors", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 9, citedText: "hormonal triggers", quote: "Hormonal fluctuation (perimenstrual) noted as trigger", source: "Jan 30, Follow-up visit, Ambient" },
-        { number: 10, citedText: "vital signs", quote: "BP 108/70 mmHg, HR 58 bpm (bradycardia on beta-blocker)", source: "Feb 12, Today's visit, Ambient" },
-        { number: 11, citedText: "weight", quote: "Weight 135 lbs (stable from previous visits)", source: "Feb 12, Today's visit, Ambient" },
-        { number: 12, citedText: "functional impact", quote: "Missing work 1-2 days per month due to migraines. Significant effect on quality of life. Patient expresses strong interest in more effective prevention.", source: "Jan 30, Follow-up visit, Ambient" }
+        { number: 1, citedText: "prior visit summary", quote: "Follow-up Visit - January 30, 2024. Chief Complaint: Migraine follow-up. History: Patient started on propranolol 80mg daily 3 months ago per neurology. Reports migraine frequency 3-4 days/month, down from baseline 6-8 days/month prior to starting preventive therapy. Uses sumatriptan 100mg for acute treatment with good response. Physical Examination: Vitals: BP 110/68, HR 60. Neurological: Alert, oriented, cranial nerves II-XII intact, strength 5/5 throughout, sensation intact. Assessment: Chronic migraine with episodic pattern, showing partial response to propranolol. Known triggers: stress, poor sleep quality, hormonal fluctuations. Plan: Continue propranolol 80mg daily, continue sumatriptan PRN for acute treatment. Discussed medication adherence and lifestyle modifications including regular sleep schedule, stress management, avoiding trigger foods. Reassess in 6 weeks.", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 2, citedText: "frequency", quote: "Migraine frequency increased to 4-6 days/month (was 3-4 at last visit)", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 3, citedText: "intensity", quote: "Moderate to severe intensity, typically unilateral", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 4, citedText: "associated symptoms", quote: "Associated with photophobia, nausea, occasionally visual aura", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 5, citedText: "propranolol", quote: "Started preventive therapy: Propranolol 80mg daily. Follow up in 3 months to assess response.", source: "Oct 15, 2023, Neurology consult, Athena" },
+        { number: 6, citedText: "sumatriptan", quote: "Continue acute therapy: Sumatriptan 100mg PRN. Patient using 2-3x/week, effective but frequent use approaching medication overuse threshold.", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 7, citedText: "sertraline", quote: "Continue Sertraline 50mg daily for comorbid anxiety disorder", source: "Oct 15, 2023, Neurology consult, Athena" },
+        { number: 8, citedText: "treatment response", quote: "Limited response to propranolol after 3 months of therapy", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 9, citedText: "lifestyle triggers", quote: "Triggers: stress, poor sleep, skipping meals, bright lights, strong odors", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 10, citedText: "hormonal triggers", quote: "Hormonal fluctuation (perimenstrual) noted as trigger", source: "Jan 30, Follow-up visit, Ambient" },
+        { number: 11, citedText: "vital signs", quote: "BP 108/70 mmHg, HR 58 bpm (bradycardia on beta-blocker)", source: "Feb 12, Today's visit, Ambient" },
+        { number: 12, citedText: "weight", quote: "Weight 135 lbs (stable from previous visits)", source: "Feb 12, Today's visit, Ambient" },
+        { number: 13, citedText: "functional impact", quote: "Missing work 1-2 days per month due to migraines. Significant effect on quality of life. Patient expresses strong interest in more effective prevention.", source: "Jan 30, Follow-up visit, Ambient" }
       ],
       careNudges: [
         {
@@ -1518,10 +1545,10 @@ export default function App() {
               </div>
             </div>
             
-            {/* Details Section */}
+            {/* Visit Context Section */}
             <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
               <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                <p className="leading-[1.2]">Details</p>
+                <p className="leading-[1.2]">Visit Context</p>
               </div>
               <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
                 <ul className="list-disc whitespace-pre-wrap">
@@ -2039,7 +2066,7 @@ export default function App() {
                 size="xsmall" 
                 intent="neutral"
                 showPrefix={false}
-                showSuffix={false}
+                showSuffix={citation.isExternal || false}
                 onClick={() => {
                   if (citation.isExternal && citation.externalUrl) {
                     window.open(citation.externalUrl, '_blank');
@@ -2218,6 +2245,69 @@ export default function App() {
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] text-[color:var(--text-body,#1a1a1a)] tracking-[0.15px] w-full whitespace-pre-wrap">
                       {message.citations ? renderChatMessageWithCitations(message.content, message.citations, `chat-${idx}`) : message.content}
                     </p>
+                    
+                    {/* Collapsible Sources */}
+                    {message.citations && message.citations.length > 0 && (
+                      <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                        <button
+                          onClick={() => {
+                            const key = `${patients[selectedPatientIndex].name}-chat-${idx}`;
+                            setExpandedChatSources(prev => {
+                              const newSet = new Set(prev);
+                              if (newSet.has(key)) {
+                                newSet.delete(key);
+                              } else {
+                                newSet.add(key);
+                              }
+                              return newSet;
+                            });
+                          }}
+                          className="flex items-center gap-[4px] text-[color:var(--text-subheading,#666)] hover:text-[color:var(--text-default,black)] transition-colors"
+                        >
+                          <p className="font-['Lato',sans-serif] text-[13px] leading-[1.2] tracking-[0.065px]">
+                            {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                          </p>
+                          <InlineIcon 
+                            name={expandedChatSources.has(`${patients[selectedPatientIndex].name}-chat-${idx}`) ? "keyboard_arrow_up" : "keyboard_arrow_down"} 
+                            size={16} 
+                          />
+                        </button>
+                        
+                        {expandedChatSources.has(`${patients[selectedPatientIndex].name}-chat-${idx}`) && (
+                          <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full">
+                            {message.citations.map((citation, citIdx) => (
+                              <div key={citIdx} className="flex items-start gap-[6px] w-full">
+                                <span className="inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
+                                  {citation.number}
+                                </span>
+                                {citation.isExternal ? (
+                                  <a
+                                    href={citation.externalUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-link,#1132ee)] hover:underline tracking-[0.065px] flex items-center gap-[4px]"
+                                  >
+                                    {citation.source}
+                                    <InlineIcon name="open_in_new" size={12} />
+                                  </a>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setPreviousTab(rightTab);
+                                      setViewingDataSource(citation.source);
+                                    }}
+                                    className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-link,#1132ee)] hover:underline tracking-[0.065px] text-left"
+                                  >
+                                    {citation.source}
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                       <div className="content-stretch flex gap-[8px] h-[28px] items-center relative shrink-0">
                         <Button
@@ -2307,11 +2397,11 @@ export default function App() {
             )}
           </div>
           
-          {/* Care Nudges Card */}
+          {/* Care Suggestions Card */}
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                Care Nudges
+                Care Suggestions
               </p>
               <IconButton 
                 variant="tertiary" 
@@ -2373,7 +2463,7 @@ export default function App() {
                 );
               })}
               
-              {/* Dismissed Care Nudges */}
+              {/* Dismissed Care Suggestions */}
               {dismissedNudges[selectedPatientIndex] && dismissedNudges[selectedPatientIndex].size > 0 && (
                 <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                   <div className="flex items-center justify-between w-full">
