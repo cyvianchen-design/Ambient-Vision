@@ -67,6 +67,41 @@ body {
   box-sizing: border-box;
 }
 
+/* Custom scrollbar styles - auto-hide */
+.scrollable-content {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.scrollable-content:hover,
+.scrollable-content:active {
+  scrollbar-color: #d0d0d0 transparent;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.scrollable-content:hover::-webkit-scrollbar-thumb,
+.scrollable-content:active::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
 /* Tailwind utility extensions for exact Figma styles */
 @layer utilities {
   .content-stretch {
