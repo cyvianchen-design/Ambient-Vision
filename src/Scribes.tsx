@@ -102,12 +102,16 @@ export default function Scribes({
     pe: ''
   });
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
+  const [highlightedQuote, setHighlightedQuote] = useState<string | null>(null);
   const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [expandedChatSources, setExpandedChatSources] = useState<Set<string>>(new Set());
+  const [showSmartEditTooltip, setShowSmartEditTooltip] = useState(false);
+  const [smartEditTooltipPosition, setSmartEditTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   
   // Reset document view when switching scribes
   useEffect(() => {
     setViewingDataSource(null);
+    setHighlightedQuote(null);
     setRightTab('actions');
   }, [selectedScribeIndex]);
   
@@ -121,216 +125,231 @@ export default function Scribes({
   const [nudgePreviews, setNudgePreviews] = useState<Record<string, {text: string, location: string, after: string}>>({});
   
   // Helper function to get badge color based on document type
-  const getDocumentTypeBadgeColor = (type: string): {bg: string, text: string} => {
-    const typeMap: Record<string, {bg: string, text: string}> = {
-      'Clinical Note': { bg: '#f1f3fe', text: '#1132ee' }, // Info (blue brand)
-      'Lab Report': { bg: '#ecf8fb', text: '#207384' }, // Cyan
-      'Diagnostic Report': { bg: '#f0ecf7', text: '#7246b5' }, // Purple
-      'Hospital Discharge': { bg: '#fff5e5', text: '#995c00' }, // Warning (orange)
-      'Home Monitoring': { bg: '#edf7ee', text: '#2f6a32' }, // Success (green)
-      'Visit Transcript': { bg: '#f0f3f4', text: '#576b75' }, // Blue Grey
-      'Visit Vitals': { bg: '#edf7ee', text: '#2f6a32' }, // Success (green)
-      'ECG Report': { bg: '#fcf1f7', text: '#ab2973' }, // Magenta
-      'Physical Exam': { bg: '#f0f3f4', text: '#576b75' }, // Blue Grey
-      'Specialist Report': { bg: '#f0ecf7', text: '#7246b5' }, // Purple
+  const getDocumentTypeBadgeColor = (type: string, date?: string): {bg: string, text: string, label: string} => {
+    // Check if Clinical Note and if it's from today
+    if (type === 'Clinical Note' && date) {
+      const isToday = date.toLowerCase().includes('today');
+      if (isToday) {
+        return { 
+          bg: '#f1f3fe', 
+          text: '#1132ee', 
+          label: "Today's Note" 
+        };
+      } else {
+        return { 
+          bg: '#ecf8fb', 
+          text: '#207384', 
+          label: 'Past Note' 
+        };
+      }
+    }
+    
+    const typeMap: Record<string, {bg: string, text: string, label: string}> = {
+      // Consolidated Document Types (matching App.tsx)
+      'Clinical Note': { bg: '#f1f3fe', text: '#1132ee', label: 'Clinical Note' }, // Info (blue brand)
+      'Imaging': { bg: '#f0ecf7', text: '#7246b5', label: 'Imaging' }, // Purple
+      'Lab Results': { bg: '#ecf8fb', text: '#207384', label: 'Lab Results' }, // Cyan
+      'Procedure Note': { bg: '#f1f7fd', text: '#1566b7', label: 'Procedure Note' }, // Blue
+      'Specialist Report': { bg: '#fcf1f7', text: '#ab2973', label: 'Specialist Report' }, // Magenta
+      'Form': { bg: '#f0f3f4', text: '#576b75', label: 'Form' }, // Blue Grey
     };
-    return typeMap[type] || { bg: '#f7f7f7', text: '#666' }; // Default grey
+    return typeMap[type] || { bg: '#f2f2f2', text: '#666', label: type }; // Default grey (History)
   };
   
   // Data source content for each scribe
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
     "Robert Chen": {
       "Operative report, 01/03/2024": {
-        type: "Operative Report",
+        type: "Procedure Note",
         date: "Jan 3, 2024",
         content: "**OPERATIVE REPORT**\n\nPatient: Robert Chen, 58M\nDate: 01/03/2024\nSurgeon: Dr. Anderson\nProcedure: Arthroscopic rotator cuff repair, right shoulder\n\n**PREOPERATIVE DIAGNOSIS**\nFull-thickness rotator cuff tear, right shoulder\n\n**INTRAOPERATIVE FINDINGS**\n• Large full-thickness tear of supraspinatus tendon measuring 2.5cm in anteroposterior dimension\n• High-grade partial-thickness articular-side tear of infraspinatus (>50% thickness)\n• Biceps tendon intact\n• No labral pathology\n• Moderate glenohumeral arthritis\n• Excellent tissue quality\n\n**PROCEDURE**\nArthroscopic examination performed. Rotator cuff repaired using double-row technique:\n• Medial row: Two 4.75mm anchors\n• Lateral row: Two 4.75mm anchors\n• Repair under minimal tension with good tissue approximation\n• Excellent fixation achieved\n\n**POSTOPERATIVE PLAN**\n• Sling immobilization with abduction pillow x 6 weeks\n• Pendulum exercises only for first 2 weeks\n• Physical therapy to begin week 2 for passive ROM\n• No active ROM until cleared by surgeon (typically 6-8 weeks)\n• Follow-up in 6 weeks"
       },
       "PT progress note, 02/05/2024": {
-        type: "PT Note",
+        type: "Clinical Note",
         date: "Feb 5, 2024",
         content: "**PHYSICAL THERAPY PROGRESS NOTE**\n\nPatient: Robert Chen, 58M\nDate: 02/05/2024\nPost-op day: 33 (4.5 weeks)\n\n**CURRENT PHASE**\nPassive range of motion exercises\n\n**INTERVENTIONS**\n• Therapist-assisted passive stretching\n• Pulley exercises for forward flexion and abduction\n• Wand exercises for external rotation\n• Scapular stabilization exercises (gentle)\n• Ice after therapy session\n\n**RANGE OF MOTION (PASSIVE)**\nForward flexion: 110 degrees\nAbduction: 80 degrees\nExternal rotation (at side): 30 degrees\nInternal rotation: To sacrum\n*Measurements taken with patient supine to ensure true passive motion*\n\n**PAIN**\n3/10 during therapy, well-tolerated\n\n**PLAN**\nContinue passive ROM protocol\nAttending 3x per week\nNo active ROM until surgeon clearance at 6-week visit\nGoal: 120° flexion, 90° abduction by 6 weeks"
       },
       "Visit transcript, 00:02:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:30\n\nDr.: "How's the pain been since surgery?"\n\nPatient: "Pain is much better now. Just 2 out of 10 at rest, maybe 4 out of 10 during PT. Way better than before the surgery."`
+        content: `Provider: "How's the pain been since surgery?" Patient: "Pain is much better now. Just 2 out of 10 at rest, maybe 4 out of 10 during PT. Way better than before the surgery."`
       },
       "Visit transcript, 00:03:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:15\n\nDr.: "How are the incisions healing?"\n\nPatient: "All the incisions are healed up really well. No redness or anything."`
+        content: `Provider: "How are the incisions healing?" Patient: "All the incisions are healed up really well. No redness or anything."`
       },
       "Visit transcript, 00:04:00": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:00\n\nDr.: "When did you stop wearing the sling?"\n\nPatient: "PT had me stop wearing the sling about 2 weeks ago."`
+        content: `Provider: "When did you stop wearing the sling?" Patient: "PT had me stop wearing the sling about 2 weeks ago."`
       },
       "Visit transcript, 00:05:20": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:20\n\nDr.: "How's your sleep now?"\n\nPatient: "I'm sleeping much better now. I can sleep on my left side without waking up."`
+        content: `Provider: "How's your sleep now?" Patient: "I'm sleeping much better now. I can sleep on my left side without waking up."`
       },
       "Visit transcript, 00:06:00": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:06:00\n\nDr.: "Any numbness or tingling in your hand?"\n\nPatient: "No numbness or tingling in my right arm or hand. Everything feels normal."`
+        content: `Provider: "Any numbness or tingling in your hand?" Patient: "No numbness or tingling in my right arm or hand. Everything feels normal."`
       },
       "Visit transcript, 00:06:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:06:45\n\nDr.: "When do you think you can return to work?"\n\nPatient: "I'd really like to know when I can go back to work. I'm on medical leave right now."`
+        content: `Provider: "When do you think you can return to work?" Patient: "I'd really like to know when I can go back to work. I'm on medical leave right now."`
       },
       "Visit transcript, 00:07:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:07:30\n\nDr.: "Any other joints bothering you?"\n\nPatient: "Just my shoulder. Everything else - knees, back, other shoulder - all fine."`
+        content: `Provider: "Any other joints bothering you?" Patient: "Just my shoulder. Everything else - knees, back, other shoulder - all fine."`
       },
       "ROS documentation, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**REVIEW OF SYSTEMS**\n\nPatient: Robert Chen\nDate: Today\n\n**MUSCULOSKELETAL**\n• Right shoulder pain improving post-operatively\n• No other joint pain or swelling\n• No myalgias\n\n**NEUROLOGIC**\n• No paresthesias or motor deficits in right upper extremity\n• No headaches, dizziness, or balance issues\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or other constitutional symptoms\n• Energy level good\n• Sleep improved since surgery\n\n**CARDIOVASCULAR**\n• No chest pain or palpitations\n\n**RESPIRATORY**\n• No shortness of breath or cough"
       },
       "Visit vitals, today": {
-        type: "Visit Vitals",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS**\n\nPatient: Robert Chen, 58M\nDate: Today (6 weeks post-op)\n\n**MEASUREMENTS**\nBlood Pressure: 128/82 mmHg\nHeart Rate: 74 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.2°F\nO2 Saturation: 99% (room air)\nWeight: 185 lbs\n\n**NOTES**\nVitals stable\nNo fever - good sign for healing"
       },
       "Physical examination, today": {
-        type: "Physical Exam",
+        type: "Clinical Note",
         date: "Today",
         content: "**PHYSICAL EXAMINATION**\n\nPatient: Robert Chen, 58M\nDate: Today (6 weeks post-op)\n\n**RIGHT SHOULDER EXAMINATION**\n\n*Inspection:*\n• All portal sites well-healed with minimal scarring\n• No erythema, no drainage, no warmth\n• Very mild effusion of glenohumeral joint (expected at this timepoint)\n\n*Palpation:*\n• No tenderness at surgical sites\n• Minimal tenderness over subacromial space\n\n*Range of Motion (Passive):*\n• Forward flexion: 110 degrees\n• Abduction: 80 degrees  \n• External rotation (at side): 30 degrees\n• Internal rotation: To sacrum\n*Measurements taken with patient supine to ensure true passive motion*\n\n*Strength:*\n• Deferred at this early timepoint to protect repair\n\n*Neurovascular:*\n• Axillary nerve function intact (deltoid sensation preserved)\n• Radial, median, and ulnar nerves intact\n• Capillary refill <2 seconds\n• Radial pulse 2+\n\n**IMPRESSION**\nExcellent early healing, ROM progressing per protocol"
       }
     },
     "Maria Garcia": {
       "Visit transcript, 00:01:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:01:15\n\nDr.: "Tell me about your back pain. When did it start?"\n\nPatient: "The pain started about 4 days ago, on Saturday morning."`
+        content: `Provider: "Tell me about your back pain. When did it start?" Patient: "The pain started about 4 days ago, on Saturday morning."`
       },
       "Visit transcript, 00:01:32": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:01:32\n\nDr.: "What were you doing when it started?"\n\nPatient: "I was helping my husband move our couch and I felt something pull in my lower back."`
+        content: `Provider: "What were you doing when it started?" Patient: "I was helping my husband move our couch and I felt something pull in my lower back."`
       },
       "Visit transcript, 00:02:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:45\n\nDr.: "What makes the pain worse?"\n\nPatient: "It hurts really bad when I bend forward or try to pick anything up."`
+        content: `Provider: "What makes the pain worse?" Patient: "It hurts really bad when I bend forward or try to pick anything up."`
       },
       "Visit transcript, 00:03:10": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:10\n\nDr.: "Does anything make it better?"\n\nPatient: "When I lie down flat it feels a bit better."`
+        content: `Provider: "Does anything make it better?" Patient: "When I lie down flat it feels a bit better."`
       },
       "Visit transcript, 00:03:58": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:58\n\nDr.: "Does the pain go down your legs?"\n\nPatient: "No, the pain stays in my back. It doesn't go down my legs at all."`
+        content: `Provider: "Does the pain go down your legs?" Patient: "No, the pain stays in my back. It doesn't go down my legs at all."`
       },
       "Visit transcript, 00:04:22": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:22\n\nDr.: "Any issues with bladder or bowel control?"\n\nPatient: "Bathroom habits are completely normal."`
+        content: `Provider: "Any issues with bladder or bowel control?" Patient: "Bathroom habits are completely normal."`
       },
       "Visit transcript, 00:05:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:15\n\nDr.: "Have you taken anything for the pain?"\n\nPatient: "I've been taking ibuprofen 600mg three times a day. It helps a little but doesn't take it away completely."`
+        content: `Provider: "Have you taken anything for the pain?" Patient: "I've been taking ibuprofen 600mg three times a day. It helps a little but doesn't take it away completely."`
       },
       "Visit transcript, 00:06:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:06:30\n\nDr.: "Any other joints giving you trouble?"\n\nPatient: "Just my back. My knees, hips, everything else feels fine."`
+        content: `Provider: "Any other joints giving you trouble?" Patient: "Just my back. My knees, hips, everything else feels fine."`
       },
       "Intake form, 02/12/2024": {
-        type: "Intake Form",
+        type: "Form",
         date: "Feb 12, 2024",
         content: "**INTAKE FORM**\n\nPatient: Maria Garcia, 35F\nDate: 02/12/2024\n\n**CHIEF COMPLAINT**\nLower back pain x 4 days\n\n**PAIN ASSESSMENT**\nLocation: Lower lumbar region (L4-L5 area)\nOnset: Saturday 02/08/2024, while moving furniture\nCharacter: Sharp\nSeverity: 7/10 at worst\nAggravating factors: Bending, lifting, twisting\nRelieving factors: Rest, lying flat\n\n**ASSOCIATED SYMPTOMS**\n☐ Radiation to legs - NO\n☐ Numbness/tingling - NO\n☐ Bowel dysfunction - NO\n☐ Bladder dysfunction - NO\n☐ Fever - NO\n☐ Weight loss - NO\n\n**PAST MEDICAL HISTORY**\nNo prior back problems or injuries\nNo chronic conditions\n\n**CURRENT MEDICATIONS**\nIbuprofen 600mg TID (started 2 days ago, OTC)"
       },
       "ROS documentation, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**REVIEW OF SYSTEMS**\n\nPatient: Maria Garcia\nDate: Today\n\n**MUSCULOSKELETAL**\n• Lower back pain as documented in HPI\n• No other joint pain, stiffness, or swelling\n• No chronic arthritis\n\n**NEUROLOGIC**\n• No numbness, tingling, or weakness in lower extremities\n• No paresthesias\n• No focal neurological symptoms\n• No headaches\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or other constitutional symptoms\n• No recent weight loss\n• Energy level normal when not limited by pain\n\n**GENITOURINARY**\n• Bowel and bladder function normal\n• No incontinence or retention\n• No dysuria"
       },
       "Visit vitals, today": {
-        type: "Visit Vitals",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS**\n\nPatient: Maria Garcia, 35F\nDate: Today\n\n**MEASUREMENTS**\nBlood Pressure: 118/76 mmHg\nHeart Rate: 72 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.4°F\nO2 Saturation: 99% (room air)\nWeight: 145 lbs\nHeight: 5'6\"\nBMI: 23.4 (normal)\n\n**NOTES**\nAll vital signs within normal limits"
       },
       "Physical examination, today": {
-        type: "Physical Exam",
+        type: "Clinical Note",
         date: "Today",
         content: "**PHYSICAL EXAMINATION**\n\nPatient: Maria Garcia, 35F\nDate: Today\n\n**GENERAL**\nWell-appearing female, mild discomfort with position changes\n\n**BACK EXAMINATION**\n*Inspection:*\n• Normal thoracic kyphosis and lumbar lordosis\n• No scoliosis\n• No visible deformity or asymmetry\n\n*Palpation:*\n• Moderate tenderness to palpation over bilateral paraspinal musculature from L3 to L5 level\n• No midline spinous process tenderness\n• No step-off deformity\n\n*Range of Motion:*\n• Flexion: Limited to 60 degrees by pain\n• Extension: Full, minimal discomfort\n• Lateral bending: Symmetric, mild discomfort\n• Rotation: Full bilaterally\n\n**NEUROLOGICAL EXAMINATION**\n*Motor:*\n• Lower extremity strength 5/5 bilaterally (hip flexors, knee extensors/flexors, ankle dorsiflexors/plantarflexors)\n\n*Sensory:*\n• Sensation intact to light touch in all dermatomes L2-S1\n\n*Reflexes:*\n• Patellar reflexes: 2+ bilaterally\n• Achilles reflexes: 2+ bilaterally\n• Symmetric\n\n*Special Tests:*\n• Straight leg raise: Negative bilaterally at 70 degrees (no radicular symptoms provoked)\n• FABER test: Negative bilaterally\n• No saddle anesthesia"
       }
     },
     "Lisa Anderson": {
       "Visit transcript, 00:01:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:01:45\n\nDr.: "What brings you in today?"\n\nPatient: "I've been having pain in my left knee for about 3 weeks now. The pain started about 3 weeks ago."`
+        content: `Provider: "What brings you in today?" Patient: "I've been having pain in my left knee for about 3 weeks now. The pain started about 3 weeks ago."`
       },
       "Visit transcript, 00:02:10": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:10\n\nDr.: "Tell me how this started."\n\nPatient: "I was training for a half marathon, increasing my mileage. That's when the pain started."`
+        content: `Provider: "Tell me how this started." Patient: "I was training for a half marathon, increasing my mileage. That's when the pain started."`
       },
       "Visit transcript, 00:02:50": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:50\n\nDr.: "Show me exactly where it hurts."\n\nPatient: "The pain is right here on the inside of my knee, along the joint."`
+        content: `Provider: "Show me exactly where it hurts." Patient: "The pain is right here on the inside of my knee, along the joint."`
       },
       "Visit transcript, 00:03:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:30\n\nDr.: "Does it feel better with rest?"\n\nPatient: "It feels better when I rest. Almost goes away completely if I don't do anything for a few days."`
+        content: `Provider: "Does it feel better with rest?" Patient: "It feels better when I rest. Almost goes away completely if I don't do anything for a few days."`
       },
       "Visit transcript, 00:04:00": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:00\n\nDr.: "Do you notice any clicking or popping?"\n\nPatient: "Sometimes I feel a click or pop when I bend and straighten my knee."`
+        content: `Provider: "Do you notice any clicking or popping?" Patient: "Sometimes I feel a click or pop when I bend and straighten my knee."`
       },
       "Visit transcript, 00:04:40": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:40\n\nDr.: "Has your knee ever felt unstable?"\n\nPatient: "A couple times my knee has felt like it was going to give out, but it hasn't fully."`
+        content: `Provider: "Has your knee ever felt unstable?" Patient: "A couple times my knee has felt like it was going to give out, but it hasn't fully."`
       },
       "Visit transcript, 00:05:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:15\n\nDr.: "What makes it worse?"\n\nPatient: "Stairs are really painful, especially going down. Squatting and twisting motions hurt too."`
+        content: `Provider: "What makes it worse?" Patient: "Stairs are really painful, especially going down. Squatting and twisting motions hurt too."`
       },
       "Visit transcript, 00:06:00": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:06:00\n\nDr.: "How far can you run now?"\n\nPatient: "I can barely run a mile now before the pain gets too bad and I have to stop."`
+        content: `Provider: "How far can you run now?" Patient: "I can barely run a mile now before the pain gets too bad and I have to stop."`
       },
       "Visit transcript, 00:06:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:06:45\n\nDr.: "What have you tried for treatment?"\n\nPatient: "I've been icing it after activity and taking ibuprofen 600mg three times a day. Helps a little but not much."`
+        content: `Provider: "What have you tried for treatment?" Patient: "I've been icing it after activity and taking ibuprofen 600mg three times a day. Helps a little but not much."`
       },
       "Visit transcript, 00:07:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:07:30\n\nDr.: "Any other joints bothering you?"\n\nPatient: "Just my left knee. Everything else feels fine."`
+        content: `Provider: "Any other joints bothering you?" Patient: "Just my left knee. Everything else feels fine."`
       },
       "Intake form, 02/12/2024": {
-        type: "Intake Form",
+        type: "Form",
         date: "Feb 12, 2024",
         content: "**INTAKE FORM**\n\nPatient: Lisa Anderson, 28F\nDate: 02/12/2024\n\n**CHIEF COMPLAINT**\nLeft knee pain x 3 weeks\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Gradual onset 3 weeks ago during half-marathon training\nLocation: Medial joint line, left knee\nCharacter: Aching, occasional sharp pain\nSeverity: 5-6/10 with activity, 2/10 at rest\nDuration: Constant when active\n\n**AGGRAVATING FACTORS**\n• Running (can only run ~1 mile before forced to stop)\n• Stairs (especially descending)\n• Squatting\n• Twisting motions\n\n**RELIEVING FACTORS**\n• Rest (pain almost resolves with 2-3 days rest)\n• Ice\n\n**ASSOCIATED SYMPTOMS**\n• Clicking/popping sensation with movement\n• Occasional feeling of \"giving way\" but no true instability\n• No locking\n• No swelling noted by patient\n\n**TREATMENTS TRIED**\n• Ice after activity\n• Ibuprofen 600mg TID - minimal relief\n• Rest from running\n\n**PAST MEDICAL HISTORY**\nNo prior knee injuries or problems\nNo prior surgeries\n\n**ACTIVITY LEVEL**\nRecreational runner, typically 20-25 miles/week\nCurrently unable to maintain training"
       },
       "ROS documentation, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**REVIEW OF SYSTEMS**\n\nPatient: Lisa Anderson\nDate: Today\n\n**MUSCULOSKELETAL**\n• Left knee pain as documented in HPI\n• No other joint pain, stiffness, or swelling\n• No back pain\n• No myalgias\n\n**NEUROLOGIC**\n• No paresthesias or motor deficits in lower extremities\n• No numbness or tingling\n• No weakness\n• No balance issues\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No recent weight changes\n• Energy level good\n\n**CARDIOVASCULAR**\n• No chest pain or palpitations with exercise\n• No exercise intolerance (other than knee pain limiting)\n\n**RESPIRATORY**\n• No shortness of breath\n• No cough"
       },
       "Visit vitals, today": {
-        type: "Visit Vitals",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS**\n\nPatient: Lisa Anderson, 28F\nDate: Today\n\n**MEASUREMENTS**\nBlood Pressure: 118/72 mmHg\nHeart Rate: 68 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.3°F\nO2 Saturation: 99% (room air)\nWeight: 135 lbs\nHeight: 5'6\"\nBMI: 21.8 (normal)\n\n**NOTES**\nAll vital signs within normal limits\nAthletic, healthy-appearing patient"
       },
       "Physical examination, today": {
-        type: "Physical Exam",
+        type: "Clinical Note",
         date: "Today",
         content: "**PHYSICAL EXAMINATION**\n\nPatient: Lisa Anderson, 28F\nDate: Today\n\n**GENERAL**\nWell-appearing, athletic build, no acute distress\n\n**LEFT KNEE EXAMINATION**\n\n*Inspection:*\n• No visible effusion\n• No ecchymosis or erythema\n• No deformity\n• Normal alignment\n\n*Palpation:*\n• Point tenderness over medial joint line, specifically posterior horn of medial meniscus region\n• No lateral joint line tenderness\n• No patellar tenderness\n\n*Range of Motion:*\n• Extension: 0 degrees (full)\n• Flexion: 135 degrees (full)\n• No pain at end ranges\n\n*Ligamentous Examination:*\n• Lachman test: Negative (firm endpoint, <3mm translation)\n• Anterior drawer: Negative\n• Posterior drawer: Negative\n• Valgus stress (0° and 30°): Stable, no pain\n• Varus stress (0° and 30°): Stable, no pain\n\n*Meniscal Tests:*\n• McMurray test: **POSITIVE** for medial meniscus - reproduces medial joint line pain and palpable click with valgus stress and external rotation at approximately 90 degrees flexion\n• Thessaly test (20°): **POSITIVE** - reproduces medial joint line pain with internal rotation\n• Apley compression: Positive\n\n*Patellofemoral:*\n• No apprehension\n• No crepitus\n• Normal tracking\n\n**GAIT**\nNormal, no antalgic gait\n\n**RIGHT KNEE**\nNormal examination, no tenderness or effusion"
       }
@@ -342,69 +361,69 @@ export default function Scribes({
         content: "**FOLLOW-UP VISIT**\n\nPatient: Sarah Johnson, 42F\nDate: 11/10/2025\n\n**CHIEF COMPLAINT**\nDiabetes 3-month follow-up\n\n**LABORATORY REVIEW**\nA1c: 7.2% (improved from 7.5% at previous visit)\nFasting glucose range: 120-140 mg/dL per home monitoring\n\n**CURRENT MEDICATIONS**\n• Metformin 1000mg BID for diabetes\n• Lisinopril 20mg daily for hypertension  \n• Atorvastatin 40mg nightly for hyperlipidemia\n\n**PHYSICAL EXAMINATION**\nBP: 134/82 mmHg\nWeight: 184 lbs (BMI 31.6)\nFoot exam: Monofilament sensation intact bilaterally, no ulcers\n\n**DIABETIC SCREENING STATUS**\nLast eye exam: June 2025 (no diabetic retinopathy)\nNext due: June 2026\nRenal function: eGFR 72 (stable)\n\n**ASSESSMENT & PLAN**\n1. Type 2 diabetes mellitus without complications - improved control\n2. Essential hypertension - controlled\n3. Hyperlipidemia - at goal\n\nContinue current medications\nDietary counseling reinforced\nFollow-up in 3 months with repeat A1c"
       },
       "Lab results, 02/05/2024": {
-        type: "Lab Report",
+        type: "Lab Results",
         date: "Feb 5, 2024",
         content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson, 42F\nDate: 02/05/2024\n\n**METABOLIC PANEL**\nGlucose, Fasting: 145 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.8% [H] (Ref: <5.7% non-diabetic, <7.0% diabetic target)\n\n**COMPARISON**\nPrevious A1c (11/08/2025): 7.2%\nTrend: Increasing ↑\n\n**LIPID PANEL**\nTotal Cholesterol: 195 mg/dL\nLDL Cholesterol: 95 mg/dL (at goal)\nHDL Cholesterol: 48 mg/dL\nTriglycerides: 125 mg/dL\n\n**RENAL FUNCTION**\nCreatinine: 0.9 mg/dL\neGFR: 72 mL/min/1.73m²\nUrine microalbumin: Negative\n\n**INTERPRETATION**\nA1c trending upward from 7.2% to 7.8% despite reported medication compliance\nSuggests need for treatment intensification\nRenal function stable, no evidence of diabetic nephropathy"
       },
       "Lab results, 11/08/2025": {
-        type: "Lab Report",
+        type: "Lab Results",
         date: "Nov 8, 2025",
         content: "**LABORATORY REPORT**\n\nPatient: Sarah Johnson, 42F\nDate: 11/08/2025\n\n**METABOLIC PANEL**\nGlucose, Fasting: 135 mg/dL [H] (Ref: 70-100)\nHemoglobin A1c: 7.2% [H] (Ref: <5.7% non-diabetic, <7.0% diabetic target)\n\n**RENAL FUNCTION**\nCreatinine: 0.9 mg/dL  \neGFR: 72 mL/min/1.73m²\nUrine microalbumin: Negative\n\n**INTERPRETATION**\nA1c 7.2%, slightly above diabetic target of <7.0%\nRenal function normal"
       },
       "Visit transcript, 00:02:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:45\n\nDr.: "How have you been doing with your diabetes medications?"\n\nPatient: "I take my metformin twice a day, 1000 milligrams each time. I don't miss doses. I'm really good about taking it with my meals."`
+        content: `Provider: "How have you been doing with your diabetes medications?" Patient: "I take my metformin twice a day, 1000 milligrams each time. I don't miss doses. I'm really good about taking it with my meals."`
       },
       "Visit transcript, 00:03:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:30\n\nDr.: "And how about your diet?"\n\nPatient: "I'll admit, I ate more sweets than I should have over the holidays. It's hard during family gatherings, you know? But I'm trying to get back on track now."`
+        content: `Provider: "And how about your diet?" Patient: "I'll admit, I ate more sweets than I should have over the holidays. It's hard during family gatherings, you know? But I'm trying to get back on track now."`
       },
       "Visit transcript, 00:04:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:15\n\nDr.: "Have you had any low blood sugar episodes?"\n\nPatient: "No low blood sugar episodes. Haven't felt shaky or sweaty."`
+        content: `Provider: "Have you had any low blood sugar episodes?" Patient: "No low blood sugar episodes. Haven't felt shaky or sweaty."`
       },
       "Visit transcript, 00:05:00": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:00\n\nDr.: "Any increased thirst or urination? How's your vision?"\n\nPatient: "No increased thirst or urination. Vision is fine."`
+        content: `Provider: "Any increased thirst or urination? How's your vision?" Patient: "No increased thirst or urination. Vision is fine."`
       },
       "Visit transcript, 00:05:45": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:45\n\nDr.: "How often are you checking your blood sugar?"\n\nPatient: "I check my blood sugar a few times a week, usually in the morning."`
+        content: `Provider: "How often are you checking your blood sugar?" Patient: "I check my blood sugar a few times a week, usually in the morning."`
       },
       "Home glucose monitoring log": {
-        type: "Home Monitoring",
+        type: "Form",
         date: "Feb 2024",
         content: "**HOME GLUCOSE LOG**\n\nPatient: Sarah Johnson\nTarget: Fasting <130 mg/dL\n\n**RECENT FASTING VALUES**\n02/12: 145 mg/dL\n02/10: 132 mg/dL ✓\n02/08: 148 mg/dL\n02/06: 135 mg/dL\n02/04: 142 mg/dL\n02/02: 138 mg/dL\n01/31: 136 mg/dL\n01/29: 143 mg/dL\n01/27: 150 mg/dL\n\n**AVERAGE**\nMean fasting glucose: 141 mg/dL\nRange: 132-150 mg/dL\n\n**TESTING FREQUENCY**\n2-3 times per week\nMostly fasting values\n\n**NOTES**\nPatient reports checking primarily in mornings before breakfast\nCompliance with testing adequate"
       },
       "ROS documentation, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**REVIEW OF SYSTEMS**\n\nPatient: Sarah Johnson\nDate: Today\n\n**ENDOCRINE**\n• Denies excessive thirst, urination, or hunger\n• No hypoglycemic episodes\n\n**CARDIOVASCULAR**\n• No cardiovascular symptoms\n• No chest pain, palpitations, orthopnea, PND, or lower extremity edema\n\n**NEUROLOGIC**\n• No peripheral neuropathy symptoms\n• No numbness, tingling, or burning sensation in feet\n• No visual changes\n\n**OPHTHALMOLOGIC**\n• No changes in vision\n• Last eye exam: June 2025\n• Due for annual diabetic eye exam\n\n**CONSTITUTIONAL**\n• No fever, chills, or night sweats\n• Weight stable over past few months"
       },
       "Visit vitals, today": {
-        type: "Visit Vitals",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS**\n\nPatient: Sarah Johnson, 42F\nDate: Today\n\n**MEASUREMENTS**\nBlood Pressure: 132/84 mmHg\nHeart Rate: 76 bpm\nRespiratory Rate: 16 breaths/min\nTemperature: 98.6°F\nWeight: 185 lbs\nHeight: 5'5\"\nBMI: 30.8 (obese class I)\n\n**COMPARISON**\nPrevious visit (11/10/2025): 184 lbs\nChange: +1 lb (stable)"
       },
       "Visit vitals comparison": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS COMPARISON**\n\nPatient: Sarah Johnson\n\n**WEIGHT TREND**\nToday: 185 lbs\n11/10/2025: 184 lbs\n08/10/2025: 183 lbs\n05/10/2025: 186 lbs\n02/10/2025: 185 lbs\n\nTrend: Stable (183-186 lbs over past year)\n\n**BLOOD PRESSURE TREND**\nToday: 132/84 mmHg\n11/10/2025: 134/82 mmHg\n08/10/2025: 128/80 mmHg\n05/10/2025: 136/84 mmHg\n\nTrend: Generally well-controlled on lisinopril\nTarget: <130/80 mmHg for diabetic patients"
       },
       "Physical examination, today": {
-        type: "Physical Exam",
+        type: "Clinical Note",
         date: "Today",
         content: "**PHYSICAL EXAMINATION**\n\nPatient: Sarah Johnson, 42F\nDate: Today\n\n**GENERAL**\nWell-appearing, comfortable, no acute distress\n\n**CARDIOVASCULAR**\n• Regular rate and rhythm\n• S1 S2 normal\n• No murmurs, rubs, or gallops\n• No jugular venous distension\n\n**EXTREMITIES**\n• No edema\n• Dorsalis pedis and posterior tibial pulses 2+ bilaterally\n• No diminution of pulses\n• Capillary refill <2 seconds\n\n**DIABETIC FOOT EXAMINATION**\n*Inspection:*\n• Skin intact bilaterally\n• No ulcerations, calluses, or blisters\n• No erythema or warmth\n• No deformities (no Charcot, no hammer toes)\n• Nails normal, trimmed appropriately\n\n*Monofilament Testing:*\n• 10/10 sites intact bilaterally\n• Protective sensation present\n• No areas of sensory loss\n\n*Vascular:*\n• Pedal pulses palpable and strong\n• No dependent rubor\n• Normal capillary refill\n\n**IMPRESSION**\nDiabetic foot exam: Low risk\nNo evidence of peripheral neuropathy or vascular insufficiency"
       }
     },
     "James Wilson": {
       "Visit scheduling, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**APPOINTMENT DETAILS**\n\nPatient: James Wilson, 55M\nDate: 02/12/2024\n\n**APPOINTMENT TYPE**\nMedicare Annual Wellness Visit\n\n**REASON FOR VISIT**\nRoutine annual examination\nHealth maintenance review\nAge-appropriate cancer screening discussion\n\n**SCHEDULED TIME**\n60 minutes\n\n**NOTES**\nPatient due for colonoscopy (first screening)\nDiscuss PSA screening\nReview preventive care"
       },
@@ -414,52 +433,52 @@ export default function Scribes({
         content: "**FOLLOW-UP VISIT**\n\nPatient: James Wilson, 55M\nDate: 02/15/2025\n\n**PAST MEDICAL HISTORY**\n• Essential hypertension (diagnosed 2018)\n• History of tobacco use (quit January 2020)\n\n**TOBACCO HISTORY**\nFormer smoker\nQuit date: January 2020 (4 years ago)\nPack-year history: 30 pack-years\n  - Smoked 1.5 packs per day for 20 years\n\n**CURRENT MEDICATIONS**\n• Lisinopril 20mg PO daily for hypertension\n• Aspirin 81mg PO daily for cardiovascular prevention\n\n**VITAL SIGNS**\nBP: 126/76 mmHg (well-controlled)\nWeight: 210 lbs\nBMI: 28.5 (overweight)\n\n**LIPID PANEL (January 2022)**\nLast checked: >2 years ago\nLDL: 118 mg/dL (slightly elevated)\nDue for repeat\n\n**ASSESSMENT**\n1. Essential hypertension - well controlled on lisinopril\n2. History of nicotine dependence - quit 4 years ago, doing well\n3. Overweight - BMI 28.5, lifestyle counseling provided"
       },
       "Visit transcript, 00:02:15": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:02:15\n\nDr.: "Are you still taking your blood pressure medication every day?"\n\nPatient: "Yes, I take my blood pressure pill every morning, 20 milligrams of lisinopril. I take it right when I wake up, never miss it."`
+        content: `Provider: "Are you still taking your blood pressure medication every day?" Patient: "Yes, I take my blood pressure pill every morning, 20 milligrams of lisinopril. I take it right when I wake up, never miss it."`
       },
       "Visit transcript, 00:03:40": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:03:40\n\nDr.: "Are you getting any exercise?"\n\nPatient: "I walk for exercise, usually 2 or 3 times a week, about 30 minutes each time."`
+        content: `Provider: "Are you getting any exercise?" Patient: "I walk for exercise, usually 2 or 3 times a week, about 30 minutes each time."`
       },
       "Visit transcript, 00:04:50": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:04:50\n\nDr.: "Are there any screenings or tests you'd like to discuss?"\n\nPatient: "Yes, I want to make sure I'm up to date on everything. What screenings should I be getting at my age?"`
+        content: `Provider: "Are there any screenings or tests you'd like to discuss?" Patient: "Yes, I want to make sure I'm up to date on everything. What screenings should I be getting at my age?"`
       },
       "Visit transcript, 00:05:30": {
-        type: "Visit Transcript",
+        type: "Clinical Note",
         date: "Today",
-        content: `**VISIT TRANSCRIPT**\nTime: 00:05:30\n\nDr.: "And you quit smoking a few years ago, right?"\n\nPatient: "I quit smoking 4 years ago. Haven't had a cigarette since then. It was tough at first but I'm glad I did it."`
+        content: `Provider: "And you quit smoking a few years ago, right?" Patient: "I quit smoking 4 years ago. Haven't had a cigarette since then. It was tough at first but I'm glad I did it."`
       },
       "Intake form, 02/12/2024": {
-        type: "Intake Form",
+        type: "Form",
         date: "Feb 12, 2024",
         content: "**INTAKE FORM**\n\nPatient: James Wilson, 55M\nDate: 02/12/2024\n\n**REASON FOR VISIT**\nAnnual wellness examination\n\n**CURRENT HEALTH STATUS**\nFeels well overall\nNo acute concerns or new symptoms\n\n**EXERCISE HABITS**\nWalking for exercise 2-3 times per week\nDuration: Approximately 30 minutes per session\nIntensity: Moderate pace\n\n**DIET**\nAdmits to high sodium intake\nFrequent fast food consumption\nTrying to eat more vegetables\nCould benefit from dietary counseling\n\n**PREVENTIVE CARE INTEREST**\nPatient interested in discussing:\n• Age-appropriate cancer screenings\n• Colonoscopy (never done)\n• Any other recommended tests\n\n**SCREENING HISTORY**\nColonoscopy: Never performed\nLipid panel: Last checked 2022\n\n**CONCERNS**\nWants to make sure he's up to date on all health maintenance"
       },
       "Health maintenance review, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**HEALTH MAINTENANCE REVIEW**\n\nPatient: James Wilson, 55M\nDate: Today\n\n**CANCER SCREENING STATUS**\n\n*Colorectal Cancer Screening:*\n• Screening colonoscopy: **NEVER DONE**\n• Patient now 55 years old\n• Eligible for first-time screening per USPSTF guidelines (start age 45-50)\n• **OVERDUE** - should schedule colonoscopy\n\n*Prostate Cancer Screening:*\n• PSA: No prior screening documented\n• Age 55 - within shared decision-making window (age 55-69 per ACS)\n• No family history of prostate cancer documented\n• Discuss risks/benefits with patient\n\n*Lung Cancer Screening:*\n• Former smoker with 30 pack-year history\n• Quit 4 years ago (2020)\n• **ELIGIBLE** for low-dose CT screening per USPSTF\n  - Age 50-80\n  - 20+ pack-year history\n  - Quit within past 15 years\n\n**CARDIOVASCULAR SCREENING**\n• Lipid panel: Last 2022 (>2 years ago)\n• Due for repeat\n\n**IMMUNIZATIONS**\n• Flu vaccine: Due this fall season\n• Tdap: Up to date\n• Pneumococcal: Not yet due (recommended age 65+)\n\n**RECOMMENDATIONS**\n1. Schedule screening colonoscopy - PRIORITY\n2. Order lipid panel today\n3. Discuss PSA screening (shared decision-making)\n4. Consider lung cancer screening CT referral\n5. Flu vaccine when available"
       },
       "ROS documentation, today": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**REVIEW OF SYSTEMS**\n\nPatient: James Wilson\nDate: Today\n\n**CARDIOVASCULAR**\n• No chest pain, palpitations, or shortness of breath\n• No orthopnea or PND\n• No lower extremity edema\n• No exercise intolerance\n\n**RESPIRATORY**\n• No chronic cough, wheezing, or shortness of breath\n• No hemoptysis\n• Former smoker, quit 4 years ago\n\n**GASTROINTESTINAL**\n• Bowel movements regular\n• No blood in stool\n• No change in bowel habits\n• No abdominal pain\n• No nausea or vomiting\n\n**GENITOURINARY**\n• Urinary function normal\n• No difficulty, frequency, urgency\n• No nighttime urination (nocturia)\n• No hematuria\n\n**CONSTITUTIONAL**\n• Feels well overall\n• No fever or chills\n• Weight stable over past year\n• Energy level good"
       },
       "Visit vitals, today": {
-        type: "Visit Vitals",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS**\n\nPatient: James Wilson, 55M\nDate: Today\n\n**MEASUREMENTS**\nBlood Pressure: 128/78 mmHg\nHeart Rate: 68 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.4°F\nO2 Saturation: 99% (room air)\nWeight: 210 lbs\nHeight: 6'0\"\nBMI: 28.5 (overweight)\n\n**NOTES**\nBlood pressure well-controlled on lisinopril\nVital signs stable"
       },
       "Visit vitals comparison": {
-        type: "Clinical Documentation",
+        type: "Clinical Note",
         date: "Today",
         content: "**VITAL SIGNS TREND**\n\nPatient: James Wilson\n\n**WEIGHT HISTORY**\nToday: 210 lbs\n02/2025: 210 lbs\n11/2024: 208 lbs\n08/2024: 211 lbs\n02/2024: 209 lbs\n\nTrend: Stable (208-211 lbs over past year)\nBMI consistently 28-29 (overweight)\n\n**BLOOD PRESSURE HISTORY**\nToday: 128/78 mmHg ✓\n02/2025: 126/76 mmHg ✓\n11/2024: 132/80 mmHg ✓\n08/2024: 124/74 mmHg ✓\n\nTrend: Excellent control on lisinopril 20mg daily\nAll readings at target (<130/80)"
       },
       "Physical examination, today": {
-        type: "Physical Exam",
+        type: "Clinical Note",
         date: "Today",
         content: "**PHYSICAL EXAMINATION**\n\nPatient: James Wilson, 55M\nDate: Today\n\n**GENERAL**\nWell-appearing male, no acute distress\nOverweight habitus\n\n**CARDIOVASCULAR**\n• Regular rate and rhythm\n• S1 S2 normal\n• No murmurs, rubs, or gallops\n• No jugular venous distension\n• Carotid upstrokes normal, no bruits\n• Peripheral pulses 2+ throughout\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• Good air movement throughout\n• No accessory muscle use\n\n**ABDOMEN**\n• Soft, non-tender, non-distended\n• Bowel sounds present and normal\n• No masses or organomegaly\n• No hernias\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n• Full peripheral pulses\n• No varicosities\n\n**NEUROLOGICAL**\n• Alert and oriented x 3\n• Cranial nerves II-XII grossly intact\n• Motor strength 5/5 throughout\n• Sensation intact\n• Gait normal\n\n**SKIN**\n• No concerning lesions\n• No rashes\n\n**RECTAL EXAM**\n• Deferred for now\n• Will perform if patient consents to PSA screening"
       }
@@ -1113,7 +1132,7 @@ export default function Scribes({
           <span 
             key={idx}
             data-citation-badge
-            className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-colors mx-[2px] ${
+            className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer mx-[2px] ${
               isActive 
                 ? 'bg-[var(--text-brand,#1132ee)] text-white' 
                 : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
@@ -1121,28 +1140,48 @@ export default function Scribes({
             style={{
               width: '14px',
               height: '14px',
-              borderRadius: '2px',
               verticalAlign: 'baseline'
             }}
             onMouseEnter={(e) => {
               setActiveCitation({ id: `scribe-${selectedScribeIndex}-${section}`, number: citationNum });
               const rect = e.currentTarget.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const tooltipWidth = 240;
+              const spaceOnRight = viewportWidth - rect.right;
+              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+              
               setTooltipPosition({
                 x: rect.left + rect.width / 2,
-                y: rect.bottom
+                y: rect.bottom,
+                alignLeft
               });
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (activeCitation?.number === citationNum) {
+              
+              // Check if citation references a visit transcript
+              if (citation && citation.source.startsWith('Visit transcript')) {
+                setRightTab('sources');
+                setPreviousTab('sources');
+                setViewingDataSource(citation.source);
+                setHighlightedQuote(citation.quote);
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              } else if (activeCitation?.number === citationNum) {
                 setActiveCitation(null);
                 setTooltipPosition(null);
               } else {
                 setActiveCitation({ id: `scribe-${selectedScribeIndex}-${section}`, number: citationNum });
                 const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
                 setTooltipPosition({
                   x: rect.left + rect.width / 2,
-                  y: rect.bottom
+                  y: rect.bottom,
+                  alignLeft
                 });
               }
             }}
@@ -1344,6 +1383,99 @@ export default function Scribes({
     });
   };
 
+  // Helper to render previsit text with citation badges (simpler version for previsit tab)
+  const renderPrevisitTextWithCitations = (text: string, citationsData: any[]) => {
+    const citationRegex = /\{\{(\d+)\}\}/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = citationRegex.exec(text)) !== null) {
+      // Add text before citation
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      // Add citation badge
+      const citationNum = parseInt(match[1], 10);
+      const citation = citationsData.find(c => c.number === citationNum);
+      const citationId = `previsit-${citationNum}`;
+      const isActive = activeCitation?.id === citationId;
+      
+      parts.push(
+        <span
+          key={`citation-${match.index}-${citationNum}`}
+          data-citation-badge
+          data-citation-id={citationId}
+          className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer mx-[2px] ${
+            isActive 
+              ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+              : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
+          }`}
+          style={{
+            width: '14px',
+            height: '14px',
+            verticalAlign: 'baseline'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            
+            // Check if citation references a visit transcript
+            if (citation && citation.source.startsWith('Visit transcript')) {
+              setRightTab('sources');
+              setPreviousTab('sources');
+              setViewingDataSource(citation.source);
+              setHighlightedQuote(citation.quote);
+              setActiveCitation(null);
+              setTooltipPosition(null);
+            } else if (citation) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const tooltipWidth = 240;
+              const spaceOnRight = viewportWidth - rect.right;
+              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+              
+              setTooltipPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.bottom,
+                alignLeft
+              });
+              setActiveCitation({ id: citationId, number: citationNum });
+            }
+          }}
+          onMouseEnter={(e) => {
+            if (citation) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const tooltipWidth = 240;
+              const spaceOnRight = viewportWidth - rect.right;
+              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+              
+              setTooltipPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.bottom,
+                alignLeft
+              });
+              const isSame = activeCitation?.id === citationId;
+              setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+            }
+          }}
+        >
+          {citationNum}
+        </span>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return parts;
+  };
+
   // Helper to render chat text with citation badges and sentence highlighting
   const renderChatTextWithCitations = (text: string, citationsData: any[], contextId: string) => {
     // Split into sentences (basic split on . ! ? followed by space or newline)
@@ -1442,7 +1574,16 @@ export default function Scribes({
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (citation) {
+              
+              // Check if citation references a visit transcript
+              if (citation && citation.source.startsWith('Visit transcript')) {
+                setRightTab('sources');
+                setPreviousTab('sources');
+                setViewingDataSource(citation.source);
+                setHighlightedQuote(citation.quote);
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              } else if (citation) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const viewportWidth = window.innerWidth;
                 const tooltipWidth = 240;
@@ -1758,7 +1899,9 @@ export default function Scribes({
                           <ul className="list-disc whitespace-pre-wrap">
                             {items.map((item: string, idx: number) => (
                               <li key={idx} className={idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
-                                <span className="leading-[1.4]">{item}</span>
+                                <span className="leading-[1.4]">
+                                  {renderPrevisitTextWithCitations(item, matchingPatient.citations || [])}
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -1768,8 +1911,64 @@ export default function Scribes({
                   </>
                 );
               })()
+            ) : activeTab === 'transcript' ? (
+              /* Transcript Content */
+              (() => {
+                // Get all visit transcript entries for this scribe
+                const transcriptEntries = Object.entries(dataSourceContent[currentScribe.name] || {})
+                  .filter(([key, data]) => key.startsWith('Visit transcript'))
+                  .sort((a, b) => {
+                    // Sort by timestamp in the key (e.g., "Visit transcript, 00:02:30")
+                    const timeA = a[0].match(/(\d+):(\d+):(\d+)/);
+                    const timeB = b[0].match(/(\d+):(\d+):(\d+)/);
+                    if (timeA && timeB) {
+                      const secondsA = parseInt(timeA[1]) * 3600 + parseInt(timeA[2]) * 60 + parseInt(timeA[3]);
+                      const secondsB = parseInt(timeB[1]) * 3600 + parseInt(timeB[2]) * 60 + parseInt(timeB[3]);
+                      return secondsA - secondsB;
+                    }
+                    return 0;
+                  });
+                
+                if (transcriptEntries.length === 0) {
+                  return <p className="text-[color:var(--text-subheading,#666)] px-[20px]">No transcript available</p>;
+                }
+                
+                // Combine all transcripts into a single text
+                const fullTranscript = transcriptEntries
+                  .map(([key, data]) => data.content)
+                  .join('\n\n');
+                
+                return (
+                  <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full px-[20px]">
+                    {/* Audio Player Placeholder */}
+                    <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex items-center justify-center px-[16px] py-[20px] relative rounded-[8px] shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[color:var(--text-subheading,#666)] tracking-[0.15px]">
+                        Audio Player (Duration: {transcriptEntries.length > 0 ? transcriptEntries[transcriptEntries.length - 1][0].match(/(\d+:\d+:\d+)/)?.[1] : '00:00:00'})
+                      </p>
+                    </div>
+                    
+                    {/* Transcript Text */}
+                    <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+                      {fullTranscript.split(/(Provider:|Patient:)/).reduce((acc: any[], part, idx, arr) => {
+                        if (part === 'Provider:' || part === 'Patient:') {
+                          // This is a speaker label, combine with the next part (the dialogue)
+                          const dialogue = arr[idx + 1]?.trim() || '';
+                          if (dialogue) {
+                            acc.push(
+                              <p key={idx} className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[color:var(--text-body,#1a1a1a)] tracking-[0.15px]">
+                                <strong>{part}</strong> {dialogue}
+                              </p>
+                            );
+                          }
+                        }
+                        return acc;
+                      }, [])}
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
-              /* Clinical Note Content */
+              /* Clinical Note & Codes Content */
               <>
             {/* Template Name */}
             <div 
@@ -2216,18 +2415,19 @@ export default function Scribes({
         )}
         
         {/* Content Area - Scrollable */}
-        <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto px-[20px] relative w-full ${viewingDataSource ? 'pt-[20px] pb-[20px]' : 'py-[20px]'}`}>
+        <div className={`content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-y-auto relative w-full ${viewingDataSource ? '' : 'py-[20px] px-[20px]'}`}>
           {viewingDataSource ? (
             /* Data Source View */
             <>
-              {/* Back Button */}
-              <div className="content-stretch flex items-center relative shrink-0 w-full">
+              {/* Back Button - Sticky */}
+              <div className="sticky top-0 z-10 bg-white content-stretch flex items-center shrink-0 w-full px-[20px] pt-[20px] pb-[12px]">
                 <Button
                   variant="tertiary-neutral"
                   size="small"
                   icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
                   onClick={() => {
                     setViewingDataSource(null);
+                    setHighlightedQuote(null);
                     setRightTab(previousTab);
                   }}
                 >
@@ -2236,76 +2436,175 @@ export default function Scribes({
               </div>
               
               {/* Data Source Content */}
-              {dataSourceContent[currentScribe.name]?.[viewingDataSource] && (
-                <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  {/* Source Header */}
-                  <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
-                    <div 
-                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
-                      style={{
-                        backgroundColor: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).bg
-                      }}
-                    >
-                      <p 
-                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+              {dataSourceContent[currentScribe.name]?.[viewingDataSource] && (() => {
+                const sourceData = dataSourceContent[currentScribe.name][viewingDataSource];
+                const badgeInfo = getDocumentTypeBadgeColor(sourceData.type, sourceData.date);
+                
+                // Format document title - remove date/timestamp from the key
+                const formatDocumentTitle = (key: string) => {
+                  // Remove timestamps like ", 00:02:30"
+                  let title = key.replace(/, \d{2}:\d{2}:\d{2}/, '');
+                  // Remove dates like ", 01/03/2024" or ", 02/12/2024"
+                  title = title.replace(/, \d{2}\/\d{2}\/\d{4}/, '');
+                  // Capitalize first letter of each word
+                  return title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                };
+                
+                return (
+                  <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full px-[20px] pb-[20px]">
+                    {/* Source Header */}
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                      <div 
+                        className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
                         style={{
-                          color: getDocumentTypeBadgeColor(dataSourceContent[currentScribe.name][viewingDataSource].type).text,
-                          textTransform: 'capitalize'
+                          backgroundColor: badgeInfo.bg
                         }}
                       >
-                        {dataSourceContent[currentScribe.name][viewingDataSource].type}
+                        <p 
+                          className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                          style={{
+                            color: badgeInfo.text
+                          }}
+                        >
+                          {badgeInfo.label}
+                        </p>
+                      </div>
+                      <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {formatDocumentTitle(viewingDataSource)}
                       </p>
                     </div>
-                    <p className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                      {dataSourceContent[currentScribe.name][viewingDataSource].date}
-                    </p>
-                  </div>
                   
                   {/* Source Content */}
                   <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
-                    <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
-                      {dataSourceContent[currentScribe.name][viewingDataSource].content}
-                    </pre>
+                    {viewingDataSource.startsWith('Visit transcript') ? (
+                      // Render full transcript with highlighting and auto-scroll
+                      (() => {
+                        // Collect ALL visit transcript entries for this scribe
+                        const allTranscriptEntries = Object.entries(dataSourceContent[currentScribe.name] || {})
+                          .filter(([key]) => key.startsWith('Visit transcript'))
+                          .sort((a, b) => {
+                            // Sort by timestamp
+                            const timeA = a[0].match(/(\d+):(\d+):(\d+)/);
+                            const timeB = b[0].match(/(\d+):(\d+):(\d+)/);
+                            if (timeA && timeB) {
+                              const secondsA = parseInt(timeA[1]) * 3600 + parseInt(timeA[2]) * 60 + parseInt(timeA[3]);
+                              const secondsB = parseInt(timeB[1]) * 3600 + parseInt(timeB[2]) * 60 + parseInt(timeB[3]);
+                              return secondsA - secondsB;
+                            }
+                            return 0;
+                          });
+                        
+                        // Combine all transcripts
+                        const fullTranscript = allTranscriptEntries
+                          .map(([_, data]) => data.content)
+                          .join(' ');
+                        
+                        return (
+                          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+                            {fullTranscript
+                              .split(/(Provider:|Patient:)/)
+                              .reduce((acc: any[], part, idx, arr) => {
+                                if (part === 'Provider:' || part === 'Patient:') {
+                                  const dialogue = arr[idx + 1]?.trim() || '';
+                                  if (dialogue) {
+                                    const isHighlighted = highlightedQuote && dialogue.includes(highlightedQuote);
+                                    acc.push(
+                                      <p 
+                                        key={idx} 
+                                        ref={(el) => {
+                                          if (isHighlighted && el) {
+                                            // Auto-scroll to highlighted element
+                                            setTimeout(() => {
+                                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }, 100);
+                                          }
+                                        }}
+                                        className={`font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[color:var(--text-body,#1a1a1a)] tracking-[0.15px] ${
+                                          isHighlighted ? 'bg-[var(--surface-accent,#f1f3fe)]' : ''
+                                        }`}
+                                      >
+                                        <strong>{part}</strong> {dialogue}
+                                      </p>
+                                    );
+                                  }
+                                }
+                                return acc;
+                              }, [])}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      // Regular content rendering
+                      <pre className="font-['Lato',sans-serif] leading-[1.6] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] w-full whitespace-pre-wrap">
+                        {sourceData.content}
+                      </pre>
+                    )}
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </>
           ) : rightTab === 'sources' ? (
             /* Sources View */
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
               {(() => {
-                // Group sources by type
+                // Determine which sources to show based on active tab
+                let sourcesToShow: string[] = [];
+                
+                if (activeTab === 'previsit') {
+                  // Show patient's data sources (non-transcript sources)
+                  const matchingPatient = patients.find(p => p.name === currentScribe.name);
+                  if (matchingPatient && matchingPatient.dataSources) {
+                    sourcesToShow = matchingPatient.dataSources;
+                  }
+                } else if (activeTab === 'transcript') {
+                  // Show visit transcript entries
+                  sourcesToShow = Object.keys(dataSourceContent[currentScribe.name] || {})
+                    .filter(key => key.startsWith('Visit transcript'));
+                } else {
+                  // Show scribe's data sources for clinical note and codes
+                  sourcesToShow = currentScribe.dataSources || [];
+                }
+                
+                // Group sources by type (and date for Clinical Notes)
                 const sourcesByType: Record<string, string[]> = {};
-                (currentScribe.dataSources || []).forEach((source) => {
+                sourcesToShow.forEach((source) => {
                   const sourceData = dataSourceContent[currentScribe.name]?.[source];
                   if (sourceData) {
-                    const type = sourceData.type;
-                    if (!sourcesByType[type]) {
-                      sourcesByType[type] = [];
+                    const badgeInfo = getDocumentTypeBadgeColor(sourceData.type, sourceData.date);
+                    const groupKey = badgeInfo.label; // Use label as key to separate Clinical Notes by date
+                    if (!sourcesByType[groupKey]) {
+                      sourcesByType[groupKey] = [];
                     }
-                    sourcesByType[type].push(source);
+                    sourcesByType[groupKey].push(source);
                   }
                 });
                 
-                return Object.entries(sourcesByType).map(([type, sources]) => (
-                  <div key={type} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                    {/* Type Badge */}
-                    <div 
-                      className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
-                      style={{
-                        backgroundColor: getDocumentTypeBadgeColor(type).bg
-                      }}
-                    >
-                      <p 
-                        className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                return Object.entries(sourcesByType).map(([groupLabel, sources]) => {
+                  // Get badge info from first source in group
+                  const firstSource = sources[0];
+                  const firstSourceData = dataSourceContent[currentScribe.name]?.[firstSource];
+                  const badgeInfo = firstSourceData ? getDocumentTypeBadgeColor(firstSourceData.type, firstSourceData.date) : { bg: '#f2f2f2', text: '#666', label: groupLabel };
+                  
+                  return (
+                    <div key={groupLabel} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                      {/* Type Badge */}
+                      <div 
+                        className="inline-flex items-center px-[8px] py-[4px] rounded-[4px]"
                         style={{
-                          color: getDocumentTypeBadgeColor(type).text,
-                          textTransform: 'capitalize'
+                          backgroundColor: badgeInfo.bg
                         }}
                       >
-                        {type}
-                      </p>
-                    </div>
+                        <p 
+                          className="font-['Lato',sans-serif] font-bold leading-[1.2] text-[11px] tracking-[0.5px]"
+                          style={{
+                            color: badgeInfo.text,
+                            textTransform: 'capitalize'
+                          }}
+                        >
+                          {badgeInfo.label}
+                        </p>
+                      </div>
                     
                     {/* Sources for this type */}
                     <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full pl-[12px]">
@@ -2320,12 +2619,14 @@ export default function Scribes({
                           onClick={() => {
                             setPreviousTab(rightTab);
                             setViewingDataSource(source);
+                            setHighlightedQuote(null);
                           }}
                         />
                       ))}
                     </div>
                   </div>
-                ));
+                  );
+                });
               })()}
             </div>
           ) : rightTab === 'assistant' ? (
@@ -2397,6 +2698,7 @@ export default function Scribes({
                                     onClick={() => {
                                       setPreviousTab(rightTab);
                                       setViewingDataSource(citation.source);
+                                      setHighlightedQuote(null);
                                     }}
                                     className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-link,#1132ee)] hover:underline tracking-[0.065px] text-left"
                                   >
@@ -2951,14 +3253,30 @@ export default function Scribes({
         
         {/* Chat Input at Bottom */}
         <div className="content-stretch flex gap-[8px] items-start pb-[20px] pl-[8px] pr-[16px] pt-[8px] relative shrink-0 w-full">
-          <IconButton 
-            variant="tertiary" 
-            size="large"
-            icon={<InlineIcon name="magic_edit" size={24} />}
-            onClick={() => {}}
-            aria-label="Magic edit"
-            className="shrink-0 text-[color:var(--text-brand,#1132ee)]"
-          />
+          <div 
+            className="relative"
+            onMouseEnter={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setSmartEditTooltipPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top
+              });
+              setShowSmartEditTooltip(true);
+            }}
+            onMouseLeave={() => {
+              setShowSmartEditTooltip(false);
+              setSmartEditTooltipPosition(null);
+            }}
+          >
+            <IconButton 
+              variant="tertiary" 
+              size="large"
+              icon={<InlineIcon name="magic_edit" size={24} />}
+              onClick={() => {}}
+              aria-label="Smart Edit"
+              className="shrink-0 text-[color:var(--text-brand,#1132ee)]"
+            />
+          </div>
           <div className="flex-[1_0_0] min-w-px">
             <ChatInput
               placeholder="Ask assistant"
@@ -2968,6 +3286,7 @@ export default function Scribes({
                 if (chatInputValue.trim()) {
                   setRightTab('assistant');
                   setViewingDataSource(null);
+                  setHighlightedQuote(null);
                   console.log('Send message:', chatInputValue);
                   setChatInputValue('');
                 }
@@ -2986,6 +3305,12 @@ export default function Scribes({
         
         if (contextId.startsWith('scribe-')) {
           citation = currentScribe.citations?.find(c => c.number === activeCitation.number);
+        } else if (contextId.startsWith('previsit-')) {
+          // Find in patient citations
+          const matchingPatient = patients.find(p => p.name === currentScribe.name);
+          if (matchingPatient && matchingPatient.citations) {
+            citation = matchingPatient.citations.find(c => c.number === activeCitation.number);
+          }
         } else if (contextId.startsWith('chat-')) {
           // Find in chat messages
           const messages = chatMessages[currentScribe.name] || [];
@@ -3013,7 +3338,7 @@ export default function Scribes({
         if (tooltipPosition.alignLeft) {
           // Position to the left of the badge
           topPosition = showBelow 
-            ? tooltipPosition.y + 14 + 4 
+            ? tooltipPosition.y + 4 
             : tooltipPosition.y - 4;
           transformValue = showBelow
             ? 'translate(-100%, 0)'
@@ -3021,7 +3346,7 @@ export default function Scribes({
         } else {
           // Default center positioning
           topPosition = showBelow 
-            ? tooltipPosition.y + 14 + 4 
+            ? tooltipPosition.y + 4 
             : tooltipPosition.y - 4;
           transformValue = showBelow
             ? 'translate(-50%, 0)'
@@ -3029,7 +3354,7 @@ export default function Scribes({
         }
         
         const bridgeTop = showBelow
-          ? tooltipPosition.y + 14
+          ? tooltipPosition.y
           : tooltipPosition.y - 4;
         
         return (
@@ -3081,6 +3406,12 @@ export default function Scribes({
                     } else {
                       setPreviousTab(rightTab);
                       setViewingDataSource(citation.source);
+                      // If it's a visit transcript, set the highlighted quote
+                      if (citation.source.startsWith('Visit transcript')) {
+                        setHighlightedQuote(citation.quote);
+                      } else {
+                        setHighlightedQuote(null);
+                      }
                     }
                     setActiveCitation(null);
                     setTooltipPosition(null);
@@ -3091,6 +3422,27 @@ export default function Scribes({
           </>
         );
       })()}
+      
+      {/* Smart Edit Tooltip - Fixed positioning to avoid clipping */}
+      {showSmartEditTooltip && smartEditTooltipPosition && (
+        <div 
+          className="fixed z-[9999] flex flex-col items-center pointer-events-none leading-[0]"
+          style={{
+            left: `${smartEditTooltipPosition.x}px`,
+            top: `${smartEditTooltipPosition.y}px`,
+            transform: 'translate(-50%, calc(-100% - 8px))'
+          }}
+        >
+          <div className="bg-[var(--surface-semantic-info,#f1f3fe)] flex items-center px-[12px] py-[8px] rounded-[4px]">
+            <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic text-[13px] text-[color:var(--shape-brand,#1132ee)] tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="leading-[1.2]">Smart Edit</p>
+            </div>
+          </div>
+          <svg width="12" height="6" viewBox="0 0 12 6" fill="none" className="block" style={{ marginTop: '-1px' }}>
+            <path d="M6 6L0.803847 0L11.1962 0L6 6Z" fill="#f1f3fe"/>
+          </svg>
+        </div>
+      )}
     </div>
   );
 }
