@@ -61,6 +61,55 @@ const PatientListItem = ({
   );
 };
 
+// Scribe List Item Component
+const ScribeListItem = ({ 
+  name, 
+  age, 
+  gender, 
+  duration, 
+  isSelected = false,
+  onClick
+}: { 
+  name: string; 
+  age: number; 
+  gender: string; 
+  duration: string; 
+  isSelected?: boolean;
+  onClick?: () => void;
+}) => {
+  const buttonClass = isSelected 
+    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
+    : "hover:bg-[var(--surface-1,#f7f7f7)]";
+    
+  return (
+    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+      <button 
+        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        onClick={onClick}
+      >
+        <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+          <div className="content-stretch flex flex-[1_0_0] gap-[8px] items-center min-h-px min-w-px relative">
+            <div className="flex flex-[1_0_0] flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] min-h-px min-w-px not-italic overflow-hidden relative text-[13px] text-[color:var(--text-default,black)] text-ellipsis text-left tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="leading-[1.2] overflow-hidden text-left">{name}</p>
+            </div>
+          </div>
+          <VisitStatus status="Generated" />
+        </div>
+        <div className="content-stretch flex font-['Lato',sans-serif] gap-[8px] items-start leading-[0] not-italic relative shrink-0 text-[13px] tracking-[0.065px] w-full whitespace-nowrap">
+          <div className="content-stretch flex flex-[1_0_0] gap-[4px] items-center min-h-px min-w-px relative text-[color:var(--text-subheading,#666)]">
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{age}</p></div>
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{gender}</p></div>
+          </div>
+          <div className="flex flex-col justify-center relative shrink-0 text-[color:var(--text-placeholder,#808080)]">
+            <p className="leading-[1.4]">{duration}</p>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+};
+
 // Shared chat messages type
 type ChatMessage = {
   type: 'user' | 'assistant';
@@ -95,6 +144,11 @@ export default function App() {
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{patientIndex: number, nudgeIndex: number} | null>(null);
   const [showDismissedCareNudges, setShowDismissedCareNudges] = useState(false);
+  const [isSecondaryNavCollapsed, setIsSecondaryNavCollapsed] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [logoTooltipPosition, setLogoTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
+  const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
@@ -106,6 +160,21 @@ export default function App() {
     setViewingDataSource(null);
     setRightTab('actions');
   }, [selectedPatientIndex]);
+
+  // Handle responsive secondary nav collapse
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSecondaryNavCollapsed(true);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
@@ -449,30 +518,49 @@ export default function App() {
         {
           title: "Right Knee Pain Score (0-10)",
           data: [
-            { date: "Jan", value: 5, label: "Jan 2023" },
-            { date: "Apr", value: 6, label: "Apr 2023" },
-            { date: "Jul", value: 7, label: "Jul 2023" },
-            { date: "Oct", value: 4, label: "Oct 2023 (Post-injection)" },
-            { date: "Dec", value: 7, label: "Dec 2023" },
-            { date: "Feb", value: 8, label: "Feb 2024 (Today)" }
+            { date: "11/20", value: 5, label: "Nov 20, 2023" },
+            { date: "11/27", value: 5, label: "Nov 27, 2023" },
+            { date: "12/4", value: 6, label: "Dec 4, 2023" },
+            { date: "12/11", value: 6, label: "Dec 11, 2023" },
+            { date: "12/18", value: 7, label: "Dec 18, 2023" },
+            { date: "12/26", value: 7, label: "Dec 26, 2023" },
+            { date: "1/2", value: 6, label: "Jan 2, 2024" },
+            { date: "1/9", value: 7, label: "Jan 9, 2024" },
+            { date: "1/16", value: 7, label: "Jan 16, 2024" },
+            { date: "1/23", value: 8, label: "Jan 23, 2024" },
+            { date: "1/30", value: 7, label: "Jan 30, 2024" },
+            { date: "2/6", value: 8, label: "Feb 6, 2024" },
+            { date: "2/13", value: 8, label: "Feb 13, 2024" },
+            { date: "2/18", value: 8, label: "Feb 18, 2024 (Today)" }
           ],
           unit: "/10",
           color: "#ab2973",
-          yAxisDomain: [0, 10] as [number, number]
+          yAxisDomain: [0, 10] as [number, number],
+          xAxisTicks: ["11/20", "12/4", "12/18", "1/2", "1/16", "1/30", "2/13"]
         },
         {
           title: "Right Knee Range of Motion (Flexion)",
           data: [
-            { date: "Jan", value: 120, label: "Jan 2023" },
-            { date: "Apr", value: 115, label: "Apr 2023" },
-            { date: "Jul", value: 112, label: "Jul 2023" },
-            { date: "Oct", value: 110, label: "Oct 2023" },
-            { date: "Feb", value: 105, label: "Feb 2024 (Today)" }
+            { date: "11/20", value: 120, label: "Nov 20, 2023" },
+            { date: "11/27", value: 118, label: "Nov 27, 2023" },
+            { date: "12/4", value: 117, label: "Dec 4, 2023" },
+            { date: "12/11", value: 116, label: "Dec 11, 2023" },
+            { date: "12/18", value: 115, label: "Dec 18, 2023" },
+            { date: "12/26", value: 114, label: "Dec 26, 2023" },
+            { date: "1/2", value: 113, label: "Jan 2, 2024" },
+            { date: "1/9", value: 112, label: "Jan 9, 2024" },
+            { date: "1/16", value: 110, label: "Jan 16, 2024" },
+            { date: "1/23", value: 109, label: "Jan 23, 2024" },
+            { date: "1/30", value: 108, label: "Jan 30, 2024" },
+            { date: "2/6", value: 107, label: "Feb 6, 2024" },
+            { date: "2/13", value: 106, label: "Feb 13, 2024" },
+            { date: "2/18", value: 105, label: "Feb 18, 2024 (Today)" }
           ],
           unit: "°",
           color: "#1132ee",
           yAxisDomain: [0, 140] as [number, number],
-          referenceRange: { min: 130, max: 140, label: "Normal", color: "#2f6a32" }
+          referenceRange: { min: 130, max: 140, label: "Normal", color: "#2f6a32" },
+          xAxisTicks: ["11/20", "12/4", "12/18", "1/2", "1/16", "1/30", "2/13"]
         }
       ]
     },
@@ -583,44 +671,50 @@ export default function App() {
         {
           title: "Pain Score (0-10)",
           data: [
-            { date: "Week 1", value: 8, label: "Week 1 Post-Op" },
-            { date: "Week 2", value: 6, label: "Week 2" },
-            { date: "Week 3", value: 5, label: "Week 3" },
-            { date: "Week 4", value: 4, label: "Week 4" },
-            { date: "Week 5", value: 3, label: "Week 5" },
-            { date: "Week 6", value: 2, label: "Week 6 (Today)" }
+            { date: "1/7", value: 8, label: "Jan 7 (Week 1 Post-Op)" },
+            { date: "1/14", value: 7, label: "Jan 14" },
+            { date: "1/21", value: 6, label: "Jan 21 (Week 2)" },
+            { date: "1/28", value: 5, label: "Jan 28 (Week 3)" },
+            { date: "2/4", value: 4, label: "Feb 4 (Week 4)" },
+            { date: "2/11", value: 3, label: "Feb 11 (Week 5)" },
+            { date: "2/18", value: 2, label: "Feb 18 (Week 6, Today)" }
           ],
           unit: "/10",
           color: "#ab2973",
-          yAxisDomain: [0, 10] as [number, number]
+          yAxisDomain: [0, 10] as [number, number],
+          xAxisTicks: ["1/7", "1/21", "2/4", "2/18"]
         },
         {
           title: "Passive Forward Flexion",
           data: [
-            { date: "Week 2", value: 60, label: "Week 2" },
-            { date: "Week 3", value: 75, label: "Week 3" },
-            { date: "Week 4", value: 90, label: "Week 4" },
-            { date: "Week 5", value: 100, label: "Week 5" },
-            { date: "Week 6", value: 110, label: "Week 6 (Today)" }
+            { date: "1/14", value: 50, label: "Jan 14 (Week 2)" },
+            { date: "1/21", value: 60, label: "Jan 21" },
+            { date: "1/28", value: 75, label: "Jan 28 (Week 3)" },
+            { date: "2/4", value: 90, label: "Feb 4 (Week 4)" },
+            { date: "2/11", value: 100, label: "Feb 11 (Week 5)" },
+            { date: "2/18", value: 110, label: "Feb 18 (Week 6, Today)" }
           ],
           unit: "°",
           color: "#1132ee",
           yAxisDomain: [0, 180] as [number, number],
-          referenceRange: { min: 150, max: 180, label: "Normal", color: "#2f6a32" }
+          referenceRange: { min: 150, max: 180, label: "Normal", color: "#2f6a32" },
+          xAxisTicks: ["1/14", "1/28", "2/11"]
         },
         {
           title: "Passive Abduction",
           data: [
-            { date: "Week 2", value: 45, label: "Week 2" },
-            { date: "Week 3", value: 55, label: "Week 3" },
-            { date: "Week 4", value: 65, label: "Week 4" },
-            { date: "Week 5", value: 72, label: "Week 5" },
-            { date: "Week 6", value: 80, label: "Week 6 (Today)" }
+            { date: "1/14", value: 40, label: "Jan 14 (Week 2)" },
+            { date: "1/21", value: 45, label: "Jan 21" },
+            { date: "1/28", value: 55, label: "Jan 28 (Week 3)" },
+            { date: "2/4", value: 65, label: "Feb 4 (Week 4)" },
+            { date: "2/11", value: 72, label: "Feb 11 (Week 5)" },
+            { date: "2/18", value: 80, label: "Feb 18 (Week 6, Today)" }
           ],
           unit: "°",
           color: "#7246b5",
           yAxisDomain: [0, 180] as [number, number],
-          referenceRange: { min: 150, max: 180, label: "Normal", color: "#2f6a32" }
+          referenceRange: { min: 150, max: 180, label: "Normal", color: "#2f6a32" },
+          xAxisTicks: ["1/14", "1/28", "2/11"]
         }
       ]
     },
@@ -721,14 +815,15 @@ export default function App() {
         {
           title: "Pain Score (0-10)",
           data: [
-            { date: "Day 1", value: 4, label: "Day 1 (Onset)" },
-            { date: "Day 2", value: 6, label: "Day 2" },
-            { date: "Day 3", value: 7, label: "Day 3" },
-            { date: "Day 4", value: 7, label: "Day 4 (Today)" }
+            { date: "2/15", value: 4, label: "Feb 15 (Onset)" },
+            { date: "2/16", value: 6, label: "Feb 16" },
+            { date: "2/17", value: 7, label: "Feb 17" },
+            { date: "2/18", value: 7, label: "Feb 18 (Today)" }
           ],
           unit: "/10",
           color: "#ab2973",
-          yAxisDomain: [0, 10] as [number, number]
+          yAxisDomain: [0, 10] as [number, number],
+          xAxisTicks: ["2/15", "2/16", "2/17", "2/18"]
         }
       ]
     },
@@ -922,6 +1017,41 @@ export default function App() {
       ]
     },
   ];
+
+  const scribesByDate = [
+    {
+      date: "Thu, Dec 19 (Today)",
+      scribes: [
+        { name: "Maria Garcia", age: 35, gender: "F", duration: "18m 45s" },
+        { name: "Robert Chen", age: 58, gender: "M", duration: "22m 15s" },
+        { name: "Lisa Anderson", age: 28, gender: "F", duration: "19m 30s" },
+      ]
+    },
+    {
+      date: "Wed, Dec 18",
+      scribes: [
+        { name: "Sarah Johnson", age: 42, gender: "F", duration: "21m 33s" },
+        { name: "James Wilson", age: 55, gender: "M", duration: "26m 08s" },
+      ]
+    }
+  ];
+
+  // Helper functions for delayed nav switching
+  const setHoveredNavWithDelay = (nav: 'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null) => {
+    if (navHoverTimeoutRef.current) {
+      clearTimeout(navHoverTimeoutRef.current);
+    }
+    navHoverTimeoutRef.current = setTimeout(() => {
+      setHoveredPrimaryNav(nav);
+    }, 100);
+  };
+
+  const clearNavHoverDelay = () => {
+    if (navHoverTimeoutRef.current) {
+      clearTimeout(navHoverTimeoutRef.current);
+      navHoverTimeoutRef.current = null;
+    }
+  };
 
   // Helper function to auto-resize textarea
   const adjustTextareaHeight = (el: HTMLTextAreaElement | null) => {
@@ -1406,6 +1536,12 @@ export default function App() {
       setRightTab={setRightTab}
       patients={patients}
       selectedPatientName={selectedPatientForScribe}
+      isSecondaryNavCollapsed={isSecondaryNavCollapsed}
+      setIsSecondaryNavCollapsed={setIsSecondaryNavCollapsed}
+      isLogoHovered={isLogoHovered}
+      setIsLogoHovered={setIsLogoHovered}
+      logoTooltipPosition={logoTooltipPosition}
+      setLogoTooltipPosition={setLogoTooltipPosition}
     />;
   }
 
@@ -1417,29 +1553,68 @@ export default function App() {
           <div className="bg-[var(--surface-1,#f7f7f7)] border-[var(--shape-outline,rgba(0,0,0,0.1))] border-r border-solid content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
             {/* Logo */}
             <div className="content-stretch flex h-[48px] items-center justify-center px-[8px] relative shrink-0 w-full">
-              <button className="content-stretch flex items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors">
-                <InlineIcon name="hexagon" size={24} />
+              <button 
+                className={`content-stretch flex items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer transition-colors ${
+                  isLogoHovered 
+                    ? 'bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] text-[color:var(--text-subheading,#666)]' 
+                    : 'hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))]'
+                }`}
+                onMouseEnter={(e) => {
+                  setIsLogoHovered(true);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setLogoTooltipPosition({
+                    x: rect.right,
+                    y: rect.top + rect.height / 2
+                  });
+                  // On medium screens, show current tab's secondary nav as overlay
+                  if (isSecondaryNavCollapsed && window.innerWidth >= 768 && window.innerWidth < 1024) {
+                    setHoveredPrimaryNav('visits');
+                  }
+                }}
+                onMouseLeave={() => {
+                  setIsLogoHovered(false);
+                  setLogoTooltipPosition(null);
+                }}
+                onClick={() => {
+                  // Only allow expanding secondary nav if screen width >= 1024px
+                  if (window.innerWidth >= 1024) {
+                    setIsSecondaryNavCollapsed(!isSecondaryNavCollapsed);
+                  } else if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+                    // On medium screens, toggle the current tab's overlay
+                    setHoveredPrimaryNav(hoveredPrimaryNav === 'visits' ? null : 'visits');
+                  }
+                }}
+              >
+                <InlineIcon name={isLogoHovered ? "side_navigation" : "hexagon"} size={isLogoHovered ? 20 : 24} />
               </button>
             </div>
             
             <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
             
             {/* Nav Items */}
-            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full">
+            <div 
+              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full"
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+            >
               {/* Visits - Selected */}
-              <div className="content-stretch flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full">
+              <button 
+                className="content-stretch flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              >
                 <div className="bg-[var(--nav-button,rgba(17,50,238,0.12))] content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] text-[color:var(--text-brand,#1132ee)]">
                   <InlineIcon name="stethoscope" size={20} />
                 </div>
                 <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[12px] text-[color:var(--text-brand,#1132ee)] tracking-[-0.36px]">
                   Visits
                 </p>
-              </div>
+              </button>
               
               {/* Scribes */}
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
                 onClick={() => setCurrentView('scribes')}
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
               >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="magic_document" size={20} />
@@ -1450,7 +1625,11 @@ export default function App() {
               </button>
               
               {/* Customize */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('customize')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="magic_edit" size={20} />
                 </div>
@@ -1460,7 +1639,11 @@ export default function App() {
               </button>
               
               {/* Assistant */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('assistant')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="sparkle" size={20} />
                 </div>
@@ -1470,7 +1653,11 @@ export default function App() {
               </button>
               
               {/* Admin */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('admin')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="analytics" size={20} />
                 </div>
@@ -1480,10 +1667,16 @@ export default function App() {
               </button>
             </div>
             
-            <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
+            <div 
+              className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+            />
             
             {/* Footer */}
-            <div className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full">
+            <div 
+              className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+            >
               <button className="content-stretch flex flex-col gap-[4px] items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors text-[color:var(--text-subheading,#666)]">
                 <InlineIcon name="help" size={20} />
               </button>
@@ -1503,6 +1696,7 @@ export default function App() {
         </div>
         
         {/* Patient List */}
+        {!isSecondaryNavCollapsed && (
         <div className="bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
           {/* Date Header */}
           <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
@@ -1519,7 +1713,6 @@ export default function App() {
                     size="small"
                     icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
                     onClick={() => {}}
-                    aria-label="Previous day"
                     className="text-[color:var(--text-subheading,#666)]"
                   />
                   <IconButton 
@@ -1527,7 +1720,6 @@ export default function App() {
                     size="small"
                     icon={<InlineIcon name="keyboard_arrow_right" size={16} />}
                     onClick={() => {}}
-                    aria-label="Next day"
                     className="text-[color:var(--text-subheading,#666)]"
                   />
                 </div>
@@ -1596,7 +1788,254 @@ export default function App() {
             </div>
           </div>
         </div>
+        )}
       </div>
+      
+      {/* Overlay Secondary Nav when collapsed */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('visits')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Date Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Mar 20, Today
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[2px] items-center relative shrink-0">
+                  <IconButton 
+                    variant="tertiary" 
+                    size="small"
+                    icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-subheading,#666)]"
+                  />
+                  <IconButton 
+                    variant="tertiary" 
+                    size="small"
+                    icon={<InlineIcon name="keyboard_arrow_right" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-subheading,#666)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Search/Filter Buttons */}
+          <div className="content-stretch flex flex-col gap-[4px] items-start px-[4px] relative shrink-0 w-full">
+            <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="search" size={16} />}
+                onClick={() => {}}
+              >
+                Search
+              </Button>
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="filter_list" size={16} />}
+                onClick={() => {}}
+              >
+                Filter
+              </Button>
+            </div>
+          </div>
+          
+          {/* Patient List */}
+          <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative w-full overflow-y-auto">
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+              {patients.map((patient, index) => (
+                <PatientListItem
+                  key={index}
+                  name={patient.name}
+                  age={patient.age}
+                  gender={patient.gender}
+                  time={patient.time}
+                  status={patient.status}
+                  isSelected={index === selectedPatientIndex}
+                  onClick={() => {
+                    // If patient has a generated scribe, navigate to scribes
+                    if (patient.status === "Generated") {
+                      setSelectedPatientForScribe(patient.name);
+                      setCurrentView('scribes');
+                    } else {
+                      setSelectedPatientIndex(index);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* New Instant Visit Button */}
+          <div className="content-stretch flex flex-col items-start relative shrink-0">
+            <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+              <Button 
+                variant="secondary" 
+                size="large"
+                icon={<InlineIcon name="mic" size={24} />}
+                onClick={() => {}}
+                className="w-full"
+              >
+                Instant Visit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Scribes */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('scribes')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    My Scribes
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Search/Filter Buttons */}
+          <div className="content-stretch flex flex-col gap-[4px] items-start px-[4px] relative shrink-0 w-full">
+            <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="search" size={16} />}
+                onClick={() => {}}
+              >
+                Search
+              </Button>
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="filter_list" size={16} />}
+                onClick={() => {}}
+              >
+                Filter
+              </Button>
+            </div>
+          </div>
+          
+          {/* Scribe List */}
+          <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative w-full overflow-y-auto">
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+              {scribesByDate.map((dateGroup, groupIndex) => {
+                const startIndex = scribesByDate.slice(0, groupIndex).reduce((acc, g) => acc + g.scribes.length, 0);
+                return (
+                  <div key={groupIndex} className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+                    {/* Date Header */}
+                    <div className="content-stretch flex flex-col items-start px-[12px] py-[8px] relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {dateGroup.date}
+                      </p>
+                    </div>
+                    
+                    {/* Scribes for this date */}
+                    {dateGroup.scribes.map((scribe, idx) => {
+                      const absoluteIndex = startIndex + idx;
+                      return (
+                        <ScribeListItem
+                          key={absoluteIndex}
+                          name={scribe.name}
+                          age={scribe.age}
+                          gender={scribe.gender}
+                          duration={scribe.duration}
+                          isSelected={false}
+                          onClick={() => setCurrentView('scribes')}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Customize */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('customize')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Customize
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Assistant */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('assistant')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Assistant
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Admin */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('admin')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Admin
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Main Content Area */}
       <div className="content-stretch flex flex-[1_0_0] flex-col h-full min-h-px min-w-px relative">
@@ -1743,6 +2182,7 @@ export default function App() {
                       yAxisDomain={trend.yAxisDomain}
                       referenceRange={trend.referenceRange}
                       height={trend.height}
+                      xAxisTicks={trend.xAxisTicks}
                     />
                   ))}
                 </div>
@@ -2720,6 +3160,27 @@ export default function App() {
           </div>
         </div>
       </div>
+      
+      {/* Logo Sidebar Toggle Tooltip */}
+      {isLogoHovered && logoTooltipPosition && (window.innerWidth < 768 || window.innerWidth >= 1024) && (
+        <div 
+          className="fixed z-[9999] flex items-center pointer-events-none"
+          style={{
+            left: `${logoTooltipPosition.x + 10}px`,
+            top: `${logoTooltipPosition.y}px`,
+            transform: 'translateY(-50%)'
+          }}
+        >
+          <svg width="6" height="12" viewBox="0 0 6 12" fill="none" className="shrink-0" style={{ filter: 'drop-shadow(0px 0px 24px rgba(0,0,0,0.15))' }}>
+            <path d="M0 6L6 0.803847L6 11.1962L0 6Z" fill="white"/>
+          </svg>
+          <div className="bg-[var(--surface-base,white)] flex items-center px-[12px] py-[8px] rounded-[4px]" style={{ boxShadow: '0px 0px 24px rgba(0,0,0,0.15)' }}>
+            <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="leading-[1.2]">{isSecondaryNavCollapsed ? 'Open Sidebar' : 'Hide Sidebar'}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Smart Edit Tooltip - Fixed positioning to avoid clipping */}
       {showSmartEditTooltip && smartEditTooltipPosition && (

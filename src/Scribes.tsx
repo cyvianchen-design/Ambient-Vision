@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button, IconButton } from './components/Button';
 import { VisitStatus } from './components/Badge';
 import { InlineIcon } from './components/InlineIcon';
@@ -56,6 +56,57 @@ const ScribeListItem = ({
   );
 };
 
+// Patient List Item Component
+const PatientListItem = ({ 
+  name, 
+  age, 
+  gender, 
+  time,
+  status = "Generated",
+  isSelected = false,
+  onClick
+}: { 
+  name: string; 
+  age: number; 
+  gender: string; 
+  time: string;
+  status?: string;
+  isSelected?: boolean;
+  onClick?: () => void;
+}) => {
+  const buttonClass = isSelected 
+    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
+    : "hover:bg-[var(--surface-1,#f7f7f7)]";
+    
+  return (
+    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+      <button 
+        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        onClick={onClick}
+      >
+        <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+          <div className="content-stretch flex flex-[1_0_0] gap-[8px] items-center min-h-px min-w-px relative">
+            <div className="flex flex-[1_0_0] flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] min-h-px min-w-px not-italic overflow-hidden relative text-[13px] text-[color:var(--text-default,black)] text-ellipsis text-left tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="leading-[1.2] overflow-hidden text-left">{name}</p>
+            </div>
+          </div>
+          {status !== "In Queue" && <VisitStatus status={status as any} />}
+        </div>
+        <div className="content-stretch flex font-['Lato',sans-serif] gap-[8px] items-start leading-[0] not-italic relative shrink-0 text-[13px] tracking-[0.065px] w-full whitespace-nowrap">
+          <div className="content-stretch flex flex-[1_0_0] gap-[4px] items-center min-h-px min-w-px relative text-[color:var(--text-subheading,#666)]">
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{age}</p></div>
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+            <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{gender}</p></div>
+          </div>
+          <div className="flex flex-col justify-center relative shrink-0 text-[color:var(--text-placeholder,#808080)]">
+            <p className="leading-[1.4]">{time}</p>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+};
+
 // Chat message type
 type ChatMessage = {
   type: 'user' | 'assistant';
@@ -76,7 +127,13 @@ export default function Scribes({
   rightTab,
   setRightTab,
   patients,
-  selectedPatientName
+  selectedPatientName,
+  isSecondaryNavCollapsed,
+  setIsSecondaryNavCollapsed,
+  isLogoHovered,
+  setIsLogoHovered,
+  logoTooltipPosition,
+  setLogoTooltipPosition
 }: { 
   onNavigateToVisits?: () => void;
   chatMessages: Record<string, ChatMessage[]>;
@@ -85,7 +142,15 @@ export default function Scribes({
   setRightTab: (tab: 'actions' | 'assistant' | 'sources') => void;
   patients: any[];
   selectedPatientName: string | null;
+  isSecondaryNavCollapsed: boolean;
+  setIsSecondaryNavCollapsed: (collapsed: boolean) => void;
+  isLogoHovered: boolean;
+  setIsLogoHovered: (hovered: boolean) => void;
+  logoTooltipPosition: { x: number; y: number } | null;
+  setLogoTooltipPosition: (position: { x: number; y: number } | null) => void;
 }) {
+  const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
+  const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [chatInputValue, setChatInputValue] = useState('');
   const [activeTab, setActiveTab] = useState<'clinical' | 'codes' | 'transcript' | 'previsit'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
@@ -114,6 +179,38 @@ export default function Scribes({
     setHighlightedQuote(null);
     setRightTab('actions');
   }, [selectedScribeIndex]);
+
+  // Handle responsive secondary nav collapse
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSecondaryNavCollapsed(true);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Helper functions for delayed nav switching
+  const setHoveredNavWithDelay = (nav: 'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null) => {
+    if (navHoverTimeoutRef.current) {
+      clearTimeout(navHoverTimeoutRef.current);
+    }
+    navHoverTimeoutRef.current = setTimeout(() => {
+      setHoveredPrimaryNav(nav);
+    }, 100);
+  };
+
+  const clearNavHoverDelay = () => {
+    if (navHoverTimeoutRef.current) {
+      clearTimeout(navHoverTimeoutRef.current);
+      navHoverTimeoutRef.current = null;
+    }
+  };
   
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [appliedNudges, setAppliedNudges] = useState<Record<number, Record<number, {selectedOptions: string[], appliedText: string}>>>({});
@@ -1637,19 +1734,55 @@ export default function Scribes({
           <div className="bg-[var(--surface-1,#f7f7f7)] border-[var(--shape-outline,rgba(0,0,0,0.1))] border-r border-solid content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
             {/* Logo */}
             <div className="content-stretch flex h-[48px] items-center justify-center px-[8px] relative shrink-0 w-full">
-              <button className="content-stretch flex items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors">
-                <InlineIcon name="hexagon" size={24} />
+              <button 
+                className={`content-stretch flex items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer transition-colors ${
+                  isLogoHovered 
+                    ? 'bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] text-[color:var(--text-subheading,#666)]' 
+                    : 'hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))]'
+                }`}
+                onMouseEnter={(e) => {
+                  setIsLogoHovered(true);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setLogoTooltipPosition({
+                    x: rect.right,
+                    y: rect.top + rect.height / 2
+                  });
+                  // On medium screens, show current tab's secondary nav as overlay
+                  if (isSecondaryNavCollapsed && window.innerWidth >= 768 && window.innerWidth < 1024) {
+                    setHoveredPrimaryNav('scribes');
+                  }
+                }}
+                onMouseLeave={() => {
+                  setIsLogoHovered(false);
+                  setLogoTooltipPosition(null);
+                }}
+                onClick={() => {
+                  // Only allow expanding secondary nav if screen width >= 1024px
+                  if (window.innerWidth >= 1024) {
+                    setIsSecondaryNavCollapsed(!isSecondaryNavCollapsed);
+                  } else if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+                    // On medium screens, toggle the current tab's overlay
+                    setHoveredPrimaryNav(hoveredPrimaryNav === 'scribes' ? null : 'scribes');
+                  }
+                }}
+              >
+                <InlineIcon name={isLogoHovered ? "side_navigation" : "hexagon"} size={isLogoHovered ? 20 : 24} />
               </button>
             </div>
             
             <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
             
             {/* Nav Items */}
-            <div className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full">
+            <div 
+              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full"
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+            >
               {/* Visits */}
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
                 onClick={onNavigateToVisits}
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
               >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="stethoscope" size={20} />
@@ -1660,17 +1793,24 @@ export default function Scribes({
               </button>
               
               {/* Scribes - Selected */}
-              <div className="content-stretch flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full">
+              <button 
+                className="content-stretch flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              >
                 <div className="bg-[var(--nav-button,rgba(17,50,238,0.12))] content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] text-[color:var(--text-brand,#1132ee)]">
                   <InlineIcon name="magic_document" size={20} />
                 </div>
                 <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[12px] text-[color:var(--text-brand,#1132ee)] tracking-[-0.36px]">
                   Scribes
                 </p>
-              </div>
+              </button>
               
               {/* Customize */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('customize')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="magic_edit" size={20} />
                 </div>
@@ -1680,7 +1820,11 @@ export default function Scribes({
               </button>
               
               {/* Assistant */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('assistant')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="sparkle" size={20} />
                 </div>
@@ -1690,7 +1834,11 @@ export default function Scribes({
               </button>
               
               {/* Admin */}
-              <button className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group">
+              <button 
+                className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
+                onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('admin')}
+                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="analytics" size={20} />
                 </div>
@@ -1700,10 +1848,16 @@ export default function Scribes({
               </button>
             </div>
             
-            <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
+            <div 
+              className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+            />
             
             {/* Footer */}
-            <div className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full">
+            <div 
+              className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
+              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+            >
               <button className="content-stretch flex flex-col gap-[4px] items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors text-[color:var(--text-subheading,#666)]">
                 <InlineIcon name="help" size={20} />
               </button>
@@ -1723,6 +1877,7 @@ export default function Scribes({
         </div>
         
         {/* Scribe List */}
+        {!isSecondaryNavCollapsed && (
         <div className="bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
           {/* Header */}
           <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
@@ -1790,7 +1945,248 @@ export default function Scribes({
             </div>
           </div>
         </div>
+        )}
       </div>
+      
+      {/* Overlay Secondary Nav when collapsed - Visits */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('visits')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Date Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Mar 20, Today
+                  </p>
+                </div>
+                <div className="content-stretch flex gap-[2px] items-center relative shrink-0">
+                  <IconButton 
+                    variant="tertiary" 
+                    size="small"
+                    icon={<InlineIcon name="keyboard_arrow_left" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-subheading,#666)]"
+                  />
+                  <IconButton 
+                    variant="tertiary" 
+                    size="small"
+                    icon={<InlineIcon name="keyboard_arrow_right" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-subheading,#666)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Search/Filter Buttons */}
+          <div className="content-stretch flex flex-col gap-[4px] items-start px-[4px] relative shrink-0 w-full">
+            <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="search" size={16} />}
+                onClick={() => {}}
+              >
+                Search
+              </Button>
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="filter_list" size={16} />}
+                onClick={() => {}}
+              >
+                Filter
+              </Button>
+            </div>
+          </div>
+          
+          {/* Patient List */}
+          <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative w-full overflow-y-auto">
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+              {patients.map((patient, index) => (
+                <PatientListItem
+                  key={index}
+                  name={patient.name}
+                  age={patient.age}
+                  gender={patient.gender}
+                  time={patient.time}
+                  status={patient.status}
+                  isSelected={patient.name === selectedPatientName}
+                  onClick={() => {
+                    onNavigateToVisits?.();
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* New Instant Visit Button */}
+          <div className="content-stretch flex flex-col items-start relative shrink-0">
+            <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+              <Button 
+                variant="secondary" 
+                size="large"
+                icon={<InlineIcon name="mic" size={24} />}
+                onClick={() => {}}
+                className="w-full"
+              >
+                Instant Visit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Scribes */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('scribes')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    My Scribes
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Search/Filter Buttons */}
+          <div className="content-stretch flex flex-col gap-[4px] items-start px-[4px] relative shrink-0 w-full">
+            <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="search" size={16} />}
+                onClick={() => {}}
+              >
+                Search
+              </Button>
+              <Button 
+                variant="tertiary" 
+                size="small"
+                icon={<InlineIcon name="filter_list" size={16} />}
+                onClick={() => {}}
+              >
+                Filter
+              </Button>
+            </div>
+          </div>
+          
+          {/* Scribe List */}
+          <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative w-full overflow-y-auto">
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+              {scribesByDate.map((dateGroup, groupIndex) => {
+                const startIndex = scribesByDate.slice(0, groupIndex).reduce((acc, g) => acc + g.scribes.length, 0);
+                return (
+                  <div key={groupIndex} className="content-stretch flex flex-col items-start relative shrink-0 w-full">
+                    {/* Date Header */}
+                    <div className="content-stretch flex flex-col items-start px-[12px] py-[8px] relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {dateGroup.date}
+                      </p>
+                    </div>
+                    
+                    {/* Scribes for this date */}
+                    {dateGroup.scribes.map((scribe, idx) => {
+                      const absoluteIndex = startIndex + idx;
+                      return (
+                        <ScribeListItem
+                          key={absoluteIndex}
+                          name={scribe.name}
+                          age={scribe.age}
+                          gender={scribe.gender}
+                          duration={scribe.duration}
+                          isSelected={absoluteIndex === selectedScribeIndex}
+                          onClick={() => setSelectedScribeIndex(absoluteIndex)}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Customize */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('customize')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Customize
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Assistant */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('assistant')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Assistant
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay Secondary Nav when collapsed - Admin */}
+      {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
+        <div 
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          onMouseEnter={() => setHoveredPrimaryNav('admin')}
+          onMouseLeave={() => setHoveredPrimaryNav(null)}
+        >
+          {/* Header */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+                <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
+                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                    Admin
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Main Content Area */}
       <div className="content-stretch flex flex-[1_0_0] flex-col h-full items-center justify-center min-h-px min-w-px relative">
@@ -3422,6 +3818,27 @@ export default function Scribes({
           </>
         );
       })()}
+      
+      {/* Logo Sidebar Toggle Tooltip */}
+      {isLogoHovered && logoTooltipPosition && (window.innerWidth < 768 || window.innerWidth >= 1024) && (
+        <div 
+          className="fixed z-[9999] flex items-center pointer-events-none"
+          style={{
+            left: `${logoTooltipPosition.x + 10}px`,
+            top: `${logoTooltipPosition.y}px`,
+            transform: 'translateY(-50%)'
+          }}
+        >
+          <svg width="6" height="12" viewBox="0 0 6 12" fill="none" className="shrink-0" style={{ filter: 'drop-shadow(0px 0px 24px rgba(0,0,0,0.15))' }}>
+            <path d="M0 6L6 0.803847L6 11.1962L0 6Z" fill="white"/>
+          </svg>
+          <div className="bg-[var(--surface-base,white)] flex items-center px-[12px] py-[8px] rounded-[4px]" style={{ boxShadow: '0px 0px 24px rgba(0,0,0,0.15)' }}>
+            <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="leading-[1.2]">{isSecondaryNavCollapsed ? 'Open Sidebar' : 'Hide Sidebar'}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Smart Edit Tooltip - Fixed positioning to avoid clipping */}
       {showSmartEditTooltip && smartEditTooltipPosition && (
