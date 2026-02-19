@@ -15,6 +15,7 @@ interface TrendChartProps {
   yAxisDomain?: [number, number];
   referenceRange?: { min: number; max: number; label: string; color?: string };
   height?: number;
+  xAxisTicks?: string[];
 }
 
 export const TrendChart: React.FC<TrendChartProps> = ({ 
@@ -24,7 +25,8 @@ export const TrendChart: React.FC<TrendChartProps> = ({
   color = '#1132ee',
   yAxisDomain,
   referenceRange,
-  height = 240
+  height = 240,
+  xAxisTicks
 }) => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -50,7 +52,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
         </div>
       </div>
       <ResponsiveContainer width="100%" height={height - 70}>
-        <LineChart data={data} margin={{ top: 0, right: 0, left: -4, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 0, right: 0, left: -4, bottom: 5 }} isAnimationActive={false}>
           <CartesianGrid 
             strokeDasharray="3 3" 
             stroke="#d0d0d0" 
@@ -68,6 +70,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
             tickLine={false}
             height={20}
             padding={{ left: 10, right: 0 }}
+            ticks={xAxisTicks}
           />
           <YAxis 
             domain={yAxisDomain}
@@ -81,7 +84,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
             tickLine={false}
             width={36}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e5e5e5', strokeWidth: 1 }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e5e5e5', strokeWidth: 1 }} isAnimationActive={false} />
           {referenceRange && (
             <ReferenceArea
               y1={referenceRange.min}
@@ -96,6 +99,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                 fontFamily: 'Lato, sans-serif',
                 fontWeight: 600
               }}
+              isAnimationActive={false}
             />
           )}
           <Line 
@@ -103,8 +107,9 @@ export const TrendChart: React.FC<TrendChartProps> = ({
             dataKey="value" 
             stroke={color}
             strokeWidth={2.5}
-            dot={{ fill: color, r: 3, strokeWidth: 0 }}
-            activeDot={{ r: 5, strokeWidth: 0 }}
+            dot={{ fill: color, r: 2, strokeWidth: 0 }}
+            activeDot={{ r: 4, strokeWidth: 0 }}
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>
