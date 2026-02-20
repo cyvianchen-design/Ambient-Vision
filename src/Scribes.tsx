@@ -258,6 +258,11 @@ export default function Scribes({
   // Data source content for each scribe
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
     "Robert Chen": {
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PHYSICAL EXAMINATION**\n\nPatient: Robert Chen\nDate: Today\n6 weeks post-op right shoulder rotator cuff repair\n\n**INSPECTION**\n• Surgical portals: All portal sites well-healed with minimal scarring. No erythema, no drainage, no warmth\n• Very mild glenohumeral effusion (expected at this timepoint)\n\n**PALPATION**\n• No tenderness over surgical sites\n• No warmth or signs of infection\n• Minimal effusion\n\n**RANGE OF MOTION (PASSIVE)**\n• Forward flexion: 110°\n• Abduction: 80°\n• External rotation: 30°\n• Internal rotation: To sacrum\n• All measurements limited by guarding, not pain\n\n**STRENGTH**\n• Deferred at this timepoint to protect repair integrity\n\n**NEUROVASCULAR EXAMINATION**\n• Axillary nerve: Deltoid sensation intact (critical finding)\n• Radial/median/ulnar nerves: Intact distally\n• Radial pulse: 2+ bilaterally\n• Capillary refill: <2 seconds\n\n**SPECIAL TESTS**\n• Not performed at 6 weeks (too early)\n\n**ASSESSMENT**\nExcellent healing progress, ready to advance to active-assisted ROM phase"
+      },
       "Operative report, 01/03/2024": {
         type: "Procedure Note",
         date: "Jan 3, 2024",
@@ -402,6 +407,11 @@ export default function Scribes({
       }
     },
     "Lisa Anderson": {
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PHYSICAL EXAMINATION**\n\nPatient: Lisa Anderson, 28F\nDate: Today\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Vitals: BP 118/74, HR 68, BMI 22.1\n\n**LEFT KNEE EXAMINATION**\n\nInspection:\n• No effusion or erythema\n• Normal alignment\n• Full weight-bearing without antalgic gait\n\nPalpation:\n• Point tenderness at medial joint line\n• No warmth or effusion\n• No popliteal cyst\n\nRange of Motion:\n• Full extension (0 degrees)\n• Flexion to 135 degrees\n• No pain at extremes of motion\n• Mild pain mid-range with loaded flexion\n\nSpecial Tests:\n• McMurray test: **POSITIVE** for medial meniscus - reproduces medial joint line pain and palpable click with valgus stress and external rotation\n• Thessaly test: **POSITIVE** - reproduction of medial joint line pain with internal rotation at 20 degrees of knee flexion\n• Lachman test: Negative (ACL intact)\n• Posterior drawer: Negative (PCL intact)\n• Valgus/varus stress: Negative (collateral ligaments intact)\n\n**ASSESSMENT**\nClinical examination highly suggestive of medial meniscus tear. Positive provocative tests with mechanical symptoms warrant MRI for definitive diagnosis and treatment planning."
+      },
       "Visit transcript, 00:01:45": {
         type: "Clinical Note",
         date: "Today",

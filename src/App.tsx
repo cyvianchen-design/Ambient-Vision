@@ -366,6 +366,31 @@ export default function App() {
       }
     },
     "Robert Chen": {
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Feb 12, 2024",
+        content: "**PHYSICAL EXAMINATION**\n\nPatient: Robert Chen\nDate: 02/12/2024\n6 weeks post-op right shoulder rotator cuff repair\n\n**INSPECTION**\n• Surgical portals: All portal sites well-healed with minimal scarring. No erythema, no drainage, no warmth\n• Very mild glenohumeral effusion (expected at this timepoint)\n\n**PALPATION**\n• No tenderness over surgical sites\n• No warmth or signs of infection\n• Minimal effusion\n\n**RANGE OF MOTION (PASSIVE)**\n• Forward flexion: 110°\n• Abduction: 80°\n• External rotation: 30°\n• Internal rotation: To sacrum\n• All measurements limited by guarding, not pain\n\n**STRENGTH**\n• Deferred at this timepoint to protect repair integrity\n\n**NEUROVASCULAR EXAMINATION**\n• Axillary nerve: Deltoid sensation intact (critical finding)\n• Radial/median/ulnar nerves: Intact distally\n• Radial pulse: 2+ bilaterally\n• Capillary refill: <2 seconds\n\n**SPECIAL TESTS**\n• Not performed at 6 weeks (too early)\n\n**ASSESSMENT**\nExcellent healing progress, ready to advance to active-assisted ROM phase"
+      },
+      "PT progress note, 02/05/2024": {
+        type: "Clinical Note",
+        date: "Feb 5, 2024",
+        content: "**PHYSICAL THERAPY PROGRESS NOTE**\n\nPatient: Robert Chen\nDOB: 08/15/1966\nDiagnosis: S/P right rotator cuff repair (01/03/2024)\nSession: Week 5 post-op, Session #9\n\n**SUBJECTIVE**\nPatient reports pain 3-4/10 during exercises, manageable. Sleeping better. Discontinued sling use at home per last visit. Compliant with home exercise program.\n\n**OBJECTIVE**\n\nRange of Motion (Passive):\n• Forward flexion: 110 degrees (goal 140° by 8 weeks)\n• Abduction: 80 degrees (goal 120° by 8 weeks)\n• External rotation (arm at side): 30 degrees (goal 45° by 8 weeks)\n• Internal rotation: To sacrum\n\nMeasurements performed supine to ensure true passive motion. Patient demonstrates good relaxation during stretching.\n\n**INTERVENTIONS**\n• Passive ROM exercises: Pulleys, wand exercises, therapist-assisted stretching\n• Scapular stabilization: Isometric exercises initiated\n• Gentle pendulum exercises\n• Modalities: Ice post-treatment\n• Education: Sleeping positions, activity modifications\n\n**ASSESSMENT**\nCurrent phase: Passive range of motion exercises. Attending 3x per week. No active ROM until surgeon clearance at 6-week visit. Patient progressing well, ROM improving as expected for timepoint. Good compliance.\n\n**PLAN**\n• Continue passive ROM 3x/week\n• Progress to active-assisted ROM pending surgeon approval at 6-week visit\n• Continue home exercise program\n• Next session: 02/08/2024"
+      },
+      "Visit transcript, 00:02:30": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:02:30]\nDoctor: How's your pain level now?\n\nPatient: Pain is much better now. Just 2 out of 10 at rest, maybe 4 out of 10 during PT. Much more manageable than those first couple weeks."
+      },
+      "Visit transcript, 00:06:45": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:06:45]\nDoctor: Any other questions or concerns for me today?\n\nPatient: I'd really like to know when I can go back to work. I'm on medical leave right now. I work as a software engineer, so it's mostly desk work and computer stuff."
+      },
+      "Operative report, 01/03/2024": {
+        type: "Procedure Note",
+        date: "Jan 3, 2024",
+        content: "**OPERATIVE REPORT - KEY FINDINGS**\n\nPatient: Robert Chen\nDate: 01/03/2024\nProcedure: Arthroscopic rotator cuff repair, right shoulder\n\n**PROCEDURE DETAILS**\n• Double-row technique with 4 anchors\n• Medial row: 2 anchors\n• Lateral row: 2 anchors\n\n**INTRAOPERATIVE FINDINGS**\n• Supraspinatus: Large full-thickness tear (2.5cm AP dimension)\n• Infraspinatus: High-grade partial-thickness articular-side tear (>50% thickness)\n• Tissue quality: Excellent\n• Repair tension: Minimal\n\n**REPAIR QUALITY**\nDouble-row technique with 4 anchors. Excellent tissue quality, repair under minimal tension. Stable repair with good tissue approximation. No complications.\n\n**PROGNOSIS**\nGood tissue quality and stable repair suggest favorable prognosis for healing and functional recovery."
+      },
       "Feb 12, Today's visit, Ambient": {
         type: "Clinical Note",
         date: "Feb 12, 2024",
@@ -457,6 +482,26 @@ export default function App() {
       }
     },
     "Lisa Anderson": {
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Feb 12, 2024",
+        content: "**PHYSICAL EXAMINATION**\n\nPatient: Lisa Anderson, 28F\nDate: 02/12/2024\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Vitals: BP 118/74, HR 68, BMI 22.1\n\n**LEFT KNEE EXAMINATION**\n\nInspection:\n• No effusion or erythema\n• Normal alignment\n• Full weight-bearing without antalgic gait\n\nPalpation:\n• Point tenderness at medial joint line\n• No warmth or effusion\n• No popliteal cyst\n\nRange of Motion:\n• Full extension (0 degrees)\n• Flexion to 135 degrees\n• No pain at extremes of motion\n• Mild pain mid-range with loaded flexion\n\nSpecial Tests:\n• McMurray test: **POSITIVE** for medial meniscus - reproduces medial joint line pain and palpable click with valgus stress and external rotation\n• Thessaly test: **POSITIVE** - reproduction of medial joint line pain with internal rotation at 20 degrees of knee flexion\n• Lachman test: Negative (ACL intact)\n• Posterior drawer: Negative (PCL intact)\n• Valgus/varus stress: Negative (collateral ligaments intact)\n\n**ASSESSMENT**\nClinical examination highly suggestive of medial meniscus tear. Positive provocative tests with mechanical symptoms warrant MRI for definitive diagnosis and treatment planning."
+      },
+      "Visit transcript, 00:01:45": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:01:45]\nDoctor: Tell me about your knee. When did this start?\n\nPatient: I've been having pain in my left knee for about 3 weeks now. The pain started about 3 weeks ago. I was out for a run - I usually do about 5 miles - and toward the end I felt this sharp pain on the inside of my knee."
+      },
+      "Visit transcript, 00:04:00": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:04:00]\nDoctor: Do you notice any clicking or locking?\n\nPatient: Sometimes I feel a click or pop when I bend and straighten my knee. It's not constant, but it happens a few times a day, especially when I'm walking up stairs."
+      },
+      "Visit transcript, 00:04:40": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:04:40]\nDoctor: Any instability or giving way?\n\nPatient: A couple times my knee has felt like it was going to give out, but it hasn't fully. It's more like a brief moment where I don't trust it to hold my weight."
+      },
       "Feb 12, Today's visit, Ambient": {
         type: "Clinical Note",
         date: "Feb 12, 2024",
