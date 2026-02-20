@@ -3085,7 +3085,7 @@ export default function Scribes({
         )}
         
         {/* Content Area - Scrollable */}
-        <div className={`content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-y-auto relative w-full ${viewingDataSource ? '' : 'py-[20px] px-[20px]'}`}>
+        <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto relative w-full ${viewingDataSource ? '' : 'py-[20px] px-[20px]'}`}>
           {viewingDataSource ? (
             /* Data Source View */
             <>
@@ -3424,7 +3424,7 @@ export default function Scribes({
               {/* Views & Highlights */}
               <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Views & Highlights
               </p>
               <IconButton 
@@ -3457,7 +3457,7 @@ export default function Scribes({
           {/* Edit Tools */}
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Edit Tools
               </p>
               <IconButton 
@@ -3507,7 +3507,7 @@ export default function Scribes({
           {/* Improve Scribe */}
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Improve Scribe
               </p>
               <IconButton 
