@@ -151,6 +151,7 @@ export default function App() {
   const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
+  const citationCloseTimeoutRef = React.useRef<number | null>(null);
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
   const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [expandedChatSources, setExpandedChatSources] = useState<Set<string>>(new Set());
@@ -160,6 +161,12 @@ export default function App() {
     setViewingDataSource(null);
     setRightTab('actions');
   }, [selectedPatientIndex]);
+
+  // Reset document view when switching scribes
+  useEffect(() => {
+    setViewingDataSource(null);
+    setRightTab('actions');
+  }, [selectedPatientForScribe]);
 
   // Handle responsive secondary nav collapse
   useEffect(() => {
@@ -240,7 +247,7 @@ export default function App() {
         type: 'assistant', 
         content: "Based on the previsit information{{1}}, imaging is not indicated at this time. The patient has no red flags{{2}} (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer). \n\nThis appears to be acute mechanical lower back pain. Per ACR Appropriateness Criteria{{3}}, imaging is usually not appropriate for nonspecific acute low back pain without red flags. Conservative management with NSAIDs and physical therapy is the recommended first-line approach{{4}}. Consider imaging if symptoms persist beyond 4-6 weeks or red flags develop.",
         citations: [
-          { number: 1, source: "Visit transcript, 00:00:45", quote: "My back has been killing me for the past 4 days. It started after I helped my son move some furniture" },
+          { number: 1, source: "Visit transcript, 00:01:15", quote: "The pain started about 4 days ago, on Saturday morning" },
           { number: 2, source: "ROS documentation, today", quote: "Constitutional: Denies fever, chills, night sweats. Neurologic: No numbness, no tingling, no weakness. GU: Normal bowel and bladder function" },
           { number: 3, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" },
           { number: 4, source: "NEJM - Low Back Pain Review", quote: "First-line treatment for acute low back pain includes NSAIDs, acetaminophen, and continued activity as tolerated.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMra1614337" }
@@ -517,6 +524,7 @@ export default function App() {
       trends: [
         {
           title: "Right Knee Pain Score (0-10)",
+          section: "Current Symptoms",
           data: [
             { date: "11/20", value: 5, label: "Nov 20, 2023" },
             { date: "11/27", value: 5, label: "Nov 27, 2023" },
@@ -540,6 +548,7 @@ export default function App() {
         },
         {
           title: "Right Knee Range of Motion (Flexion)",
+          section: "Physical Exam (Last Visit)",
           data: [
             { date: "11/20", value: 120, label: "Nov 20, 2023" },
             { date: "11/27", value: 118, label: "Nov 27, 2023" },
@@ -584,33 +593,33 @@ export default function App() {
           "Patient underwent arthroscopic rotator cuff repair on January 3rd. {{1}}",
           "Intraoperative findings showed large full-thickness tear of supraspinatus (2.5cm) and partial-thickness tear of infraspinatus. {{2}}",
           "Repaired with double-row technique using 4 anchors. {{3}}",
-          "Surgery uncomplicated, placed in sling with abduction pillow. {{1}}",
+          "Surgery uncomplicated, placed in sling with abduction pillow. {{17}}",
           "Started on pain medications and instructed on pendulum exercises only for first 2 weeks. {{4}}",
-          "PT to begin at 2 weeks post-op, follow-up scheduled for 6 weeks. {{4}}"
+          "PT to begin at 2 weeks post-op, follow-up scheduled for 6 weeks. {{18}}"
         ],
         "Surgical Details": [
-          "Procedure: Arthroscopic rotator cuff repair (1/3/24) {{1}}",
-          "Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial) {{2}}",
-          "Repair: Double-row technique, 4 suture anchors {{3}}",
-          "No complications intraoperatively {{1}}"
+          "Procedure: Arthroscopic rotator cuff repair (1/3/24) {{19}}",
+          "Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial) {{20}}",
+          "Repair: Double-row technique, 4 suture anchors {{21}}",
+          "No complications intraoperatively {{22}}"
         ],
         "Current Symptoms": [
           "Pain 2/10 at rest, 4/10 with PT exercises {{5}}",
-          "Sleeping better - able to lie on left side {{5}}",
+          "Sleeping better - able to lie on left side {{23}}",
           "Sling discontinued 2 weeks ago per PT {{6}}",
           "No numbness, tingling, or signs of infection {{7}}"
         ],
         "Physical Therapy Progress": [
           "PT started week 2 - passive ROM protocol {{8}}",
           "Current ROM: Forward flexion 110°, abduction 80° (passive) {{9}}",
-          "No active ROM yet - per protocol {{8}}",
-          "Scapular strengthening exercises initiated {{8}}"
+          "No active ROM yet - per protocol {{24}}",
+          "Scapular strengthening exercises initiated {{25}}"
         ],
         "Physical Exam (Last Visit)": [
           "Incisions well-healed, no erythema or drainage {{10}}",
-          "Minimal shoulder effusion {{10}}",
+          "Minimal shoulder effusion {{26}}",
           "Supraspinatus strength: not tested (too early) {{11}}",
-          "Neurovascular intact - axillary nerve function preserved {{11}}"
+          "Neurovascular intact - axillary nerve function preserved {{27}}"
         ],
         "Current Medications": [
           "Tramadol 50mg Q6H PRN (rarely using now) {{12}}",
@@ -619,7 +628,7 @@ export default function App() {
         ],
         "Return to Work": [
           "Occupation: Software engineer (desk job) {{15}}",
-          "Currently out of work - can type but limited by positioning {{15}}",
+          "Currently out of work - can type but limited by positioning {{28}}",
           "Interested in return to work timeline {{16}}"
         ]
       },
@@ -639,7 +648,19 @@ export default function App() {
         { number: 13, citedText: "blood pressure medication", quote: "Hypertension managed with lisinopril 10mg daily, blood pressure well-controlled", source: "Dec 15, 2023, PCP visit, Athena" },
         { number: 14, citedText: "acetaminophen", quote: "Acetaminophen 1000mg three times daily, taken regularly with physical therapy sessions for pain control", source: "Feb 12, Intake form, Ambient" },
         { number: 15, citedText: "occupation", quote: "Occupation: Software engineer, primarily desk work involving computer use. Currently on medical leave.", source: "Dec 20, 2023, Pre-operative visit, Athena" },
-        { number: 16, citedText: "work concerns", quote: "Patient inquiring about timeline for return to work. Reports he can type with right hand but positioning at desk is uncomfortable. Employer requesting return-to-work note with restrictions if applicable.", source: "Feb 12, Intake form, Ambient" }
+        { number: 16, citedText: "work concerns", quote: "Patient inquiring about timeline for return to work. Reports he can type with right hand but positioning at desk is uncomfortable. Employer requesting return-to-work note with restrictions if applicable.", source: "Feb 12, Intake form, Ambient" },
+        { number: 17, citedText: "Surgery uncomplicated", quote: "Surgery uncomplicated. No complications noted intraoperatively.", source: "Jan 3, Operative report, Athena" },
+        { number: 18, citedText: "PT to begin at 2 weeks", quote: "Physical therapy to begin week 2 for passive ROM. Follow-up in 6 weeks.", source: "Jan 3, Operative report, Athena" },
+        { number: 19, citedText: "Arthroscopic rotator cuff repair", quote: "Procedure: Arthroscopic rotator cuff repair, right shoulder. Date: January 3, 2024", source: "Jan 3, Operative report, Athena" },
+        { number: 20, citedText: "Tears details", quote: "Supraspinatus (2.5cm full-thickness tear), infraspinatus (high-grade partial-thickness tear >50%)", source: "Jan 3, Operative report, Athena" },
+        { number: 21, citedText: "Double-row technique", quote: "Repair: Double-row technique, 4 suture anchors (2 medial row, 2 lateral row)", source: "Jan 3, Operative report, Athena" },
+        { number: 22, citedText: "No complications", quote: "No complications intraoperatively", source: "Jan 3, Operative report, Athena" },
+        { number: 23, citedText: "Sleeping better", quote: "Sleep quality improved, able to lie on contralateral side without waking", source: "Feb 12, Intake form, Ambient" },
+        { number: 24, citedText: "No active ROM yet", quote: "No active ROM permitted until cleared by surgeon", source: "Feb 5, PT progress note, Athena" },
+        { number: 25, citedText: "Scapular strengthening", quote: "Scapular stabilization exercises initiated", source: "Feb 5, PT progress note, Athena" },
+        { number: 26, citedText: "Minimal effusion", quote: "Very mild effusion of glenohumeral joint, expected at this timepoint", source: "Jan 17, 2-week post-op visit, Athena" },
+        { number: 27, citedText: "Neurovascular intact", quote: "Axillary nerve function intact (deltoid sensation preserved), radial/median/ulnar nerves intact", source: "Jan 17, 2-week post-op visit, Athena" },
+        { number: 28, citedText: "limited by positioning", quote: "Can type with right hand but positioning at desk is uncomfortable", source: "Feb 12, Intake form, Ambient" }
       ],
       dataSources: [
         "Feb 12, Today's visit, Ambient",
@@ -670,6 +691,7 @@ export default function App() {
       trends: [
         {
           title: "Pain Score (0-10)",
+          section: "Current Symptoms",
           data: [
             { date: "1/7", value: 8, label: "Jan 7 (Week 1 Post-Op)" },
             { date: "1/14", value: 7, label: "Jan 14" },
@@ -686,6 +708,7 @@ export default function App() {
         },
         {
           title: "Passive Forward Flexion",
+          section: "Physical Therapy Progress",
           data: [
             { date: "1/14", value: 50, label: "Jan 14 (Week 2)" },
             { date: "1/21", value: 60, label: "Jan 21" },
@@ -702,6 +725,7 @@ export default function App() {
         },
         {
           title: "Passive Abduction",
+          section: "Physical Therapy Progress",
           data: [
             { date: "1/14", value: 40, label: "Jan 14 (Week 2)" },
             { date: "1/21", value: 45, label: "Jan 21" },
@@ -814,6 +838,7 @@ export default function App() {
       trends: [
         {
           title: "Pain Score (0-10)",
+          section: "Current Symptoms",
           data: [
             { date: "2/15", value: 4, label: "Feb 15 (Onset)" },
             { date: "2/16", value: 6, label: "Feb 16" },
@@ -1069,16 +1094,37 @@ export default function App() {
     let subjective = `Chief Complaint: ${patient.chiefComplaint}\n\n`;
     subjective += `History of Present Illness:\n`;
     
-    // Generate HPI from atAGlance and details
-    const hpiItems = [...patient.atAGlance];
+    // Generate HPI from atAGlance and details (skip "Next step" items)
+    const hpiItems = patient.atAGlance.filter(item => !item.startsWith('Next step'));
     hpiItems.forEach((item, idx) => {
-      const citationNumbers = patient.citations
-        ?.filter(c => item.includes(c.citedText))
-        .map(c => c.number)
-        .sort((a, b) => a - b);
+      // Find all citations that match text in this item
+      const matchingCitations = patient.citations
+        ?.filter(c => item.toLowerCase().includes(c.citedText.toLowerCase()))
+        .sort((a, b) => {
+          // Sort by position in text
+          const aPos = item.toLowerCase().indexOf(a.citedText.toLowerCase());
+          const bPos = item.toLowerCase().indexOf(b.citedText.toLowerCase());
+          return aPos - bPos;
+        });
       
-      if (citationNumbers && citationNumbers.length > 0) {
-        subjective += `${item} {{${citationNumbers[0]}}}`;
+      if (matchingCitations && matchingCitations.length > 0) {
+        // Insert citations right after their referenced text
+        let modifiedItem = item;
+        let offset = 0;
+        
+        matchingCitations.forEach(citation => {
+          const citedTextLower = citation.citedText.toLowerCase();
+          const itemLower = modifiedItem.toLowerCase();
+          const index = itemLower.indexOf(citedTextLower, offset);
+          
+          if (index !== -1) {
+            const insertPos = index + citation.citedText.length;
+            modifiedItem = modifiedItem.slice(0, insertPos) + ` {{${citation.number}}}` + modifiedItem.slice(insertPos);
+            offset = insertPos + ` {{${citation.number}}}`.length;
+          }
+        });
+        
+        subjective += modifiedItem;
       } else {
         subjective += item;
       }
@@ -1090,16 +1136,8 @@ export default function App() {
       subjective += `\n\nPast Medical History: `;
       const historyItems = patient.sections['Medical History'];
       historyItems.forEach((item, idx) => {
-        const citationNumbers = patient.citations
-          ?.filter(c => item.includes(c.citedText))
-          .map(c => c.number)
-          .sort((a, b) => a - b);
-        
-        if (citationNumbers && citationNumbers.length > 0) {
-          subjective += `${item} {{${citationNumbers[0]}}}`;
-        } else {
-          subjective += item;
-        }
+        // Already has citation markers embedded, just use as-is
+        subjective += item;
         
         if (idx < historyItems.length - 1) {
           subjective += '; ';
@@ -1112,16 +1150,8 @@ export default function App() {
       subjective += `\n\nCurrent Medications: `;
       const medItems = patient.sections['Current Medications'];
       medItems.forEach((item, idx) => {
-        const citationNumbers = patient.citations
-          ?.filter(c => item.includes(c.citedText))
-          .map(c => c.number)
-          .sort((a, b) => a - b);
-        
-        if (citationNumbers && citationNumbers.length > 0) {
-          subjective += `${item} {{${citationNumbers[0]}}}`;
-        } else {
-          subjective += item;
-        }
+        // Already has citation markers embedded, just use as-is
+        subjective += item;
         
         if (idx < medItems.length - 1) {
           subjective += '; ';
@@ -1134,16 +1164,8 @@ export default function App() {
     if (patient.sections['Vitals']) {
       objective += `Vitals:\n`;
       patient.sections['Vitals'].forEach((item, idx) => {
-        const citationNumbers = patient.citations
-          ?.filter(c => item.includes(c.citedText))
-          .map(c => c.number)
-          .sort((a, b) => a - b);
-        
-        if (citationNumbers && citationNumbers.length > 0) {
-          objective += `${item} {{${citationNumbers[0]}}}\n`;
-        } else {
-          objective += `${item}\n`;
-        }
+        // Already has citation markers embedded, just use as-is
+        objective += `${item}\n`;
       });
       objective += `\n`;
     }
@@ -1181,193 +1203,14 @@ export default function App() {
     return { subjective, objective, assessment, plan };
   };
 
-  // Helper function to render prechart text with citations
+  // Helper function to render prechart text with citations (sentence-based like Scribes)
   const renderPrechartTextWithCitations = (text: string) => {
     const patient = patients[selectedPatientIndex];
     const citations = patient.citations || [];
     
-    // Split by citation markers only
-    const parts = text.split(/(\{\{\d+\}\})/g);
-    
-    return parts.map((part, idx) => {
-      // Check if it's a citation marker
-      const citationMatch = part.match(/\{\{(\d+)\}\}/);
-      if (citationMatch) {
-        const citationNum = parseInt(citationMatch[1]);
-        const citation = citations.find(c => c.number === citationNum);
-        const citationId = `prechart-${citationNum}`;
-        const isActive = activeCitation?.id === citationId;
-        
-        return (
-          <span 
-            key={idx}
-            data-citation-badge
-            data-citation-id={citationId}
-            className={`inline-flex items-center justify-center font-bold text-[10px] cursor-pointer transition-colors mx-[2px] ${
-              isActive 
-                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
-                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
-            }`}
-            style={{
-              width: '14px',
-              height: '14px',
-              borderRadius: '2px',
-              verticalAlign: 'baseline'
-            }}
-            onMouseEnter={(e) => {
-              if (citation) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const viewportWidth = window.innerWidth;
-                const tooltipWidth = 240;
-                const spaceOnRight = viewportWidth - rect.right;
-                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
-                
-                setActiveCitation({ id: citationId, number: citationNum });
-                setTooltipPosition({
-                  x: rect.left + rect.width / 2,
-                  y: rect.bottom,
-                  alignLeft
-                });
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (citation) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const viewportWidth = window.innerWidth;
-                const tooltipWidth = 240;
-                const spaceOnRight = viewportWidth - rect.right;
-                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
-                
-                const isSame = activeCitation?.id === citationId;
-                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
-                setTooltipPosition(isSame ? null : {
-                  x: rect.left + rect.width / 2,
-                  y: rect.bottom,
-                  alignLeft
-                });
-              }
-            }}
-          >
-            {citationMatch[1]}
-          </span>
-        );
-      }
-      
-      // Check if this text should be highlighted for citations
-      if (activeCitation && part) {
-        const citation = citations.find(c => c.number === activeCitation.number);
-        if (citation && citation.citedText && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
-          const citedText = citation.citedText;
-          const regex = new RegExp(`(${citedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-          const highlighted = part.split(regex).map((segment, segIdx) => {
-            if (segment.toLowerCase() === citedText.toLowerCase()) {
-              return (
-                <mark key={`${idx}-${segIdx}`} className="bg-[#f1f3fe] text-inherit" style={{ padding: 0 }}>
-                  {segment}
-                </mark>
-              );
-            }
-            return <span key={`${idx}-${segIdx}`}>{segment}</span>;
-          });
-          return <span key={idx}>{highlighted}</span>;
-        }
-      }
-      
-      return <span key={idx}>{part}</span>;
-    });
-  };
-
-  // Helper function to render text with citation badges
-  const renderTextWithCitations = (text: string, citationsData: any[], contextId: string = 'previsit') => {
-    // Parse text for {{number}} patterns and render citation badges
-    const parts: (string | JSX.Element)[] = [];
-    let lastIndex = 0;
-    const regex = /\{\{(\d+)\}\}/g;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      const beforeText = text.slice(lastIndex, match.index);
-      if (beforeText) {
-        parts.push(beforeText);
-      }
-
-      const citationNum = parseInt(match[1], 10);
-      const citation = citationsData.find(c => c.number === citationNum);
-      const citationId = `${contextId}-${citationNum}`;
-      const isActive = activeCitation?.id === citationId;
-
-      parts.push(
-        <span
-          key={`citation-${citationNum}-${match.index}`}
-          data-citation-badge
-          data-citation-id={citationId}
-          className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
-            isActive 
-              ? 'bg-[var(--text-brand,#1132ee)] text-white' 
-              : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
-          }`}
-          style={{
-            width: '14px',
-            height: '14px',
-            verticalAlign: 'baseline',
-            marginLeft: '2px',
-            marginRight: '2px'
-          }}
-          onMouseEnter={(e) => {
-            if (citation) {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const viewportWidth = window.innerWidth;
-              const tooltipWidth = 240;
-              const spaceOnRight = viewportWidth - rect.right;
-              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
-              
-              setActiveCitation({ id: citationId, number: citationNum });
-              setTooltipPosition({ 
-                x: rect.left + rect.width / 2, 
-                y: rect.bottom,
-                alignLeft 
-              });
-            }
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (citation) {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const viewportWidth = window.innerWidth;
-              const tooltipWidth = 240;
-              const spaceOnRight = viewportWidth - rect.right;
-              const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
-              
-              const isSame = activeCitation?.id === citationId;
-              setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
-              setTooltipPosition(isSame ? null : { 
-                x: rect.left + rect.width / 2, 
-                y: rect.bottom,
-                alignLeft 
-              });
-            }
-          }}
-        >
-          {citationNum}
-        </span>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts.length > 0 ? parts : text;
-  };
-
-  // Helper to render chat messages with sentence highlighting
-  const renderChatMessageWithCitations = (text: string, citationsData: any[], contextId: string) => {
-    // Split into sentences (basic split on . ! ? followed by space or newline)
+    // Split into sentences/clauses - handle periods, semicolons, and newlines as boundaries
     const sentences: Array<{text: string, start: number, end: number}> = [];
-    const sentenceRegex = /[^.!?\n]+[.!?\n]+|\n+/g;
+    const sentenceRegex = /[^.!?;\n]+[.!?;\n]+/g;
     let match;
     let lastEnd = 0;
     
@@ -1397,7 +1240,220 @@ export default function App() {
     while ((citMatch = citationRegex.exec(text)) !== null) {
       const citNum = parseInt(citMatch[1], 10);
       const position = citMatch.index;
-      const sentenceIdx = sentences.findIndex(s => position >= s.start && position < s.end);
+      
+      // Find the sentence this citation belongs to
+      // Citations should highlight the sentence containing the text BEFORE the marker
+      let sentenceIdx = -1;
+      
+      // Look at the character right before the citation marker to determine which sentence it belongs to
+      const charBeforeCitation = position > 0 ? position - 1 : position;
+      
+      // Check which sentence contains the position just before the citation
+      for (let i = 0; i < sentences.length; i++) {
+        if (charBeforeCitation >= sentences[i].start && charBeforeCitation < sentences[i].end) {
+          sentenceIdx = i;
+          break;
+        }
+      }
+      
+      // Fallback: if still not found, find the closest previous sentence
+      if (sentenceIdx === -1) {
+        for (let i = sentences.length - 1; i >= 0; i--) {
+          if (position >= sentences[i].end) {
+            sentenceIdx = i;
+            break;
+          }
+        }
+      }
+      
+      citationPositions.push({ number: citNum, position, sentenceIdx });
+    }
+    
+    // Render sentences with highlighting
+    return sentences.map((sentence, idx) => {
+      const sentenceCitations = citationPositions.filter(c => c.sentenceIdx === idx);
+      const isHighlighted = sentenceCitations.some(c => 
+        activeCitation?.id === `prechart-${c.number}`
+      );
+      
+      // Render the sentence with citation badges
+      const parts: (string | JSX.Element)[] = [];
+      let lastIndex = 0;
+      const regex = /\{\{(\d+)\}\}/g;
+      let match;
+      const sentenceText = sentence.text;
+      
+      while ((match = regex.exec(sentenceText)) !== null) {
+        const beforeText = sentenceText.slice(lastIndex, match.index);
+        if (beforeText) {
+          parts.push(beforeText);
+        }
+        
+        const citationNum = parseInt(match[1], 10);
+        const citation = citations.find(c => c.number === citationNum);
+        const citationId = `prechart-${citationNum}`;
+        const isActive = activeCitation?.id === citationId;
+        
+        parts.push(
+          <span
+            key={`citation-${idx}-${citationNum}-${match.index}`}
+            data-citation-badge
+            data-citation-id={citationId}
+            className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
+              isActive 
+                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
+            }`}
+            style={{
+              width: '14px',
+              height: '14px',
+              verticalAlign: 'baseline',
+              marginLeft: '2px',
+              marginRight: '2px'
+            }}
+            onMouseEnter={(e) => {
+              if (citation) {
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
+                
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                setActiveCitation({ id: citationId, number: citationNum });
+                setTooltipPosition({
+                  x: rect.left + rect.width / 2,
+                  y: rect.bottom,
+                  alignLeft
+                });
+              }
+            }}
+            onMouseLeave={() => {
+              citationCloseTimeoutRef.current = window.setTimeout(() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }, 100);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                const isSame = activeCitation?.id === citationId;
+                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+                setTooltipPosition(isSame ? null : {
+                  x: rect.left + rect.width / 2,
+                  y: rect.bottom,
+                  alignLeft
+                });
+              }
+            }}
+          >
+            {citationNum}
+          </span>
+        );
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      if (lastIndex < sentenceText.length) {
+        parts.push(sentenceText.slice(lastIndex));
+      }
+      
+      const content = parts.length > 0 ? parts : sentenceText;
+      
+      if (isHighlighted) {
+        return (
+          <mark 
+            key={`sentence-${idx}`} 
+            className="bg-[#f1f3fe] text-inherit" 
+            style={{ padding: 0 }}
+          >
+            {content}
+          </mark>
+        );
+      }
+      
+      return <span key={`sentence-${idx}`}>{content}</span>;
+    });
+  };
+
+  // Helper function to render text with citation badges (sentence-based highlighting like Scribes)
+  const renderTextWithCitations = (text: string, citationsData: any[], contextId: string = 'previsit') => {
+    // For short text (like list items), treat the whole thing as one sentence
+    // Otherwise split into proper sentences
+    const sentences: Array<{text: string, start: number, end: number}> = [];
+    
+    if (text.length < 300 || !text.match(/[.!?]\s/)) {
+      // Short text or no sentence breaks - treat as single unit
+      sentences.push({ text: text, start: 0, end: text.length });
+    } else {
+      // Split into sentences for longer text
+      const sentenceRegex = /[^.!?\n]+[.!?\n]+/g;
+      let match;
+      let lastEnd = 0;
+      
+      while ((match = sentenceRegex.exec(text)) !== null) {
+        sentences.push({
+          text: match[0],
+          start: match.index,
+          end: match.index + match[0].length
+        });
+        lastEnd = match.index + match[0].length;
+      }
+      
+      // Add any remaining text
+      if (lastEnd < text.length) {
+        sentences.push({
+          text: text.slice(lastEnd),
+          start: lastEnd,
+          end: text.length
+        });
+      }
+    }
+    
+    // Find which sentence each citation belongs to
+    const citationRegex = /\{\{(\d+)\}\}/g;
+    const citationPositions: Array<{number: number, position: number, sentenceIdx: number}> = [];
+    let citMatch;
+    
+    while ((citMatch = citationRegex.exec(text)) !== null) {
+      const citNum = parseInt(citMatch[1], 10);
+      const position = citMatch.index;
+      
+      // Find the sentence this citation belongs to
+      // Citations should highlight the sentence containing the text BEFORE the marker
+      let sentenceIdx = -1;
+      
+      // Look at the character right before the citation marker to determine which sentence it belongs to
+      const charBeforeCitation = position > 0 ? position - 1 : position;
+      
+      // Check which sentence contains the position just before the citation
+      for (let i = 0; i < sentences.length; i++) {
+        if (charBeforeCitation >= sentences[i].start && charBeforeCitation < sentences[i].end) {
+          sentenceIdx = i;
+          break;
+        }
+      }
+      
+      // Fallback: if still not found, find the closest previous sentence
+      if (sentenceIdx === -1) {
+        for (let i = sentences.length - 1; i >= 0; i--) {
+          if (position >= sentences[i].end) {
+            sentenceIdx = i;
+            break;
+          }
+        }
+      }
+      
       citationPositions.push({ number: citNum, position, sentenceIdx });
     }
     
@@ -1445,6 +1501,11 @@ export default function App() {
             }}
             onMouseEnter={(e) => {
               if (citation) {
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
+                
                 const rect = e.currentTarget.getBoundingClientRect();
                 const viewportWidth = window.innerWidth;
                 const tooltipWidth = 240;
@@ -1458,6 +1519,194 @@ export default function App() {
                   alignLeft 
                 });
               }
+            }}
+            onMouseLeave={() => {
+              citationCloseTimeoutRef.current = window.setTimeout(() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }, 100);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (citation) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                const isSame = activeCitation?.id === citationId;
+                setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
+                setTooltipPosition(isSame ? null : { 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+          >
+            {citationNum}
+          </span>
+        );
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      if (lastIndex < sentenceText.length) {
+        parts.push(sentenceText.slice(lastIndex));
+      }
+      
+      const content = parts.length > 0 ? parts : sentenceText;
+      
+      if (isHighlighted) {
+        return (
+          <mark 
+            key={`sentence-${idx}`} 
+            className="bg-[#f1f3fe] text-inherit" 
+            style={{ padding: 0 }}
+          >
+            {content}
+          </mark>
+        );
+      }
+      
+      return <span key={`sentence-${idx}`}>{content}</span>;
+    });
+  };
+
+  // Helper to render chat messages with sentence highlighting
+  const renderChatMessageWithCitations = (text: string, citationsData: any[], contextId: string) => {
+    // Split into sentences (basic split on . ! ? followed by space or newline)
+    const sentences: Array<{text: string, start: number, end: number}> = [];
+    const sentenceRegex = /[^.!?\n]+[.!?\n]+|\n+/g;
+    let match;
+    let lastEnd = 0;
+    
+    while ((match = sentenceRegex.exec(text)) !== null) {
+      sentences.push({
+        text: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+      lastEnd = match.index + match[0].length;
+    }
+    
+    // Add any remaining text as a sentence
+    if (lastEnd < text.length) {
+      sentences.push({
+        text: text.slice(lastEnd),
+        start: lastEnd,
+        end: text.length
+      });
+    }
+    
+    // Find which sentence each citation belongs to
+    const citationRegex = /\{\{(\d+)\}\}/g;
+    const citationPositions: Array<{number: number, position: number, sentenceIdx: number}> = [];
+    let citMatch;
+    
+    while ((citMatch = citationRegex.exec(text)) !== null) {
+      const citNum = parseInt(citMatch[1], 10);
+      const position = citMatch.index;
+      
+      // Find the sentence this citation belongs to
+      // Citations should highlight the sentence containing the text BEFORE the marker
+      let sentenceIdx = -1;
+      
+      // Look at the character right before the citation marker to determine which sentence it belongs to
+      const charBeforeCitation = position > 0 ? position - 1 : position;
+      
+      // Check which sentence contains the position just before the citation
+      for (let i = 0; i < sentences.length; i++) {
+        if (charBeforeCitation >= sentences[i].start && charBeforeCitation < sentences[i].end) {
+          sentenceIdx = i;
+          break;
+        }
+      }
+      
+      // Fallback: if still not found, find the closest previous sentence
+      if (sentenceIdx === -1) {
+        for (let i = sentences.length - 1; i >= 0; i--) {
+          if (position >= sentences[i].end) {
+            sentenceIdx = i;
+            break;
+          }
+        }
+      }
+      
+      citationPositions.push({ number: citNum, position, sentenceIdx });
+    }
+    
+    // Render sentences with highlighting
+    return sentences.map((sentence, idx) => {
+      const sentenceCitations = citationPositions.filter(c => c.sentenceIdx === idx);
+      const isHighlighted = sentenceCitations.some(c => 
+        activeCitation?.id === `${contextId}-${c.number}`
+      );
+      
+      // Render the sentence with citation badges
+      const parts: (string | JSX.Element)[] = [];
+      let lastIndex = 0;
+      const regex = /\{\{(\d+)\}\}/g;
+      let match;
+      const sentenceText = sentence.text;
+      
+      while ((match = regex.exec(sentenceText)) !== null) {
+        const beforeText = sentenceText.slice(lastIndex, match.index);
+        if (beforeText) {
+          parts.push(beforeText);
+        }
+        
+        const citationNum = parseInt(match[1], 10);
+        const citation = citationsData.find(c => c.number === citationNum);
+        const citationId = `${contextId}-${citationNum}`;
+        const isActive = activeCitation?.id === citationId;
+        
+        parts.push(
+          <span
+            key={`citation-${idx}-${citationNum}-${match.index}`}
+            data-citation-badge
+            data-citation-id={citationId}
+            className={`inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none transition-colors cursor-pointer ${
+              isActive 
+                ? 'bg-[var(--text-brand,#1132ee)] text-white' 
+                : 'bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)]'
+            }`}
+            style={{
+              width: '14px',
+              height: '14px',
+              verticalAlign: 'baseline',
+              marginLeft: '2px',
+              marginRight: '2px'
+            }}
+            onMouseEnter={(e) => {
+              if (citation) {
+                // Clear any pending close timeout
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
+                
+                const rect = e.currentTarget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const tooltipWidth = 240;
+                const spaceOnRight = viewportWidth - rect.right;
+                const alignLeft = spaceOnRight < tooltipWidth / 2 + 20;
+                
+                setActiveCitation({ id: citationId, number: citationNum });
+                setTooltipPosition({ 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.bottom,
+                  alignLeft 
+                });
+              }
+            }}
+            onMouseLeave={() => {
+              // Delay closing to allow moving to tooltip
+              citationCloseTimeoutRef.current = window.setTimeout(() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }, 100);
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -1593,8 +1842,7 @@ export default function App() {
             
             {/* Nav Items */}
             <div 
-              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full"
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip py-[16px] relative w-full"
             >
               {/* Visits - Selected */}
               <button 
@@ -1612,7 +1860,13 @@ export default function App() {
               {/* Scribes */}
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
-                onClick={() => setCurrentView('scribes')}
+                onClick={() => {
+                  setCurrentView('scribes');
+                  if (isSecondaryNavCollapsed) {
+                    clearNavHoverDelay();
+                    setHoveredPrimaryNav('scribes');
+                  }
+                }}
                 onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
                 onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
               >
@@ -1669,13 +1923,23 @@ export default function App() {
             
             <div 
               className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              onMouseEnter={() => {
+                if (isSecondaryNavCollapsed) {
+                  clearNavHoverDelay();
+                  setHoveredPrimaryNav('visits');
+                }
+              }}
             />
             
             {/* Footer */}
             <div 
               className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
+              onMouseEnter={() => {
+                if (isSecondaryNavCollapsed) {
+                  clearNavHoverDelay();
+                  setHoveredPrimaryNav('visits');
+                }
+              }}
             >
               <button className="content-stretch flex flex-col gap-[4px] items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors text-[color:var(--text-subheading,#666)]">
                 <InlineIcon name="help" size={20} />
@@ -1795,7 +2059,10 @@ export default function App() {
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('visits')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('visits');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Date Header */}
@@ -1866,6 +2133,10 @@ export default function App() {
                     if (patient.status === "Generated") {
                       setSelectedPatientForScribe(patient.name);
                       setCurrentView('scribes');
+                      if (isSecondaryNavCollapsed) {
+                        clearNavHoverDelay();
+                        setHoveredPrimaryNav('scribes');
+                      }
                     } else {
                       setSelectedPatientIndex(index);
                     }
@@ -1896,7 +2167,10 @@ export default function App() {
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('scribes')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('scribes');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -1959,7 +2233,13 @@ export default function App() {
                           gender={scribe.gender}
                           duration={scribe.duration}
                           isSelected={false}
-                          onClick={() => setCurrentView('scribes')}
+                          onClick={() => {
+                            setCurrentView('scribes');
+                            if (isSecondaryNavCollapsed) {
+                              clearNavHoverDelay();
+                              setHoveredPrimaryNav('scribes');
+                            }
+                          }}
                         />
                       );
                     })}
@@ -1975,7 +2255,10 @@ export default function App() {
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('customize')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('customize');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -1997,7 +2280,10 @@ export default function App() {
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('assistant')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('assistant');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2019,7 +2305,10 @@ export default function App() {
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('admin')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('admin');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2130,11 +2419,35 @@ export default function App() {
               const hoveredHighlightId = hoveredNudge && 
                 patients[hoveredNudge.patientIndex]?.careNudges?.[hoveredNudge.nudgeIndex]?.highlightId;
               
+              // Find charts for this section
+              const sectionCharts = patients[selectedPatientIndex].trends?.filter(
+                (trend: any) => trend.section === sectionTitle
+              ) || [];
+              
               return (
                 <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
                   <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                     <p className="leading-[1.2]">{sectionTitle}</p>
                   </div>
+                  
+                  {/* Render charts if any exist for this section */}
+                  {sectionCharts.length > 0 && (
+                    <div className="content-stretch grid grid-cols-1 gap-[12px] items-start relative shrink-0 w-full mt-[8px] mb-[8px]">
+                      {sectionCharts.map((trend: any, idx: number) => (
+                        <TrendChart
+                          key={idx}
+                          title={trend.title}
+                          data={trend.data}
+                          unit={trend.unit}
+                          color={trend.color}
+                          yAxisDomain={trend.yAxisDomain}
+                          xAxisTicks={trend.xAxisTicks}
+                          referenceRange={trend.referenceRange}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
                     <ul className="list-disc whitespace-pre-wrap">
                       {items.map((item, idx) => {
@@ -2164,30 +2477,6 @@ export default function App() {
                 </div>
               );
             })}
-            
-            {/* Trends Section */}
-            {patients[selectedPatientIndex].trends && patients[selectedPatientIndex].trends.length > 0 && (
-              <div className="content-stretch flex flex-col gap-[8px] items-start py-[12px] relative shrink-0 w-full @container">
-                <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                  <p className="leading-[1.2]">Trends</p>
-                </div>
-                <div className="content-stretch grid grid-cols-1 @[640px]:grid-cols-2 gap-[16px] items-start relative shrink-0 w-full">
-                  {patients[selectedPatientIndex].trends.map((trend, idx) => (
-                    <TrendChart
-                      key={idx}
-                      title={trend.title}
-                      data={trend.data}
-                      unit={trend.unit}
-                      color={trend.color}
-                      yAxisDomain={trend.yAxisDomain}
-                      referenceRange={trend.referenceRange}
-                      height={trend.height}
-                      xAxisTicks={trend.xAxisTicks}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
               </>
             )}
             
@@ -2633,6 +2922,11 @@ export default function App() {
                 pointerEvents: 'auto'
               }}
               onMouseEnter={() => {
+                // Clear any pending close timeout
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
                 setActiveCitation(activeCitation);
                 setTooltipPosition(tooltipPosition);
               }}
@@ -2653,12 +2947,14 @@ export default function App() {
                 onClick={() => {
                   if (citation.isExternal && citation.externalUrl) {
                     window.open(citation.externalUrl, '_blank');
-                  } else {
+                  } else if (dataSourceContent[patients[selectedPatientIndex].name]?.[citation.source]) {
+                    // Document exists in dataSourceContent
                     setPreviousTab(rightTab);
                     setViewingDataSource(citation.source);
+                    setActiveCitation(null);
+                    setTooltipPosition(null);
                   }
-                  setActiveCitation(null);
-                  setTooltipPosition(null);
+                  // If document doesn't exist, do nothing (don't open empty document)
                 }}
               />
             </div>
@@ -2873,7 +3169,7 @@ export default function App() {
                                     {citation.source}
                                     <InlineIcon name="open_in_new" size={12} />
                                   </a>
-                                ) : (
+                                ) : dataSourceContent[patients[selectedPatientIndex].name]?.[citation.source] ? (
                                   <button
                                     onClick={() => {
                                       setPreviousTab(rightTab);
@@ -2883,6 +3179,10 @@ export default function App() {
                                   >
                                     {citation.source}
                                   </button>
+                                ) : (
+                                  <span className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-subheading,#666)] tracking-[0.065px] text-left">
+                                    {citation.source}
+                                  </span>
                                 )}
                               </div>
                             ))}

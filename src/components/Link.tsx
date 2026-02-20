@@ -22,7 +22,6 @@ export const Link: React.FC<LinkProps> = ({
   onClick,
   className = '',
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   
   const sizeConfig = {
@@ -79,11 +78,9 @@ export const Link: React.FC<LinkProps> = ({
           onClick();
         }
       }}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`content-stretch flex flex-wrap ${config.gap} items-center relative cursor-pointer transition-colors ${className}`}
+      className={`content-stretch flex flex-wrap ${config.gap} items-center relative cursor-pointer transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--litmus-100,#cfd6fc)] focus-visible:rounded-[8px] ${className}`}
     >
       {showPrefix && (
         <div className={`${textColor} shrink-0`}>
@@ -99,11 +96,6 @@ export const Link: React.FC<LinkProps> = ({
         <div className={textColor}>
           <InlineIcon name="open_in_new" size={config.iconSize} />
         </div>
-      )}
-      
-      {/* Focus outline */}
-      {isFocused && (
-        <div className="absolute border-[3px] border-[var(--litmus-100,#cfd6fc)] border-solid inset-[-2px] rounded-[8px] pointer-events-none" />
       )}
     </a>
   );

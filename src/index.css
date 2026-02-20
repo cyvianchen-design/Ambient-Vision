@@ -67,6 +67,16 @@ body {
   box-sizing: border-box;
 }
 
+/* Remove focus outline on mouse click, keep for keyboard navigation */
+button, a, [role="button"] {
+  outline: none;
+}
+
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+  outline: 3px solid var(--litmus-100, #cfd6fc);
+  outline-offset: 2px;
+}
+
 /* Custom scrollbar styles - auto-hide */
 .scrollable-content {
   scrollbar-width: thin;
