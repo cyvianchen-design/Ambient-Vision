@@ -320,6 +320,16 @@ export default function Scribes({
       }
     },
     "Maria Garcia": {
+      "Aug 10, 2023, Annual wellness visit, Athena": {
+        type: "Clinical Note",
+        date: "Aug 10, 2023",
+        content: "**ANNUAL WELLNESS VISIT**\n\nPatient: Maria Garcia, 35F\nDate: 08/10/2023\nVisit Type: Annual wellness examination\n\n**CHIEF COMPLAINT**\nRoutine health maintenance\n\n**HISTORY OF PRESENT ILLNESS**\nPatient presents for annual wellness visit. Reports feeling well overall. No acute concerns or complaints. Maintaining active lifestyle with regular exercise (running 3x/week). Healthy diet, no tobacco use, occasional alcohol.\n\n**PHYSICAL EXAMINATION**\nGeneral: Well-appearing, no acute distress. No chronic medical conditions identified.\nVitals: BP 120/75, HR 72, Temp 98.6°F, Weight 145 lbs, BMI 23.5\nHEENT: Normocephalic, atraumatic. PERRLA. TMs clear bilaterally.\nCardiac: Regular rate and rhythm, no murmurs.\nLungs: Clear to auscultation bilaterally.\nAbdomen: Soft, non-tender, no masses.\nExtremities: No edema, full range of motion.\n\n**ASSESSMENT**\n35-year-old healthy female, here for preventive care. No concerning findings on examination.\n\n**PLAN**\n• Age-appropriate screening labs ordered (CBC, CMP, lipid panel)\n• Counseled on healthy lifestyle maintenance\n• Discussed contraception options (patient currently using OCPs)\n• Return for annual exam in 12 months\n• Call with any concerns in interim\n\n**Counseled on preventive care and scheduled follow-up in 12 months.**\n\n---\nDr. Sarah Martinez, MD\nFamily Medicine"
+      },
+      "June 15, 2023, Lumbar spine X-ray, Athena": {
+        type: "Imaging",
+        date: "June 15, 2023",
+        content: "**RADIOLOGY REPORT - LUMBAR SPINE X-RAY**\n\nPatient: Maria Garcia\nDOB: 03/15/1989\nMRN: MG-334567\nExam Date: 06/15/2023\nStudy: Lumbar spine radiographs (AP and lateral views)\n\n**CLINICAL INDICATION**\nLower back pain\n\n**TECHNIQUE**\nStanding AP and lateral views of the lumbar spine obtained.\n\n**FINDINGS**\n\nAlignment:\n• Normal thoracic kyphosis and lumbar lordosis\n• No scoliosis\n• No spondylolisthesis\n\nVertebral Bodies:\n• Normal height and alignment\n• No compression fractures\n• No lytic or blastic lesions\n\nDisc Spaces:\n• Mild degenerative disc disease at L4-L5 and L5-S1\n• Disc heights preserved\n• No severe disc space narrowing\n\nFacet Joints:\n• Mild facet arthropathy at L4-L5 and L5-S1\n• No significant hypertrophy\n\nSoft Tissues:\n• No significant abnormality\n\n**IMPRESSION**\n1. Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights\n2. Mild facet arthropathy at L4-L5 and L5-S1\n3. No acute fracture, listhesis, or significant stenosis\n4. No concerning findings\n\n**RECOMMENDATION**\nClinical correlation recommended. Follow-up imaging as clinically indicated."
+      },
       "Visit transcript, 00:01:15": {
         type: "Clinical Note",
         date: "Today",
@@ -359,6 +369,16 @@ export default function Scribes({
         type: "Clinical Note",
         date: "Today",
         content: `Provider: "Any other joints giving you trouble?" Patient: "Just my back. My knees, hips, everything else feels fine."`
+      },
+      "Feb 12, Intake form, Ambient": {
+        type: "Form",
+        date: "Feb 12, 2024",
+        content: "**INTAKE FORM - AMBIENT DOCUMENTATION**\n\nPatient: Maria Garcia, 35F\nDate: 02/12/2024\n\n**CHIEF COMPLAINT**\nLower back pain\n\n**PAIN ASSESSMENT**\n• Location: Sharp pain localized to lower lumbar region, L4-L5 area\n• Onset: Started after helping son move furniture 4 days ago\n• Character: Sharp, aching\n• Severity: Pain severity 7/10 at worst, improves with rest\n• Duration: 4 days, gradual onset, pain worsened over first 24 hours\n• Aggravating factors: Bending, lifting, prolonged standing\n• Relieving factors: Rest, lying flat\n• Radiation: No radiation to legs, no numbness or tingling\n\n**RED FLAGS ASSESSMENT**\n• Fever: No fever\n• Bowel/bladder dysfunction: No bowel/bladder dysfunction\n• Trauma: No trauma\n• Night pain: No night pain\n• Constitutional symptoms: No history of cancer or recent weight loss\n\n**CURRENT MEDICATIONS**\n• Current medications: None. Takes occasional ibuprofen OTC as needed.\n\n**PAST MEDICAL HISTORY**\n• No prior back problems\n• No chronic conditions"
+      },
+      "Feb 12, Today's visit, Ambient": {
+        type: "Clinical Note",
+        date: "Feb 12, 2024",
+        content: "**TODAY'S VISIT - AMBIENT DOCUMENTATION**\n\nPatient: Maria Garcia, 35F\nDate: 02/12/2024\n\n**PHYSICAL EXAMINATION**\n• General: Well-appearing, no acute distress, no signs of systemic illness\n• Vitals: BP 118/72, HR 76, Temp 98.4°F\n• Gait: Normal gait, negative straight leg raise test bilaterally\n• Back: Tenderness over paraspinal muscles L3-L5\n• Range of Motion: Full range of motion with mild discomfort, no neurological deficits\n\n**ASSESSMENT**\n• Acute mechanical low back pain, no red flags present\n\n**PLAN**\n• Conservative management indicated - no red flags present\n• Physical therapy referral for core strengthening and body mechanics education\n• NSAIDs for pain management\n• Follow-up in 2 weeks if no improvement or if symptoms worsen\n\n**COUNSELING**\n• Discussed nature of mechanical back pain\n• Importance of staying active within pain limits\n• Proper body mechanics and lifting techniques\n• Return precautions reviewed"
       },
       "Intake form, 02/12/2024": {
         type: "Form",
@@ -684,7 +704,18 @@ export default function Scribes({
             { type: "Documentation", description: "Specify mechanism of injury timing and activity to support acute diagnosis.", highlightId: "maria-garcia-hpi-mechanism" }
           ],
           dataSources: [
+            "Aug 10, 2023, Annual wellness visit, Athena",
+            "June 15, 2023, Lumbar spine X-ray, Athena",
+            "Feb 12, Intake form, Ambient",
+            "Feb 12, Today's visit, Ambient",
             "Visit transcript, 00:01:15",
+            "Visit transcript, 00:01:32",
+            "Visit transcript, 00:02:45",
+            "Visit transcript, 00:03:10",
+            "Visit transcript, 00:03:58",
+            "Visit transcript, 00:04:22",
+            "Visit transcript, 00:05:15",
+            "Visit transcript, 00:06:30",
             "Intake form, 02/12/2024",
             "ROS documentation, today",
             "Visit vitals, today",
@@ -1509,8 +1540,12 @@ export default function Scribes({
                   setHoveredHighlight({ scribeIndex: selectedScribeIndex, nudgeIndex });
                 }
               }}
-              onMouseLeave={() => {
-                setHoveredHighlight(null);
+              onMouseLeave={(e) => {
+                // Only clear if we're actually leaving the highlight
+                const relatedTarget = e.relatedTarget as HTMLElement;
+                if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+                  setHoveredHighlight(null);
+                }
               }}
             >
               {part.substring(start, end)}
@@ -3218,23 +3253,8 @@ export default function Scribes({
             /* Sources View */
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
               {(() => {
-                // Determine which sources to show based on active tab
-                let sourcesToShow: string[] = [];
-                
-                if (activeTab === 'previsit') {
-                  // Show patient's data sources (non-transcript sources)
-                  const matchingPatient = patients.find(p => p.name === currentScribe.name);
-                  if (matchingPatient && matchingPatient.dataSources) {
-                    sourcesToShow = matchingPatient.dataSources;
-                  }
-                } else if (activeTab === 'transcript') {
-                  // Show visit transcript entries
-                  sourcesToShow = Object.keys(dataSourceContent[currentScribe.name] || {})
-                    .filter(key => key.startsWith('Visit transcript'));
-                } else {
-                  // Show scribe's data sources for clinical note and codes
-                  sourcesToShow = currentScribe.dataSources || [];
-                }
+                // Always show all sources from scribe's dataSources, regardless of active tab
+                const sourcesToShow = currentScribe.dataSources || [];
                 
                 // Group sources by type (and date for Clinical Notes)
                 const sourcesByType: Record<string, string[]> = {};
@@ -3242,7 +3262,12 @@ export default function Scribes({
                   const sourceData = dataSourceContent[currentScribe.name]?.[source];
                   if (sourceData) {
                     const badgeInfo = getDocumentTypeBadgeColor(sourceData.type, sourceData.date);
-                    const groupKey = badgeInfo.label; // Use label as key to separate Clinical Notes by date
+                    // Group all Visit transcript entries together
+                    let groupKey = badgeInfo.label;
+                    if (source.startsWith('Visit transcript')) {
+                      groupKey = 'Transcript';
+                    }
+                    
                     if (!sourcesByType[groupKey]) {
                       sourcesByType[groupKey] = [];
                     }
@@ -3255,6 +3280,9 @@ export default function Scribes({
                   const firstSource = sources[0];
                   const firstSourceData = dataSourceContent[currentScribe.name]?.[firstSource];
                   const badgeInfo = firstSourceData ? getDocumentTypeBadgeColor(firstSourceData.type, firstSourceData.date) : { bg: '#f2f2f2', text: '#666', label: groupLabel };
+                  
+                  // For Visit transcript group, show as single entry
+                  const isTranscriptGroup = groupLabel === 'Transcript';
                   
                   return (
                     <div key={groupLabel} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
@@ -3278,7 +3306,23 @@ export default function Scribes({
                     
                     {/* Sources for this type */}
                     <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full pl-[12px]">
-                      {sources.map((source, idx) => (
+                      {isTranscriptGroup ? (
+                        // Show single "Visit transcript" entry
+                        <Link 
+                          key="visit-transcript"
+                          label="Visit transcript"
+                          size="medium"
+                          intent="neutral"
+                          showPrefix={false}
+                          showSuffix={false}
+                          onClick={() => {
+                            setPreviousTab(rightTab);
+                            // Show the first transcript entry when clicked
+                            setViewingDataSource(sources[0]);
+                          }}
+                        />
+                      ) : (
+                        sources.map((source, idx) => (
                         <Link 
                           key={idx}
                           label={source}
@@ -3292,7 +3336,8 @@ export default function Scribes({
                             setHighlightedQuote(null);
                           }}
                         />
-                      ))}
+                      ))
+                      )}
                     </div>
                   </div>
                   );
@@ -3320,7 +3365,12 @@ export default function Scribes({
                     </p>
                     
                     {/* Collapsible Sources */}
-                    {message.citations && message.citations.length > 0 && (
+                    {message.citations && message.citations.length > 0 && (() => {
+                      // Count unique sources
+                      const uniqueSources = new Set(message.citations.map((c: any) => c.source));
+                      const sourceCount = uniqueSources.size;
+                      
+                      return (
                       <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                         <button
                           onClick={() => {
@@ -3338,7 +3388,7 @@ export default function Scribes({
                           className="flex items-center gap-[4px] text-[color:var(--text-subheading,#666)] hover:text-[color:var(--text-default,black)] transition-colors"
                         >
                           <p className="font-['Lato',sans-serif] text-[13px] leading-[1.2] tracking-[0.065px]">
-                            {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                            {sourceCount} source{sourceCount !== 1 ? 's' : ''}
                           </p>
                           <InlineIcon 
                             name={expandedChatSources.has(`${currentScribe.name}-chat-${idx}`) ? "keyboard_arrow_up" : "keyboard_arrow_down"} 
@@ -3346,12 +3396,33 @@ export default function Scribes({
                           />
                         </button>
                         
-                        {expandedChatSources.has(`${currentScribe.name}-chat-${idx}`) && (
+                        {expandedChatSources.has(`${currentScribe.name}-chat-${idx}`) && (() => {
+                          // Group citations by source
+                          const groupedCitations = new Map<string, {citation: any, numbers: number[]}>();
+                          message.citations.forEach((citation: any) => {
+                            const key = citation.source;
+                            if (groupedCitations.has(key)) {
+                              groupedCitations.get(key)!.numbers.push(citation.number);
+                            } else {
+                              groupedCitations.set(key, { citation, numbers: [citation.number] });
+                            }
+                          });
+                          
+                          return (
                           <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full">
-                            {message.citations.map((citation, citIdx) => (
-                              <div key={citIdx} className="flex items-start gap-[6px] w-full">
-                                <span className="inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
-                                  {citation.number}
+                            {Array.from(groupedCitations.values()).map((group, groupIdx) => {
+                              const { citation, numbers } = group;
+                              // Format numbers as range or list
+                              const numbersDisplay = numbers.length === 1 
+                                ? numbers[0].toString()
+                                : numbers.length > 1 && numbers[numbers.length - 1] - numbers[0] === numbers.length - 1
+                                  ? `${numbers[0]}-${numbers[numbers.length - 1]}`
+                                  : numbers.join(', ');
+                              
+                              return (
+                              <div key={groupIdx} className="flex items-start gap-[6px] w-full">
+                                <span className="inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] shrink-0" style={{ minWidth: '14px', height: '14px', marginTop: '3px', padding: '0 2px' }}>
+                                  {numbersDisplay}
                                 </span>
                                 {citation.isExternal ? (
                                   <a
@@ -3380,11 +3451,14 @@ export default function Scribes({
                                   </span>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
-                    )}
+                      );
+                    })()}
                     
                     <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                       <div className="content-stretch flex gap-[8px] h-[28px] items-center relative shrink-0">
@@ -3547,7 +3621,13 @@ export default function Scribes({
                         isThisNudgeHovered ? 'bg-[var(--surface-1,#f7f7f7)]' : ''
                       }`}
                       onMouseEnter={() => setHoveredNudge({scribeIndex: selectedScribeIndex, nudgeIndex: idx})}
-                      onMouseLeave={() => setHoveredNudge(null)}
+                      onMouseLeave={(e) => {
+                        // Only clear if we're actually leaving the card (not entering a child)
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+                          setHoveredNudge(null);
+                        }
+                      }}
                       onClick={(e) => {
                         // Only handle click on the card itself, not on buttons/options
                         if ((e.target as HTMLElement).closest('button')) {

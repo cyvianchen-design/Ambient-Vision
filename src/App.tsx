@@ -186,6 +186,22 @@ export default function App() {
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
     "Sarah Johnson": [
+      { type: 'user', content: "When was the patient's most recent knee imaging?" },
+      { 
+        type: 'assistant', 
+        content: "The patient had **bilateral knee X-rays on January 10, 2024** (about 5 weeks ago){{1}}. Key findings:\n\n**Right knee (symptomatic):**\n• Kellgren-Lawrence Grade 4 osteoarthritis{{2}} - severe\n• Severe joint space narrowing (medial compartment completely lost){{3}}\n• Large marginal osteophytes{{4}}\n• Subchondral sclerosis and cyst formation{{5}}\n• Varus malalignment: 8 degrees{{6}}\n\n**Left knee:**\n• Grade 2 osteoarthritis - mild to moderate{{7}}\n• Minimal joint space narrowing{{8}}\n\nThis imaging, combined with failed conservative management{{9}} (PT minimal benefit, injection only 6 weeks relief), supports the need for surgical discussion at today's visit.",
+        citations: [
+          { number: 1, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 2, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 3, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 4, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 5, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 6, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 7, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 8, source: "Jan 10, X-ray bilateral knees, Athena", quote: "Right knee: Kellgren-Lawrence Grade 4, severe joint space narrowing with complete loss of medial compartment, large marginal osteophytes, subchondral sclerosis and cyst formation, varus alignment 8 degrees. Left knee: Grade 2, minimal joint space narrowing." },
+          { number: 9, source: "Oct 20, 2023, Office visit, Athena", quote: "PT: 8 weeks minimal benefit. Intra-articular corticosteroid injection with 6 weeks relief before return to baseline" }
+        ]
+      },
       { type: 'user', content: "What should I focus on during this knee follow-up visit?" },
       { 
         type: 'assistant', 
@@ -242,15 +258,32 @@ export default function App() {
       }
     ],
     "Maria Garcia": [
-      { type: 'user', content: "Should I order imaging for this patient's back pain?" },
+      { type: 'user', content: "When was the patient's last lumbar X-ray?" },
       { 
         type: 'assistant', 
-        content: "Based on the previsit information{{1}}, imaging is not indicated at this time. The patient has no red flags{{2}} (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer). \n\nThis appears to be acute mechanical lower back pain. Per ACR Appropriateness Criteria{{3}}, imaging is usually not appropriate for nonspecific acute low back pain without red flags. Conservative management with NSAIDs and physical therapy is the recommended first-line approach{{4}}. Consider imaging if symptoms persist beyond 4-6 weeks or red flags develop.",
+        content: "The patient had a lumbar spine X-ray on **June 15, 2023** (approximately 8 months ago){{1}}. The findings were:\n\n**Imaging results:**\n• Mild degenerative disc disease at L4-L5 and L5-S1{{2}}\n• Preserved disc heights{{3}}\n• No acute fracture, listhesis, or significant stenosis{{4}}\n• Mild facet arthropathy{{5}}\n\n**Current presentation:**\nGiven this is **acute** onset lower back pain (started 4 days ago{{6}}) with no red flags{{7}}, the previous imaging from 8 months ago showing only mild degenerative changes suggests this is likely an acute mechanical strain rather than progressive structural pathology. New imaging is not indicated unless symptoms fail to improve with conservative management{{8}}.",
         citations: [
-          { number: 1, source: "Visit transcript, 00:01:15", quote: "The pain started about 4 days ago, on Saturday morning" },
-          { number: 2, source: "ROS documentation, today", quote: "Constitutional: Denies fever, chills, night sweats. Neurologic: No numbness, no tingling, no weakness. GU: Normal bowel and bladder function" },
-          { number: 3, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" },
-          { number: 4, source: "NEJM - Low Back Pain Review", quote: "First-line treatment for acute low back pain includes NSAIDs, acetaminophen, and continued activity as tolerated.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMra1614337" }
+          { number: 1, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis. Mild facet arthropathy. No significant stenosis." },
+          { number: 2, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis. Mild facet arthropathy. No significant stenosis." },
+          { number: 3, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis. Mild facet arthropathy. No significant stenosis." },
+          { number: 4, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis. Mild facet arthropathy. No significant stenosis." },
+          { number: 5, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis. Mild facet arthropathy. No significant stenosis." },
+          { number: 6, source: "Visit transcript, 00:01:15", quote: "The pain started about 4 days ago, on Saturday morning" },
+          { number: 7, source: "ROS documentation, today", quote: "Constitutional: Denies fever, chills, night sweats. Neurologic: No numbness, no tingling, no weakness. GU: Normal bowel and bladder function" },
+          { number: 8, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" }
+        ]
+      },
+      { type: 'user', content: "Should I order new imaging for this current episode?" },
+      { 
+        type: 'assistant', 
+        content: "No, new imaging is not indicated at this time. Here's why:\n\n**Recent baseline imaging:**\n• Prior X-ray from 8 months ago{{1}} showed only mild degenerative changes\n• No significant structural abnormalities that would predispose to acute issues{{1}}\n\n**Clinical picture:**\n• Acute onset (4 days ago{{2}}) - mechanical injury pattern\n• No red flags{{3}} (no fever, no bowel/bladder dysfunction, no trauma, no night pain, no history of cancer)\n• Likely acute muscular strain from moving furniture{{4}}\n\n**Evidence-based approach:**\nPer ACR Appropriateness Criteria{{5}}, imaging is not appropriate for nonspecific acute low back pain without red flags. Conservative management with NSAIDs and physical therapy is first-line{{6}}. Consider imaging only if symptoms persist beyond 4-6 weeks or red flags develop.",
+        citations: [
+          { number: 1, source: "June 15, 2023, Lumbar spine X-ray, Athena", quote: "Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights. No acute fracture or listhesis." },
+          { number: 2, source: "Visit transcript, 00:01:15", quote: "The pain started about 4 days ago, on Saturday morning" },
+          { number: 3, source: "ROS documentation, today", quote: "Constitutional: Denies fever, chills, night sweats. Neurologic: No numbness, no tingling, no weakness. GU: Normal bowel and bladder function" },
+          { number: 4, source: "Visit transcript, 00:01:30", quote: "I was helping my daughter move some furniture when I felt this sharp pain in my lower back" },
+          { number: 5, source: "ACR Appropriateness Criteria - Low Back Pain", quote: "Imaging is usually not appropriate for patients with nonspecific low back pain and no red flags.", isExternal: true, externalUrl: "https://acsearch.acr.org/docs/69483/Narrative/" },
+          { number: 6, source: "NEJM - Low Back Pain Review", quote: "First-line treatment for acute low back pain includes NSAIDs, acetaminophen, and continued activity as tolerated.", isExternal: true, externalUrl: "https://www.nejm.org/doi/full/10.1056/NEJMra1614337" }
         ]
       }
     ],
@@ -370,10 +403,35 @@ export default function App() {
       }
     },
     "Maria Garcia": {
+      "Aug 10, 2023, Annual wellness visit, Athena": {
+        type: "Clinical Note",
+        date: "Aug 10, 2023",
+        content: "**ANNUAL WELLNESS VISIT**\n\nPatient: Maria Garcia, 35F\nDate: 08/10/2023\nVisit Type: Annual wellness examination\n\n**CHIEF COMPLAINT**\nRoutine health maintenance\n\n**HISTORY OF PRESENT ILLNESS**\nPatient presents for annual wellness visit. Reports feeling well overall. No acute concerns or complaints. Maintaining active lifestyle with regular exercise (running 3x/week). Healthy diet, no tobacco use, occasional alcohol.\n\n**PHYSICAL EXAMINATION**\nGeneral: Well-appearing, no acute distress. No chronic medical conditions identified.\nVitals: BP 120/75, HR 72, Temp 98.6°F, Weight 145 lbs, BMI 23.5\nHEENT: Normocephalic, atraumatic. PERRLA. TMs clear bilaterally.\nCardiac: Regular rate and rhythm, no murmurs.\nLungs: Clear to auscultation bilaterally.\nAbdomen: Soft, non-tender, no masses.\nExtremities: No edema, full range of motion.\n\n**ASSESSMENT**\n35-year-old healthy female, here for preventive care. No concerning findings on examination.\n\n**PLAN**\n• Age-appropriate screening labs ordered (CBC, CMP, lipid panel)\n• Counseled on healthy lifestyle maintenance\n• Discussed contraception options (patient currently using OCPs)\n• Return for annual exam in 12 months\n• Call with any concerns in interim\n\n**Counseled on preventive care and scheduled follow-up in 12 months.**\n\n---\nDr. Sarah Martinez, MD\nFamily Medicine"
+      },
+      "June 15, 2023, Lumbar spine X-ray, Athena": {
+        type: "Imaging",
+        date: "June 15, 2023",
+        content: "**RADIOLOGY REPORT - LUMBAR SPINE X-RAY**\n\nPatient: Maria Garcia\nDOB: 03/15/1989\nMRN: MG-334567\nExam Date: 06/15/2023\nStudy: Lumbar spine radiographs (AP and lateral views)\n\n**CLINICAL INDICATION**\nLower back pain\n\n**TECHNIQUE**\nStanding AP and lateral views of the lumbar spine obtained.\n\n**FINDINGS**\n\nAlignment:\n• Normal thoracic kyphosis and lumbar lordosis\n• No scoliosis\n• No spondylolisthesis\n\nVertebral Bodies:\n• Normal height and alignment\n• No compression fractures\n• No lytic or blastic lesions\n\nDisc Spaces:\n• Mild degenerative disc disease at L4-L5 and L5-S1\n• Disc heights preserved\n• No severe disc space narrowing\n\nFacet Joints:\n• Mild facet arthropathy at L4-L5 and L5-S1\n• No significant hypertrophy\n\nSoft Tissues:\n• No significant abnormality\n\n**IMPRESSION**\n1. Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights\n2. Mild facet arthropathy at L4-L5 and L5-S1\n3. No acute fracture, listhesis, or significant stenosis\n4. No concerning findings\n\n**RECOMMENDATION**\nClinical correlation recommended. Follow-up imaging as clinically indicated."
+      },
       "Feb 12, Intake form, Ambient": {
         type: "Form",
         date: "Feb 12, 2024",
         content: "**INTAKE FORM**\n\nPatient: Maria Garcia, 35F\n\n**CHIEF COMPLAINT**\nLower back pain x4 days\n\n**HPI**\nSharp pain in L4-L5 region, 7/10 severity, improves with rest. Started after moving furniture. No radiation, numbness, tingling.\n\n**RED FLAGS**\nNo fever, bowel/bladder dysfunction, trauma, night pain, or history of cancer.\n\n**CURRENT MEDS**\nNone (occasional ibuprofen OTC)"
+      },
+      "Visit transcript, 00:01:15": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:01:15]\nDoctor: So tell me, when did this back pain start?\n\nPatient: The pain started about 4 days ago, on Saturday morning."
+      },
+      "Visit transcript, 00:01:30": {
+        type: "Transcript",
+        date: "Feb 12, 2024",
+        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:01:30]\nDoctor: What were you doing when it started?\n\nPatient: I was helping my daughter move some furniture when I felt this sharp pain in my lower back. It was like something pulled or tweaked."
+      },
+      "ROS documentation, today": {
+        type: "Clinical Note",
+        date: "Feb 12, 2024",
+        content: "**REVIEW OF SYSTEMS**\n\nPatient: Maria Garcia\nDate: 02/12/2024\n\n**Constitutional:**\nDenies fever, chills, night sweats. No unintentional weight loss or gain.\n\n**Musculoskeletal:**\nLower back pain as described in HPI. No other joint pain, swelling, or stiffness.\n\n**Neurologic:**\nNo numbness, no tingling, no weakness in lower extremities. No loss of coordination or balance.\n\n**Genitourinary:**\nNormal bowel and bladder function. No incontinence, retention, or changes in habits.\n\n**All Other Systems:**\nNegative per template."
       },
       "Feb 12, Today's visit, Ambient": {
         type: "Clinical Note",
@@ -3126,7 +3184,12 @@ export default function App() {
                     </p>
                     
                     {/* Collapsible Sources */}
-                    {message.citations && message.citations.length > 0 && (
+                    {message.citations && message.citations.length > 0 && (() => {
+                      // Count unique sources
+                      const uniqueSources = new Set(message.citations.map((c: any) => c.source));
+                      const sourceCount = uniqueSources.size;
+                      
+                      return (
                       <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                         <button
                           onClick={() => {
@@ -3144,7 +3207,7 @@ export default function App() {
                           className="flex items-center gap-[4px] text-[color:var(--text-subheading,#666)] hover:text-[color:var(--text-default,black)] transition-colors"
                         >
                           <p className="font-['Lato',sans-serif] text-[13px] leading-[1.2] tracking-[0.065px]">
-                            {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                            {sourceCount} source{sourceCount !== 1 ? 's' : ''}
                           </p>
                           <InlineIcon 
                             name={expandedChatSources.has(`${patients[selectedPatientIndex].name}-chat-${idx}`) ? "keyboard_arrow_up" : "keyboard_arrow_down"} 
@@ -3152,12 +3215,33 @@ export default function App() {
                           />
                         </button>
                         
-                        {expandedChatSources.has(`${patients[selectedPatientIndex].name}-chat-${idx}`) && (
+                        {expandedChatSources.has(`${patients[selectedPatientIndex].name}-chat-${idx}`) && (() => {
+                          // Group citations by source
+                          const groupedCitations = new Map<string, {citation: any, numbers: number[]}>();
+                          message.citations.forEach((citation: any) => {
+                            const key = citation.source;
+                            if (groupedCitations.has(key)) {
+                              groupedCitations.get(key)!.numbers.push(citation.number);
+                            } else {
+                              groupedCitations.set(key, { citation, numbers: [citation.number] });
+                            }
+                          });
+                          
+                          return (
                           <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full">
-                            {message.citations.map((citation, citIdx) => (
-                              <div key={citIdx} className="flex items-start gap-[6px] w-full">
-                                <span className="inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
-                                  {citation.number}
+                            {Array.from(groupedCitations.values()).map((group, groupIdx) => {
+                              const { citation, numbers } = group;
+                              // Format numbers as range or list
+                              const numbersDisplay = numbers.length === 1 
+                                ? numbers[0].toString()
+                                : numbers.length > 1 && numbers[numbers.length - 1] - numbers[0] === numbers.length - 1
+                                  ? `${numbers[0]}-${numbers[numbers.length - 1]}`
+                                  : numbers.join(', ');
+                              
+                              return (
+                              <div key={groupIdx} className="flex items-start gap-[6px] w-full">
+                                <span className="inline-flex items-center justify-center rounded-[2px] text-[10px] font-bold leading-none bg-[#f1f3fe] text-[color:var(--text-brand,#1132ee)] shrink-0" style={{ minWidth: '14px', height: '14px', marginTop: '3px', padding: '0 2px' }}>
+                                  {numbersDisplay}
                                 </span>
                                 {citation.isExternal ? (
                                   <a
@@ -3185,11 +3269,14 @@ export default function App() {
                                   </span>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
-                    )}
+                      );
+                    })()}
                     
                     <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                       <div className="content-stretch flex gap-[8px] h-[28px] items-center relative shrink-0">
