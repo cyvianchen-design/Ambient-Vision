@@ -3229,7 +3229,7 @@ export default function App() {
               {/* Visit Settings Card */}
               <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Visit Settings
               </p>
               <IconButton 
@@ -3283,7 +3283,7 @@ export default function App() {
           {/* Care Suggestions Card */}
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Care Suggestions
               </p>
               <IconButton 
