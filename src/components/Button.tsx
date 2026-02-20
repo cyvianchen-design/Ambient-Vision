@@ -39,7 +39,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--litmus-100,#cfd6fc)] ${className}`}
       style={{ fontFeatureSettings: "'ss07'" }}
     >
       {icon && showPrefix && (
@@ -93,7 +93,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`content-stretch flex items-center justify-center rounded-[6px] transition-all cursor-pointer ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={`content-stretch flex items-center justify-center rounded-[6px] transition-all cursor-pointer outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--litmus-100,#cfd6fc)] ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
       aria-label={ariaLabel}
       style={isMagic ? { 
         backgroundImage: 'linear-gradient(-89.166deg, rgb(128, 68, 255) 2.281%, rgb(69, 84, 229) 50.375%, rgb(38, 112, 255) 98.469%)'

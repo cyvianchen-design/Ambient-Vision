@@ -157,14 +157,16 @@ export default function Scribes({
   const [selectedView, setSelectedView] = useState<'default' | 'highlights' | 'citation'>('default');
   const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number; alignLeft?: boolean } | null>(null);
+  const citationCloseTimeoutRef = React.useRef<number | null>(null);
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
-  const [editingSection, setEditingSection] = useState<'hpi' | 'ros' | 'pe' | null>(null);
-  const [editedContent, setEditedContent] = useState<{hpi: string; ros: string; pe: string}>({
+  const [editingSection, setEditingSection] = useState<'hpi' | 'ros' | 'pe' | 'mdm' | null>(null);
+  const [editedContent, setEditedContent] = useState<{hpi: string; ros: string; pe: string; mdm: string}>({
     hpi: '',
     ros: '',
-    pe: ''
+    pe: '',
+    mdm: ''
   });
   const [viewingDataSource, setViewingDataSource] = useState<string | null>(null);
   const [highlightedQuote, setHighlightedQuote] = useState<string | null>(null);
@@ -621,6 +623,7 @@ export default function Scribes({
           hpi: "35-year-old female presenting with acute lower back pain x 4 days{{1}}. Pain started after moving furniture{{2}}, located in lower lumbar region. Describes sharp pain, 7/10 intensity{{3}}, worse with bending and lifting{{4}}. Pain improves with rest{{5}}. Denies radiation to legs{{6}}, no paresthesias. No bowel/bladder dysfunction{{7}}. Takes ibuprofen with moderate relief{{8}}. No prior history of back problems{{9}}.",
           ros: "Musculoskeletal: Lower back pain as described; no other joint pain{{10}}.\nNeurologic: No numbness, tingling, or weakness in legs{{11}}.\nConstitutional: Denies fever, chills, or weight loss{{12}}.\nGU: Normal bowel and bladder function{{13}}.",
           pe: "General: Well-appearing, mild discomfort with position changes.\nVitals: BP 118/76, HR 72, RR 14{{14}}.\nBack: Tenderness over paraspinal muscles L3-L5{{15}}; no midline tenderness. Normal spinal curvature{{16}}.\nNeuro: Strength 5/5 lower extremities bilaterally; sensation intact; negative straight leg raise bilaterally{{17}}; reflexes 2+ and symmetric{{18}}.",
+          mdm: "Assessment: Acute mechanical lower back pain, likely lumbar strain. No red flags present - no fever, no neurological deficits, no bowel/bladder dysfunction. Negative straight leg raise makes radiculopathy unlikely.\n\nRisk: Low complexity. Straightforward acute musculoskeletal complaint without complications.\n\nData Reviewed: Intake form, ROS, physical examination findings.\n\nManagement Plan:\n• Conservative management with NSAIDs (continue ibuprofen 600mg TID with food)\n• Recommend addition of cyclobenzaprine 5mg TID PRN for muscle spasm\n• Activity modification: avoid heavy lifting, prolonged bending\n• Apply heat/ice as tolerated\n• Referral to physical therapy for core strengthening and body mechanics education\n• Follow-up in 4-6 weeks if not improved, or sooner if red flags develop\n• Return precautions discussed: worsening pain, radiation to legs, numbness/weakness, bowel/bladder dysfunction",
           citations: [
             { number: 1, citedText: "x 4 days", quote: "The pain started about 4 days ago, on Saturday morning", source: "Visit transcript, 00:01:15" },
             { number: 2, citedText: "moving furniture", quote: "I was helping my husband move our couch and I felt something pull in my lower back", source: "Visit transcript, 00:01:32" },
@@ -698,6 +701,7 @@ export default function Scribes({
           hpi: "58-year-old male presenting for 6-week post-operative visit following shoulder arthroscopic rotator cuff repair{{1}}. Surgery performed January 3rd{{2}} for large full-thickness supraspinatus tear (2.5cm){{3}} and partial infraspinatus tear{{4}}. Repair with double-row technique{{5}}. Patient reports good pain control{{6}}, currently 2-4/10 with PT exercises. Incisions well-healed{{7}}, no signs of infection. Discontinued sling 2 weeks ago per PT{{8}}. Passive ROM improving: forward flexion 110°, abduction 80°{{9}}. Sleeping better, able to lie on opposite side{{10}}. No numbness or tingling in hand{{11}}. Currently out of work (software engineer), interested in return-to-work timeline{{12}}.",
           ros: "Musculoskeletal: Shoulder pain improving; no other joint pain{{13}}.\nNeurologic: No numbness, tingling, or weakness in arm/hand{{14}}.\nConstitutional: No fever, chills{{15}}.\nCardiovascular: Denies chest pain or palpitations.\nRespiratory: No shortness of breath.",
           pe: "General: Well-appearing, no acute distress.\nVitals: BP 128/82, HR 74, RR 14{{16}}.\nShoulder: Incisions well-healed, no erythema or drainage{{17}}; minimal effusion{{18}}. ROM (passive): Forward flexion 110°, abduction 80°, ER 30°{{19}}. Neurovascular: Axillary nerve intact (deltoid sensation present){{20}}; radial/median/ulnar intact distally{{21}}. Strength: Deferred at this early timepoint{{22}}.",
+          mdm: "Assessment: 6 weeks status post arthroscopic rotator cuff repair (supraspinatus and infraspinatus), progressing well. Surgical healing excellent, ROM improving per expected protocol, pain well-controlled.\n\nComplexity: Moderate. Post-operative management of significant rotator cuff repair. Requires monitoring of healing, ROM progression, and complications. Return-to-work considerations with occupation-specific restrictions.\n\nData Reviewed: Operative report (1/3/24), PT progress notes, 2-week post-op visit, today's examination findings.\n\nManagement Plan:\n• Advance to active-assisted ROM exercises - cleared for PT progression\n• Continue passive ROM and scapular strengthening\n• Gradual weaning of sling use during day (discontinue at night already done)\n• Return to work: Cleared for modified duty - desk work with ergonomic setup, no overhead reaching, limit keyboard use to 30-minute intervals with breaks\n• Continue tramadol PRN and acetaminophen scheduled\n• Follow-up in 6 weeks (12 weeks post-op) to assess for active strengthening clearance\n• Discussed realistic timeline: full recovery 4-6 months, return to normal activities gradual",
           citations: [
             { number: 1, citedText: "arthroscopic rotator cuff repair", quote: "Procedure: Arthroscopic rotator cuff repair, right shoulder", source: "Operative report, 01/03/2024" },
             { number: 2, citedText: "January 3rd", quote: "Surgery date: January 3, 2024", source: "Operative report, 01/03/2024" },
@@ -761,6 +765,7 @@ export default function Scribes({
           hpi: "28-year-old female recreational runner presenting with 3-week history of knee pain{{1}}. Pain started during half-marathon training{{2}}, gradual onset without acute injury. Located medial joint line{{3}}, 5-6/10 intensity with activity{{4}}, improves with rest{{5}}. Describes clicking sensation{{6}} and occasional giving way{{7}}. Denies locking or true instability. Pain worse with stairs, squatting, twisting motions{{8}}. Running limited to 1 mile before pain forces stop{{9}}. Has been icing and taking ibuprofen with minimal relief{{10}}. No prior knee problems{{11}}.",
           ros: "Musculoskeletal: Knee pain as described; no other joint pain{{12}}.\nNeurologic: No numbness, tingling, or weakness in leg{{13}}.\nConstitutional: Denies fever, chills.\nCardiovascular: No chest pain or palpitations with exercise.",
           pe: "General: Well-appearing, athletic build.\nVitals: BP 118/72, HR 68, RR 14{{14}}.\nKnee: No effusion{{15}}; tenderness to palpation at medial joint line{{16}}. ROM: Full extension, flexion to 135°{{17}}. McMurray test positive for medial meniscus{{18}}. Thessaly test positive{{19}}. Lachman, anterior drawer negative{{20}}. Valgus/varus stress stable{{21}}. No patellar apprehension{{22}}.",
+          mdm: "Assessment: Left medial meniscus tear, likely posterior horn, based on examination findings. Positive McMurray and Thessaly tests highly specific for meniscal pathology. Stable ligamentous examination rules out ACL or collateral ligament injury.\n\nComplexity: Moderate. Sports medicine injury requiring advanced imaging and possible surgical consultation. Young, active patient with functional limitations affecting quality of life and athletic goals.\n\nData Reviewed: Intake form, examination findings including specialized meniscal tests, current activity level and limitations.\n\nManagement Plan:\n• Order MRI left knee without contrast to confirm meniscal tear and assess for additional cartilage injury\n• Prescribe naproxen 500mg BID with food for anti-inflammatory effect\n• Activity modification: avoid running, squatting, twisting until imaging complete\n• May continue low-impact cardio (cycling, swimming) as tolerated\n• Referral to orthopedic sports medicine specialist pending MRI results\n• Discuss treatment options: conservative management vs. arthroscopic partial meniscectomy based on tear pattern\n• Physical therapy referral for quadriceps strengthening regardless of surgical decision\n• Follow-up in 2 weeks with MRI results or sooner if symptoms worsen",
           citations: [
             { number: 1, citedText: "3-week history of left knee pain", quote: "The pain started about 3 weeks ago", source: "Visit transcript, 00:01:45" },
             { number: 2, citedText: "during half-marathon training", quote: "I was training for a half marathon, increasing my mileage", source: "Visit transcript, 00:02:10" },
@@ -836,6 +841,7 @@ export default function Scribes({
           hpi: "42-year-old female with Type 2 diabetes mellitus{{1}} presents for routine 3-month follow-up. Recent A1c 7.8%{{2}}, up from 7.2% three months ago{{3}}. Patient reports good medication compliance with metformin 1000mg BID{{4}}. Admits to dietary indiscretions during holidays{{5}}. No hypoglycemic episodes{{6}}. Denies polyuria, polydipsia, or changes in vision{{7}}. Checking blood sugars 2-3 times per week{{8}}, fasting values range 130-150 mg/dL{{9}}. No new symptoms. Co-morbid hypertension and hyperlipidemia well-controlled{{10}}.",
           ros: "Endocrine: No polyuria, polydipsia, or polyphagia{{11}}.\nCardiovascular: Denies chest pain, palpitations, or leg swelling{{12}}.\nNeurologic: Denies numbness, tingling in feet{{13}}.\nOphthalmic: No vision changes; last eye exam 8 months ago{{14}}.\nConstitutional: Weight stable{{15}}.",
           pe: "General: Well-appearing, comfortable.\nVitals: BP 132/84, HR 76, RR 16, Weight 185 lbs (stable){{16}}.\nCardiac: RRR, no murmurs{{17}}.\nExtremities: No edema; pedal pulses 2+ bilaterally{{18}}; monofilament sensation intact{{19}}.",
+          mdm: "Assessment: Type 2 diabetes mellitus with suboptimal control. A1c rising from 7.2% to 7.8% despite metformin compliance, likely due to dietary factors. No evidence of microvascular complications at this time - neuropathy screening negative, good pedal pulses.\n\nComplexity: Moderate. Chronic disease management requiring medication adjustment and patient education. Multiple comorbidities (hypertension, hyperlipidemia) that compound cardiovascular risk.\n\nData Reviewed: Current A1c (7.8%), previous A1c trend (7.2% three months ago), home glucose log showing fasting values 130-150 mg/dL, medication list, previous visit notes, most recent lipid panel and creatinine.\n\nManagement Plan:\n• Add glipizide 5mg daily before breakfast to current metformin regimen to improve glycemic control\n• Discussed hypoglycemia symptoms and when to call\n• Referral to certified diabetes educator for dietary counseling and carbohydrate counting\n• Increase home glucose monitoring to daily fasting checks until A1c improves\n• Target fasting glucose <130 mg/dL\n• Order: Comprehensive metabolic panel, lipid panel, urine microalbumin/creatinine ratio\n• Recommend diabetic retinopathy screening (overdue - last exam 8 months ago, should be annual)\n• Pneumococcal vaccine update per ACIP guidelines\n• Follow-up in 3 months with repeat A1c; goal A1c <7.0%\n• Continue current BP and cholesterol medications",
           citations: [
             { number: 1, citedText: "Type 2 diabetes mellitus", quote: "Diagnosis: Type 2 diabetes mellitus without complications, diagnosed 2019", source: "Previous visit note, 11/10/2025" },
             { number: 2, citedText: "A1c 7.8%", quote: "Hemoglobin A1c: 7.8% (Reference range: <7.0% for diabetics)", source: "Lab results, 02/05/2024" },
@@ -989,7 +995,7 @@ export default function Scribes({
   }, [selectedPatientName, allScribes]);
   
   // Function to update scribe content
-  const updateScribeContent = (section: 'hpi' | 'ros' | 'pe', content: string) => {
+  const updateScribeContent = (section: 'hpi' | 'ros' | 'pe' | 'mdm', content: string) => {
     const updatedScribesByDate = scribesByDate.map(dateGroup => ({
       ...dateGroup,
       scribes: dateGroup.scribes.map((scribe, idx) => {
@@ -1032,14 +1038,14 @@ export default function Scribes({
       "maria-garcia-hpi-mechanism": "Pain started after moving furniture",
       "maria-garcia-pe-exam": "Back: Tenderness over paraspinal muscles L3-L5",
       "robert-chen-hpi-shoulder": "shoulder arthroscopic rotator cuff repair",
-      "robert-chen-note-header": "Right Shoulder Post-Op",
+      "robert-chen-note-header": "Passive ROM improving: forward flexion 110°, abduction 80°",
       "robert-chen-hpi-work": "Currently out of work (software engineer), interested in return-to-work timeline",
       "lisa-anderson-hpi-knee": "knee pain",
       "lisa-anderson-hpi-onset": "gradual onset without acute injury",
       "lisa-anderson-hpi-running": "Running limited to 1 mile before pain forces stop",
-      "sarah-johnson-hpi-a1c": "Recent A1c 7.8%, up from 7.2% three months ago",
-      "sarah-johnson-note-header": "Diabetes Follow-up",
-      "james-wilson-note-header": "Annual Check-up",
+      "sarah-johnson-hpi-a1c": "monofilament sensation intact",
+      "sarah-johnson-note-header": "Recent A1c 7.8%, up from 7.2% three months ago",
+      "james-wilson-note-header": "Interested in age-appropriate health screenings",
       "james-wilson-pe-bmi": "BMI 28.5"
     };
   };
@@ -1150,8 +1156,43 @@ export default function Scribes({
     let shouldHighlightInsertionPoint = false;
     let nudgeHighlights: Array<{text: string, nudgeIndex: number}> = [];
     
-    // Don't collect all nudge highlights by default - only show when hovering
-    // This prevents all nudges from highlighting simultaneously
+    // Collect nudge highlights for current section only
+    if (shouldShowNudgeHighlights && currentScribe.nudges) {
+      currentScribe.nudges.forEach((nudge, nudgeIndex) => {
+        if (nudge.highlightId) {
+          // Determine section from highlightId (e.g., "maria-garcia-hpi-laterality" -> hpi)
+          // Always prioritize extracting from highlightId first for consistency
+          let nudgeSection = null;
+          
+          // Look for known section abbreviations in the highlightId
+          const sectionPatterns = ['hpi', 'ros', 'pe', 'mdm', 'note'];
+          for (const pattern of sectionPatterns) {
+            if (nudge.highlightId.includes(`-${pattern}-`)) {
+              if (pattern === 'note') {
+                // Special case: note-header nudges - show in HPI where the relevant content is
+                nudgeSection = 'hpi';
+              } else {
+                nudgeSection = pattern;
+              }
+              break;
+            }
+          }
+          
+          // Fallback to insertLocation if we couldn't extract from highlightId
+          if (!nudgeSection && nudge.insertLocation) {
+            nudgeSection = nudge.insertLocation;
+          }
+          
+          // Only include nudges that belong to current section
+          if (nudgeSection === section) {
+            const text = highlightMapping[nudge.highlightId];
+            if (text) {
+              nudgeHighlights.push({ text, nudgeIndex });
+            }
+          }
+        }
+      });
+    }
     
     if (isNudgeHovered && hoveredNudge) {
       const nudge = currentScribe.nudges?.[hoveredNudge.nudgeIndex];
@@ -1223,7 +1264,8 @@ export default function Scribes({
       if (match && shouldShowCitations) {
         const citationNum = parseInt(match[1]);
         const citation = citations.find(c => c.number === citationNum);
-        const isActive = activeCitation?.number === citationNum;
+        const citationId = `scribe-${selectedScribeIndex}-${section}`;
+        const isActive = activeCitation?.id === citationId && activeCitation?.number === citationNum;
         
         const badge = (
           <span 
@@ -1240,6 +1282,12 @@ export default function Scribes({
               verticalAlign: 'baseline'
             }}
             onMouseEnter={(e) => {
+              // Clear any pending close timeout
+              if (citationCloseTimeoutRef.current) {
+                clearTimeout(citationCloseTimeoutRef.current);
+                citationCloseTimeoutRef.current = null;
+              }
+              
               setActiveCitation({ id: `scribe-${selectedScribeIndex}-${section}`, number: citationNum });
               const rect = e.currentTarget.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
@@ -1253,6 +1301,13 @@ export default function Scribes({
                 alignLeft
               });
             }}
+            onMouseLeave={() => {
+              // Delay closing to allow moving to tooltip
+              citationCloseTimeoutRef.current = window.setTimeout(() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }, 100);
+            }}
             onClick={(e) => {
               e.stopPropagation();
               
@@ -1264,11 +1319,11 @@ export default function Scribes({
                 setHighlightedQuote(citation.quote);
                 setActiveCitation(null);
                 setTooltipPosition(null);
-              } else if (activeCitation?.number === citationNum) {
+              } else if (activeCitation?.id === citationId) {
                 setActiveCitation(null);
                 setTooltipPosition(null);
               } else {
-                setActiveCitation({ id: `scribe-${selectedScribeIndex}-${section}`, number: citationNum });
+                setActiveCitation({ id: citationId, number: citationNum });
                 const rect = e.currentTarget.getBoundingClientRect();
                 const viewportWidth = window.innerWidth;
                 const tooltipWidth = 240;
@@ -1302,8 +1357,8 @@ export default function Scribes({
       let highlightColor = '#f1f3fe';
       
       // Check for citation highlighting
-      if (activeCitation && part && shouldShowCitations) {
-        const citation = citations.find(c => c.number === activeCitation);
+      if (activeCitation && part && shouldShowCitations && activeCitation.id.startsWith(`scribe-${selectedScribeIndex}-${section}`)) {
+        const citation = citations.find(c => c.number === activeCitation.number);
         if (citation && part.toLowerCase().includes(citation.citedText.toLowerCase())) {
           shouldHighlight = true;
           highlightTargetText = citation.citedText;
@@ -1349,8 +1404,8 @@ export default function Scribes({
         });
       }
       
-      // Add citation/nudge highlight (for hovered nudge)
-      if (shouldHighlight && highlightTargetText && part && (isNudgeHovered || isHighlightHovered)) {
+      // Add citation/nudge highlight (for hovered nudge or active citation)
+      if (shouldHighlight && highlightTargetText && part) {
         let searchStart = 0;
         let foundIndex;
         const searchLower = part.toLowerCase();
@@ -1369,22 +1424,21 @@ export default function Scribes({
       }
       
       // Add default view nudge highlights (insertion points)
+      // Only highlight first occurrence of each nudge's text to maintain 1:1 relationship
       if (shouldShowNudgeHighlights && nudgeHighlights.length > 0 && part) {
         nudgeHighlights.forEach(({ text: nudgeText, nudgeIndex }) => {
-          let searchStart = 0;
-          let foundIndex;
           const searchLower = part.toLowerCase();
           const targetLower = nudgeText.toLowerCase();
-          // Find all occurrences
-          while ((foundIndex = searchLower.indexOf(targetLower, searchStart)) !== -1) {
+          // Find only the FIRST occurrence to maintain 1:1 nudge-to-highlight relationship
+          const foundIndex = searchLower.indexOf(targetLower);
+          if (foundIndex !== -1) {
             allHighlights.push({
               start: foundIndex,
               end: foundIndex + nudgeText.length,
-              color: highlightColor,
-              priority: 3, // Lower priority than hovered highlights
+              color: '#f1f3fe',
+              priority: 0, // Highest priority to ensure nudge highlights show above abnormals
               nudgeIndex: nudgeIndex
             });
-            searchStart = foundIndex + 1;
           }
         });
       }
@@ -1542,6 +1596,12 @@ export default function Scribes({
           }}
           onMouseEnter={(e) => {
             if (citation) {
+              // Clear any pending close timeout
+              if (citationCloseTimeoutRef.current) {
+                clearTimeout(citationCloseTimeoutRef.current);
+                citationCloseTimeoutRef.current = null;
+              }
+              
               const rect = e.currentTarget.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
               const tooltipWidth = 240;
@@ -1556,6 +1616,13 @@ export default function Scribes({
               const isSame = activeCitation?.id === citationId;
               setActiveCitation(isSame ? null : { id: citationId, number: citationNum });
             }
+          }}
+          onMouseLeave={() => {
+            // Delay closing to allow moving to tooltip
+            citationCloseTimeoutRef.current = window.setTimeout(() => {
+              setActiveCitation(null);
+              setTooltipPosition(null);
+            }, 100);
           }}
         >
           {citationNum}
@@ -1607,7 +1674,32 @@ export default function Scribes({
     while ((citMatch = citationRegex.exec(text)) !== null) {
       const citNum = parseInt(citMatch[1], 10);
       const position = citMatch.index;
-      const sentenceIdx = sentences.findIndex(s => position >= s.start && position < s.end);
+      
+      // Find the sentence this citation belongs to
+      // Citations should highlight the sentence containing the text BEFORE the marker
+      let sentenceIdx = -1;
+      
+      // Look at the character right before the citation marker to determine which sentence it belongs to
+      const charBeforeCitation = position > 0 ? position - 1 : position;
+      
+      // Check which sentence contains the position just before the citation
+      for (let i = 0; i < sentences.length; i++) {
+        if (charBeforeCitation >= sentences[i].start && charBeforeCitation < sentences[i].end) {
+          sentenceIdx = i;
+          break;
+        }
+      }
+      
+      // Fallback: if still not found, find the closest previous sentence
+      if (sentenceIdx === -1) {
+        for (let i = sentences.length - 1; i >= 0; i--) {
+          if (position >= sentences[i].end) {
+            sentenceIdx = i;
+            break;
+          }
+        }
+      }
+      
       citationPositions.push({ number: citNum, position, sentenceIdx });
     }
     
@@ -1655,6 +1747,12 @@ export default function Scribes({
             }}
             onMouseEnter={(e) => {
               if (citation) {
+                // Clear any pending close timeout
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
+                
                 const rect = e.currentTarget.getBoundingClientRect();
                 const viewportWidth = window.innerWidth;
                 const tooltipWidth = 240;
@@ -1669,17 +1767,26 @@ export default function Scribes({
                 });
               }
             }}
+            onMouseLeave={() => {
+              // Delay closing to allow moving to tooltip
+              citationCloseTimeoutRef.current = window.setTimeout(() => {
+                setActiveCitation(null);
+                setTooltipPosition(null);
+              }, 100);
+            }}
             onClick={(e) => {
               e.stopPropagation();
               
-              // Check if citation references a visit transcript
-              if (citation && citation.source.startsWith('Visit transcript')) {
+              // Check if citation document exists in dataSourceContent
+              if (citation && dataSourceContent[currentScribe.name]?.[citation.source]) {
                 setRightTab('sources');
                 setPreviousTab('sources');
                 setViewingDataSource(citation.source);
                 setHighlightedQuote(citation.quote);
                 setActiveCitation(null);
                 setTooltipPosition(null);
+              } else if (citation && citation.isExternal && citation.externalUrl) {
+                window.open(citation.externalUrl, '_blank');
               } else if (citation) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const viewportWidth = window.innerWidth;
@@ -1774,13 +1881,18 @@ export default function Scribes({
             
             {/* Nav Items */}
             <div 
-              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip px-[4px] py-[16px] relative w-full"
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              className="content-stretch flex flex-[1_0_0] flex-col gap-[24px] items-center min-h-px min-w-px overflow-clip py-[16px] relative w-full"
             >
               {/* Visits */}
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
-                onClick={onNavigateToVisits}
+                onClick={() => {
+                  onNavigateToVisits?.();
+                  if (isSecondaryNavCollapsed) {
+                    clearNavHoverDelay();
+                    setHoveredPrimaryNav('visits');
+                  }
+                }}
                 onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('visits')}
                 onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
               >
@@ -1823,7 +1935,12 @@ export default function Scribes({
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
                 onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('assistant')}
-                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+                onMouseLeave={() => {
+                  if (isSecondaryNavCollapsed) {
+                    clearNavHoverDelay();
+                    setHoveredPrimaryNav('scribes');
+                  }
+                }}
               >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="sparkle" size={20} />
@@ -1837,7 +1954,12 @@ export default function Scribes({
               <button 
                 className="content-stretch cursor-pointer flex flex-col gap-[2px] items-center justify-center relative rounded-[6px] shrink-0 w-full group"
                 onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('admin')}
-                onMouseLeave={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+                onMouseLeave={() => {
+                  if (isSecondaryNavCollapsed) {
+                    clearNavHoverDelay();
+                    setHoveredPrimaryNav('scribes');
+                  }
+                }}
               >
                 <div className="content-stretch flex flex-col items-center justify-center relative rounded-[6px] shrink-0 size-[36px] group-hover:bg-[var(--surface-3,#e6e6e6)] transition-colors text-[color:var(--text-subheading,#666)]">
                   <InlineIcon name="analytics" size={20} />
@@ -1850,13 +1972,23 @@ export default function Scribes({
             
             <div 
               className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              onMouseEnter={() => {
+                if (isSecondaryNavCollapsed) {
+                  clearNavHoverDelay();
+                  setHoveredPrimaryNav('scribes');
+                }
+              }}
             />
             
             {/* Footer */}
             <div 
               className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
-              onMouseEnter={() => isSecondaryNavCollapsed && setHoveredNavWithDelay('scribes')}
+              onMouseEnter={() => {
+                if (isSecondaryNavCollapsed) {
+                  clearNavHoverDelay();
+                  setHoveredPrimaryNav('scribes');
+                }
+              }}
             >
               <button className="content-stretch flex flex-col gap-[4px] items-center justify-center relative rounded-[6px] shrink-0 size-[36px] cursor-pointer hover:bg-[var(--surface-transparent-dark-3,rgba(0,0,0,0.03))] transition-colors text-[color:var(--text-subheading,#666)]">
                 <InlineIcon name="help" size={20} />
@@ -1952,7 +2084,10 @@ export default function Scribes({
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('visits')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('visits');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Date Header */}
@@ -2020,6 +2155,10 @@ export default function Scribes({
                   isSelected={patient.name === selectedPatientName}
                   onClick={() => {
                     onNavigateToVisits?.();
+                    if (isSecondaryNavCollapsed) {
+                      clearNavHoverDelay();
+                      setHoveredPrimaryNav('visits');
+                    }
                   }}
                 />
               ))}
@@ -2047,7 +2186,10 @@ export default function Scribes({
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('scribes')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('scribes');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2126,7 +2268,10 @@ export default function Scribes({
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('customize')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('customize');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2148,7 +2293,10 @@ export default function Scribes({
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('assistant')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('assistant');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2170,7 +2318,10 @@ export default function Scribes({
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
         <div 
           className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
-          onMouseEnter={() => setHoveredPrimaryNav('admin')}
+          onMouseEnter={() => {
+            clearNavHoverDelay();
+            setHoveredPrimaryNav('admin');
+          }}
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
@@ -2752,6 +2903,129 @@ export default function Scribes({
                 </div>
               )}
             </div>
+            
+            {/* MDM Section */}
+            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+              {/* Section Title & CTAs */}
+              <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
+                <p 
+                  className={`flex-[1_0_0] font-['Lato',sans-serif] font-bold leading-[1.2] min-h-px min-w-px not-italic relative text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px] pl-[8px] ${
+                    hoveredNudge?.scribeIndex === selectedScribeIndex && 
+                    currentScribe.nudges?.[hoveredNudge.nudgeIndex]?.highlightId === `${currentScribe.name.toLowerCase().replace(/\s+/g, '-')}-mdm-section`
+                      ? 'bg-[#f1f3fe]' 
+                      : ''
+                  }`}
+                  style={{ fontFeatureSettings: "'ss07'" }}
+                  data-highlight-id={`${currentScribe.name.toLowerCase().replace(/\s+/g, '-')}-mdm-section`}
+                >
+                  MDM
+                </p>
+                <div className="flex gap-[4px] items-center shrink-0">
+                  {editingSection === 'mdm' ? (
+                    <>
+                      <div className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]">
+                        <InlineIcon name="mic" size={16} />
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          Dictate
+                        </p>
+                      </div>
+                      <div 
+                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
+                        onClick={() => {
+                          updateScribeContent('mdm', editedContent.mdm);
+                          setEditingSection(null);
+                        }}
+                      >
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          Save
+                        </p>
+                      </div>
+                      <div 
+                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
+                        onClick={() => setEditingSection(null)}
+                      >
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          Cancel
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                    <IconButton
+                      variant="tertiary"
+                      size="small"
+                      icon={<InlineIcon name="edit" size={16} />}
+                      onClick={() => {
+                        setEditedContent({ ...editedContent, mdm: currentScribe.mdm?.replace(/\{\{(\d+)\}\}/g, '') || '' });
+                        setEditingSection('mdm');
+                      }}
+                      className="text-[color:var(--text-brand,#1132ee)]"
+                    />
+                    <IconButton
+                      variant="tertiary"
+                      size="small"
+                      icon={<InlineIcon name="mic" size={16} />}
+                      onClick={() => {}}
+                      className="text-[color:var(--text-brand,#1132ee)]"
+                    />
+                    <IconButton
+                      variant="tertiary"
+                      size="small"
+                      icon={<InlineIcon name="school" size={16} />}
+                      onClick={() => {}}
+                      className="text-[color:var(--text-brand,#1132ee)]"
+                    />
+                    <IconButton
+                      variant="tertiary"
+                      size="small"
+                      icon={<InlineIcon name="docs_add_on" size={16} />}
+                      onClick={() => {}}
+                      className="text-[color:var(--text-brand,#1132ee)]"
+                    />
+                    <Button
+                      variant="tertiary"
+                      size="small"
+                      icon={<InlineIcon name="content_copy" size={16} />}
+                      onClick={() => {}}
+                    >
+                      Copy
+                    </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Section Content */}
+              {editingSection === 'mdm' ? (
+                <div className="border border-[var(--shape-brand,#1132ee)] border-solid content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full">
+                  <textarea
+                    autoFocus
+                    ref={(el) => adjustTextareaHeight(el)}
+                    value={editedContent.mdm}
+                    onChange={(e) => {
+                      setEditedContent({ ...editedContent, mdm: e.target.value });
+                      adjustTextareaHeight(e.target);
+                    }}
+                    className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[#111827] tracking-[0.15px] w-full p-[8px] rounded-[6px] resize-none overflow-hidden border-0 outline-none bg-transparent"
+                    style={{ minHeight: 'auto' }}
+                  />
+                </div>
+              ) : (
+                <div 
+                  className="content-stretch flex flex-col items-start relative rounded-[6px] shrink-0 w-full cursor-pointer"
+                  onClick={() => {
+                    setEditedContent({ ...editedContent, mdm: currentScribe.mdm?.replace(/\{\{(\d+)\}\}/g, '') || '' });
+                    setEditingSection('mdm');
+                  }}
+                >
+                  <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
+                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
+                      {currentScribe.mdm ? renderTextWithCitations(currentScribe.mdm, 'mdm') : 'No MDM content'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
               </>
             )}
           </div>
@@ -3089,17 +3363,21 @@ export default function Scribes({
                                     {citation.source}
                                     <InlineIcon name="open_in_new" size={12} />
                                   </a>
-                                ) : (
+                                ) : dataSourceContent[currentScribe.name]?.[citation.source] ? (
                                   <button
                                     onClick={() => {
                                       setPreviousTab(rightTab);
                                       setViewingDataSource(citation.source);
-                                      setHighlightedQuote(null);
+                                      setHighlightedQuote(citation.quote || null);
                                     }}
                                     className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-link,#1132ee)] hover:underline tracking-[0.065px] text-left"
                                   >
                                     {citation.source}
                                   </button>
+                                ) : (
+                                  <span className="font-['Lato',sans-serif] text-[13px] leading-[1.4] text-[color:var(--text-subheading,#666)] tracking-[0.065px] text-left">
+                                    {citation.source}
+                                  </span>
                                 )}
                               </div>
                             ))}
@@ -3164,7 +3442,7 @@ export default function Scribes({
                 orientation="horizontal"
                 size="small"
                 options={[
-                  { id: 'default', label: 'Default' },
+                  { id: 'default', label: 'All' },
                   { id: 'highlights', label: 'Highlights' },
                   { id: 'citation', label: 'Citation' },
                   { id: 'none', label: 'None' }
@@ -3778,6 +4056,11 @@ export default function Scribes({
                 transform: transformValue
               }}
               onMouseEnter={() => {
+                // Clear any pending close timeout
+                if (citationCloseTimeoutRef.current) {
+                  clearTimeout(citationCloseTimeoutRef.current);
+                  citationCloseTimeoutRef.current = null;
+                }
                 // Keep tooltip open when hovering over it
                 setActiveCitation(activeCitation);
               }}
@@ -3799,18 +4082,15 @@ export default function Scribes({
                   onClick={() => {
                     if (citation.isExternal && citation.externalUrl) {
                       window.open(citation.externalUrl, '_blank');
-                    } else {
+                    } else if (dataSourceContent[currentScribe.name]?.[citation.source]) {
+                      // Document exists in dataSourceContent
                       setPreviousTab(rightTab);
                       setViewingDataSource(citation.source);
-                      // If it's a visit transcript, set the highlighted quote
-                      if (citation.source.startsWith('Visit transcript')) {
-                        setHighlightedQuote(citation.quote);
-                      } else {
-                        setHighlightedQuote(null);
-                      }
+                      setHighlightedQuote(citation.quote);
+                      setActiveCitation(null);
+                      setTooltipPosition(null);
                     }
-                    setActiveCitation(null);
-                    setTooltipPosition(null);
+                    // If document doesn't exist, do nothing (don't open empty document)
                   }}
                 />
               </div>

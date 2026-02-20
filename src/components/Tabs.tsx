@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export type Tab = {
   id: string;
@@ -38,6 +38,12 @@ export const Tabs: React.FC<TabsProps> = ({
   hideBorder = false,
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
+  
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
   
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -113,6 +119,12 @@ export const VerticalTabs: React.FC<VerticalTabsProps> = ({
   className = '',
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
+  
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
   
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
