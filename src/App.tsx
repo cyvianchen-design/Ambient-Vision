@@ -1144,6 +1144,64 @@ export default function App() {
         "Oct 15, 2023, Neurology consult, Athena"
       ]
     },
+    {
+      name: "David Martinez",
+      age: 32,
+      gender: "M",
+      time: "11:30 am",
+      status: "In Queue",
+      chiefComplaint: "Knee Pain",
+      atAGlance: [
+        "32-year-old recreational soccer player with 2-week history of acute knee pain following pivoting injury during game.",
+        "Recreational athlete, no prior knee injuries or surgeries.",
+        "Today's visit: evaluate acute knee pain with mechanical symptoms (clicking, giving way) to assess for meniscal injury."
+      ],
+      details: [
+        "New patient - acute knee pain",
+        "Soccer injury / Possible meniscal tear"
+      ],
+      sections: {
+        "Last Visit Summary": [
+          "No prior visits to this clinic - new patient presentation."
+        ],
+        "Active Problems": [
+          "Acute knee pain (new onset 2 weeks ago)"
+        ],
+        "Recent Labs": [
+          "No recent labs on file"
+        ],
+        "Recent Imaging & Diagnostics": [
+          "No prior imaging available"
+        ],
+        "Historical Procedures": [
+          "No prior procedures documented"
+        ],
+        "Active Medications": [
+          "No active medications"
+        ],
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Occupation: Software developer",
+          "Lives alone in San Francisco",
+          "Recreational soccer player - plays 2-3x per week",
+          "Non-smoker, occasional alcohol (1-2 drinks per week)",
+          "Regular exercise routine prior to injury"
+        ],
+        "Vitals": [
+          "BP: 122/78 mmHg",
+          "HR: 64 bpm",
+          "RR: 14",
+          "Height: 5'10\"",
+          "Weight: 175 lbs",
+          "BMI: 25.1"
+        ]
+      },
+      citations: [],
+      careNudges: [],
+      dataSources: []
+    },
   ];
 
   const scribesByDate = [
