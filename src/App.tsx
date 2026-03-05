@@ -529,8 +529,9 @@ export default function App() {
       status: "In Queue", 
       chiefComplaint: "Right Knee Pain",
       atAGlance: [
-        "Bilateral knee OA (R>L); progressive pain and stiffness; conservative management failing; significant functional limitation.",
-        "Next step → review recent imaging; discuss total knee arthroplasty options; assess readiness for surgery."
+        "62-year-old with bilateral knee OA (R>L) for 2+ years, conservative management failing.",
+        "HTN well-controlled on lisinopril. BMI 34.2 (working on weight loss).",
+        "Today's visit: Reassess after 3 months conservative treatment; discuss surgical candidacy for right TKA."
       ],
       details: [
         "Follow-up for knee osteoarthritis",
@@ -544,35 +545,50 @@ export default function App() {
           "Discussed surgical options but patient wanted to try more conservative management first. {{4}}",
           "Started on PT and oral NSAIDs. Plan was to follow up in 3 months to reassess. {{5}}"
         ],
-        "Pain & Function": [
+        "Active Problems": [
+          "Bilateral knee osteoarthritis (R>L) - progressive despite conservative management",
           "Right knee pain 7/10 at rest, 9/10 with activity {{6}}",
           "Difficulty walking >1 block; stairs very painful {{7}}",
           "Night pain interfering with sleep {{8}}",
-          "Left knee mild pain (4/10) - manageable for now {{9}}"
+          "Left knee mild pain (4/10) - manageable for now {{9}}",
+          "Hypertension - controlled",
+          "Obesity (BMI 34.2) - weight loss ongoing"
         ],
-        "Imaging": [
-          "X-ray (Jan 10): Right knee - severe joint space narrowing, large osteophytes, subchondral sclerosis {{10}}",
-          "Left knee - moderate OA changes (KL Grade 2-3) {{11}}"
+        "Recent Labs": [
+          "No recent labs in past 2 years"
         ],
-        "Physical Exam (Last Visit)": [
-          "Right knee: Moderate effusion, crepitus with ROM, ROM 5-110° {{12}}",
-          "Varus alignment, tenderness at medial joint line {{13}}",
-          "Left knee: Mild crepitus, ROM 0-125° {{14}}"
+        "Recent Imaging & Diagnostics": [
+          "X-ray bilateral knees (Jan 10): {{10}}{{11}}",
+          "  • Right knee: Severe joint space narrowing, large osteophytes, subchondral sclerosis (KL Grade 4)",
+          "  • Left knee: Moderate OA changes (KL Grade 2-3)",
+          "Prior X-ray (Oct 20, 2023): Confirmed bilateral OA, R>L {{2}}"
         ],
-        "Prior Treatments": [
-          "PT x 8 weeks - minimal benefit {{15}}",
-          "Cortisone injection (Oct 2023) - 6 weeks relief {{16}}",
-          "NSAIDs (meloxicam 15mg daily), glucosamine - ongoing {{17}}"
+        "Historical Procedures": [
+          "Intra-articular cortisone injection to right knee (Oct 2023) - 6 weeks relief {{16}}",
+          "Physical therapy x 8 weeks - minimal benefit {{15}}"
         ],
-        "Current Medications": [
-          "Meloxicam 15mg daily {{18}}",
+        "Active Medications": [
+          "Meloxicam 15mg daily (for OA pain) {{18}}",
           "Lisinopril 20mg daily (HTN) {{19}}",
-          "Tylenol PRN {{20}}"
+          "Acetaminophen 1000mg PRN (breakthrough pain) {{20}}",
+          "Glucosamine/chondroitin supplement {{17}}"
         ],
-        "Comorbidities": [
-          "HTN - well controlled on lisinopril {{21}}",
-          "BMI 34 (obesity) - weight loss attempts ongoing {{22}}",
-          "No diabetes, no cardiac disease {{23}}"
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Retired schoolteacher",
+          "Lives with spouse",
+          "Previously active - walking for exercise (now limited by knee pain)",
+          "Non-smoker",
+          "Minimal alcohol use"
+        ],
+        "Vitals": [
+          "BP: 128/78 mmHg {{21}}",
+          "HR: 74 bpm",
+          "Height: 5'4\"",
+          "Weight: 210 lbs {{22}}",
+          "BMI: 34.2 (obesity) - weight loss attempts ongoing {{22}}"
         ]
       },
       citations: [
@@ -611,23 +627,23 @@ export default function App() {
         {
           type: "Surgical Consultation",
           description: "Discuss total knee arthroplasty - conservative management failing, severe OA on imaging.",
-          highlightId: "sarah-pain-function-0"
+          highlightId: "sarah-active-problems-1"
         },
         {
           type: "Pre-operative Optimization",
           description: "Weight loss goal BMI <35 before TKA - currently BMI 34.2, discuss timeline.",
-          highlightId: "sarah-comorbidities-1"
+          highlightId: "sarah-vitals-4"
         },
         {
           type: "Repeat Injection",
           description: "Consider repeat cortisone injection if patient wants to defer surgery further.",
-          highlightId: "sarah-prior-treatments-1"
+          highlightId: "sarah-historical-procedures-0"
         }
       ],
       trends: [
         {
           title: "Right Knee Pain Score (0-10)",
-          section: "Current Symptoms",
+          section: "Active Problems",
           data: [
             { date: "11/20", value: 5, label: "Nov 20, 2023" },
             { date: "11/27", value: 5, label: "Nov 27, 2023" },
@@ -651,7 +667,7 @@ export default function App() {
         },
         {
           title: "Right Knee Range of Motion (Flexion)",
-          section: "Physical Exam (Last Visit)",
+          section: "Active Problems",
           data: [
             { date: "11/20", value: 120, label: "Nov 20, 2023" },
             { date: "11/27", value: 118, label: "Nov 27, 2023" },
@@ -684,8 +700,9 @@ export default function App() {
       status: "In Queue", 
       chiefComplaint: "Right Shoulder Post-Op",
       atAGlance: [
-        "6 weeks post-op right rotator cuff repair; good early healing; ROM progressing per protocol; minimal pain.",
-        "Next step → advance PT to active ROM; discuss return to work timeline; confirm healing on exam."
+        "58-year-old 6 weeks post-op from arthroscopic right rotator cuff repair (supraspinatus + infraspinatus tears).",
+        "HTN well-controlled. Pain minimal (2/10). PT progressing per protocol - passive ROM only.",
+        "Today's visit: Advance to active-assisted ROM; discuss return to work timeline (software engineer, desk job)."
       ],
       details: [
         "6-week post-op visit - rotator cuff repair",
@@ -700,39 +717,50 @@ export default function App() {
           "Started on pain medications and instructed on pendulum exercises only for first 2 weeks. {{4}}",
           "PT to begin at 2 weeks post-op, follow-up scheduled for 6 weeks. {{18}}"
         ],
-        "Surgical Details": [
-          "Procedure: Arthroscopic rotator cuff repair (1/3/24) {{19}}",
-          "Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial) {{20}}",
-          "Repair: Double-row technique, 4 suture anchors {{21}}",
-          "No complications intraoperatively {{22}}"
+        "Active Problems": [
+          "Status post arthroscopic right rotator cuff repair (6 weeks ago) {{1}}",
+          "Post-operative pain - well controlled (2/10 at rest, 4/10 with PT) {{5}}",
+          "Limited ROM - progressing per protocol {{9}}",
+          "Hypertension - controlled on medication"
         ],
-        "Current Symptoms": [
-          "Pain 2/10 at rest, 4/10 with PT exercises {{5}}",
-          "Sleeping better - able to lie on left side {{23}}",
-          "Sling discontinued 2 weeks ago per PT {{6}}",
-          "No numbness, tingling, or signs of infection {{7}}"
+        "Recent Labs": [
+          "No recent labs in past 2 years"
         ],
-        "Physical Therapy Progress": [
-          "PT started week 2 - passive ROM protocol {{8}}",
-          "Current ROM: Forward flexion 110°, abduction 80° (passive) {{9}}",
-          "No active ROM yet - per protocol {{24}}",
-          "Scapular strengthening exercises initiated {{25}}"
+        "Recent Imaging & Diagnostics": [
+          "Operative report (Jan 3): Confirmed full-thickness supraspinatus tear (2.5cm), partial infraspinatus tear {{2}}",
+          "Pre-operative MRI (Dec 2023): Showed rotator cuff pathology requiring surgical repair"
         ],
-        "Physical Exam (Last Visit)": [
-          "Incisions well-healed, no erythema or drainage {{10}}",
-          "Minimal shoulder effusion {{26}}",
-          "Supraspinatus strength: not tested (too early) {{11}}",
-          "Neurovascular intact - axillary nerve function preserved {{27}}"
+        "Historical Procedures": [
+          "Arthroscopic right rotator cuff repair (Jan 3, 2024): {{19}}{{20}}{{21}}{{22}}",
+          "  • Procedure: Double-row repair technique with 4 suture anchors",
+          "  • Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial)",
+          "  • Outcome: No complications intraoperatively",
+          "Physical therapy - started week 2 post-op: {{8}}{{9}}{{24}}{{25}}",
+          "  • Passive ROM protocol (forward flexion 110°, abduction 80°)",
+          "  • Scapular strengthening exercises initiated",
+          "  • No active ROM yet per protocol"
         ],
-        "Current Medications": [
-          "Tramadol 50mg Q6H PRN (rarely using now) {{12}}",
+        "Active Medications": [
+          "Tramadol 50mg every 6 hours PRN - rarely using now, 1-2 tablets/day {{12}}",
           "Lisinopril 10mg daily (HTN) {{13}}",
-          "Tylenol 1000mg TID with PT {{14}}"
+          "Acetaminophen 1000mg TID with PT sessions {{14}}"
         ],
-        "Return to Work": [
-          "Occupation: Software engineer (desk job) {{15}}",
-          "Currently out of work - can type but limited by positioning {{28}}",
-          "Interested in return to work timeline {{16}}"
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Occupation: Software engineer (desk job, primarily computer work) {{15}}",
+          "Currently on medical leave - can type but desk positioning uncomfortable {{28}}",
+          "Lives with family",
+          "Non-smoker",
+          "Minimal alcohol use"
+        ],
+        "Vitals": [
+          "BP: 128/76 mmHg (well-controlled)",
+          "HR: 72 bpm",
+          "Temp: 98.6°F",
+          "Incisions: Well-healed, no erythema or drainage {{10}}",
+          "Exam: Minimal shoulder effusion, neurovascular intact {{26}}{{27}}"
         ]
       },
       citations: [
@@ -778,23 +806,23 @@ export default function App() {
         {
           type: "PT Progression",
           description: "Advance to active-assisted ROM - patient at 6 weeks, progressing well per protocol.",
-          highlightId: "robert-physical-therapy-progress-1"
+          highlightId: "robert-historical-procedures-1"
         },
         {
           type: "Return to Work",
           description: "Clear for modified duty desk work - can return with restrictions (no lifting, reaching).",
-          highlightId: "robert-return-to-work-1"
+          highlightId: "robert-social-history-0"
         },
         {
           type: "Pain Management",
           description: "Wean off tramadol - pain well-controlled with minimal narcotic use.",
-          highlightId: "robert-current-symptoms-0"
+          highlightId: "robert-active-problems-1"
         }
       ],
       trends: [
         {
           title: "Pain Score (0-10)",
-          section: "Current Symptoms",
+          section: "Active Problems",
           data: [
             { date: "1/7", value: 8, label: "Jan 7 (Week 1 Post-Op)" },
             { date: "1/14", value: 7, label: "Jan 14" },
@@ -811,7 +839,7 @@ export default function App() {
         },
         {
           title: "Passive Forward Flexion",
-          section: "Physical Therapy Progress",
+          section: "Historical Procedures",
           data: [
             { date: "1/14", value: 50, label: "Jan 14 (Week 2)" },
             { date: "1/21", value: 60, label: "Jan 21" },
@@ -828,7 +856,7 @@ export default function App() {
         },
         {
           title: "Passive Abduction",
-          section: "Physical Therapy Progress",
+          section: "Historical Procedures",
           data: [
             { date: "1/14", value: 40, label: "Jan 14 (Week 2)" },
             { date: "1/21", value: 45, label: "Jan 21" },
@@ -853,8 +881,9 @@ export default function App() {
       status: "In Queue", 
       chiefComplaint: "Lower Back Pain",
       atAGlance: [
-        "Acute lower back pain x 4 days; no red flags for serious pathology; likely musculoskeletal strain.",
-        "Next step → conservative management with NSAIDs and PT; reassess in 2 weeks if not improving."
+        "35-year-old otherwise healthy patient with acute lower back pain x 4 days after lifting furniture.",
+        "No chronic conditions. No red flags for serious pathology (no fever, trauma, neurological deficits).",
+        "Today's visit: Start conservative management - NSAIDs, PT referral for core strengthening."
       ],
       details: [
         "New visit for acute back pain",
@@ -867,36 +896,44 @@ export default function App() {
           "Vitals were within normal limits, patient reported regular exercise and healthy diet. {{3}}",
           "Counseled on preventive care and scheduled follow-up in 12 months. {{4}}"
         ],
-        "Pain Characteristics": [
-          "Sharp, localized to lower lumbar region (L4-L5 area) {{5}}",
-          "Pain 7/10 at worst, improves with rest {{6}}",
-          "No radiation to legs; no numbness or tingling {{7}}"
+        "Active Problems": [
+          "Acute lower back pain (4 days duration) - likely musculoskeletal strain",
+          "Sharp pain localized to L4-L5 area, 7/10 severity, improves with rest {{5}}{{6}}",
+          "No radiation to legs, no numbness or tingling {{7}}",
+          "Started after helping move furniture {{8}}",
+          "No red flags: No fever, bowel/bladder dysfunction, trauma, night pain, or weight loss {{10}}{{11}}{{12}}"
         ],
-        "Mechanism": [
-          "Started after helping move furniture 4 days ago {{8}}",
-          "Gradual onset, worsened over 24 hours {{9}}"
+        "Recent Labs": [
+          "No recent labs (not indicated for acute mechanical back pain)"
         ],
-        "Red Flags": [
-          "No fever, no bowel/bladder dysfunction {{10}}",
-          "No trauma, no night pain {{11}}",
-          "No history of cancer or recent weight loss {{12}}"
+        "Recent Imaging & Diagnostics": [
+          "No imaging ordered - no red flags present, conservative management appropriate {{19}}"
         ],
-        "Physical Exam": [
-          "Normal gait; negative straight leg raise bilaterally {{13}}",
-          "Tenderness over paraspinal muscles L3-L5 {{14}}",
-          "Full ROM with mild discomfort; no neurological deficits {{15}}"
+        "Historical Procedures": [
+          "No prior procedures"
+        ],
+        "Active Medications": [
+          "None - takes occasional ibuprofen OTC as needed {{18}}"
+        ],
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Occupation: Elementary school teacher",
+          "Lives with husband and two children",
+          "Regular exercise routine (running, yoga)",
+          "Non-smoker",
+          "Minimal alcohol use",
+          "Active lifestyle - incident occurred while helping son move furniture"
         ],
         "Vitals": [
-          "BP 118/72; HR 76; Temp 98.4°F {{16}}",
+          "BP: 118/72 mmHg {{16}}",
+          "HR: 76 bpm {{16}}",
+          "Temp: 98.4°F {{16}}",
+          "Height: 5'6\"",
+          "Weight: 145 lbs",
+          "Exam: Normal gait, negative SLR bilaterally, tenderness L3-L5 paraspinals {{13}}{{14}}{{15}}",
           "No signs of systemic illness {{17}}"
-        ],
-        "Current Medications": [
-          "None (takes occasional ibuprofen OTC) {{18}}"
-        ],
-        "Treatment Plan": [
-          "Conservative management indicated - no red flags present {{19}}",
-          "Physical therapy referral recommended for core strengthening {{20}}",
-          "Follow-up in 2 weeks if no improvement {{21}}"
         ]
       },
       citations: [
@@ -930,18 +967,18 @@ export default function App() {
         {
           type: "Treatment Plan",
           description: "Start ibuprofen 600mg TID with food for pain and inflammation.",
-          highlightId: "maria-pain-characteristics-0"
+          highlightId: "maria-active-problems-1"
         },
         {
           type: "Physical Therapy",
           description: "Refer to PT for core strengthening and body mechanics education.",
-          highlightId: "maria-treatment-plan-1"
+          highlightId: "maria-active-problems-0"
         }
       ],
       trends: [
         {
           title: "Pain Score (0-10)",
-          section: "Current Symptoms",
+          section: "Active Problems",
           data: [
             { date: "2/15", value: 4, label: "Feb 15 (Onset)" },
             { date: "2/16", value: 6, label: "Feb 16" },
@@ -963,8 +1000,9 @@ export default function App() {
       status: "In Queue", 
       chiefComplaint: "Annual Check-up",
       atAGlance: [
-        "Annual wellness visit; HTN well-controlled on current regimen; due for age-appropriate screenings.",
-        "Next step → order lipid panel and colonoscopy; discuss PSA screening; reinforce lifestyle modifications."
+        "55-year-old for annual wellness visit. HTN well-controlled. Former smoker (quit 2020).",
+        "Due for first-time colonoscopy screening, lipid panel update, and flu vaccine.",
+        "Today's visit: Complete annual exam, order age-appropriate screenings, discuss PSA screening."
       ],
       details: [
         "Annual wellness examination",
@@ -978,24 +1016,51 @@ export default function App() {
           "Discussed importance of age-appropriate health screenings. {{4}}",
           "Patient remains active with regular walking, plan was to schedule colonoscopy. {{5}}"
         ],
-        "Preventive Care Due": [
-          "Colonoscopy (age 55 - first screening due) {{6}}",
-          "Lipid panel (last checked 2 years ago) {{7}}",
-          "Consider PSA discussion {{8}}"
+        "Active Problems": [
+          "Hypertension - well controlled on lisinopril (BP 128/78) {{2}}{{11}}",
+          "Overweight (BMI 28.5) - weight stable, active lifestyle {{12}}{{13}}",
+          "Former smoker (quit 2020, 30 pack-year history) - tobacco-free {{3}}"
         ],
-        "Current Medications": [
-          "Lisinopril 20mg daily {{9}}",
-          "Aspirin 81mg daily {{10}}"
+        "Recent Labs": [
+          "Lipid panel (Jan 12, 2022): {{7}}",
+          "  • Total cholesterol: 195 mg/dL",
+          "  • LDL: 118 mg/dL",
+          "  • HDL: 52 mg/dL",
+          "  • Triglycerides: 125 mg/dL",
+          "  • Due for repeat (>2 years ago)"
+        ],
+        "Recent Imaging & Diagnostics": [
+          "No recent imaging"
+        ],
+        "Historical Procedures": [
+          "No prior procedures documented"
+        ],
+        "Active Medications": [
+          "Lisinopril 20mg daily (hypertension) {{9}}",
+          "Aspirin 81mg daily (cardiovascular prevention) {{10}}"
+        ],
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Occupation: Accountant",
+          "Lives with spouse",
+          "Physically active - regular walking for exercise {{5}}",
+          "Former smoker: Quit 2020, 30 pack-year history {{3}}",
+          "Moderate alcohol use (social drinking)"
         ],
         "Vitals": [
-          "BP 128/78 (well controlled) {{11}}",
-          "BMI 28.5 (overweight) {{12}}",
-          "Weight stable {{13}}"
-        ],
-        "Health Maintenance": [
-          "Flu vaccine due (fall) {{14}}",
-          "Tdap up to date {{15}}",
-          "Continue current medications {{16}}"
+          "BP: 128/78 mmHg (well-controlled) {{11}}",
+          "HR: 74 bpm",
+          "Height: 5'11\"",
+          "Weight: 210 lbs (stable) {{13}}",
+          "BMI: 28.5 (overweight) {{12}}",
+          "Preventive care due:",
+          "  • Colonoscopy (age 55 - first screening) {{6}}",
+          "  • Lipid panel (repeat due) {{7}}",
+          "  • Flu vaccine (fall season) {{14}}",
+          "  • Tdap up to date (05/2021) {{15}}",
+          "  • Consider PSA discussion {{8}}"
         ]
       },
       citations: [
@@ -1020,22 +1085,22 @@ export default function App() {
         {
           type: "Screening Due",
           description: "Order colonoscopy - age 55, first screening due.",
-          highlightId: "james-preventive-care-due-0"
+          highlightId: "james-vitals-6"
         },
         {
           type: "Labs",
           description: "Order fasting lipid panel - last checked 2 years ago.",
-          highlightId: "james-preventive-care-due-1"
+          highlightId: "james-recent-labs-0"
         },
         {
           type: "Shared Decision",
           description: "Discuss PSA screening - age 55, no documented family history.",
-          highlightId: "james-preventive-care-due-2"
+          highlightId: "james-vitals-9"
         },
         {
           type: "Immunization",
           description: "Administer flu vaccine - fall season, annual due.",
-          highlightId: "james-health-maintenance-0"
+          highlightId: "james-vitals-8"
         }
       ],
       dataSources: [
@@ -1052,8 +1117,9 @@ export default function App() {
       status: "In Queue", 
       chiefComplaint: "Migraine Headaches",
       atAGlance: [
-        "Chronic migraines; current preventive therapy showing limited benefit; significant impact on daily function.",
-        "Next step → consider switching to CGRP inhibitor; optimize acute treatment; rule out medication overuse."
+        "28-year-old with chronic migraines, limited response to propranolol after 3 months.",
+        "Frequency increased to 4-6 days/month despite preventive therapy. Comorbid anxiety on sertraline.",
+        "Today's visit: Consider switching to CGRP inhibitor; assess for medication overuse headache; optimize treatment."
       ],
       details: [
         "Follow-up for chronic migraines",
@@ -1067,34 +1133,48 @@ export default function App() {
           "Triggers identified include stress, poor sleep, and hormonal fluctuations. {{4}}",
           "Discussed medication adherence and lifestyle modifications, plan was to continue current regimen and reassess in 6 weeks. {{5}}"
         ],
-        "Headache Pattern": [
-          "4-6 migraine days per month (up from 3-4) {{6}}",
-          "Moderate to severe intensity; typically unilateral {{7}}",
-          "Associated with photophobia, nausea, occasionally visual aura {{8}}"
+        "Active Problems": [
+          "Chronic migraines - frequency 4-6 days/month (increased from 3-4) {{6}}",
+          "Moderate to severe intensity, typically unilateral {{7}}",
+          "Associated symptoms: photophobia, nausea, occasionally visual aura {{8}}",
+          "Limited response to propranolol preventive therapy {{12}}{{13}}",
+          "Concern for medication overuse headache - sumatriptan 2-3x/week {{10}}{{14}}",
+          "Functional impact: Missing work 1-2 days/month {{20}}{{21}}",
+          "Generalized anxiety disorder - stable on sertraline"
         ],
-        "Current Medications": [
-          "Preventive: Propranolol 80mg daily x 3 months {{9}}",
-          "Acute: Sumatriptan 100mg (using 2-3x/week) {{10}}",
-          "Sertraline 50mg daily (for anxiety) {{11}}"
+        "Recent Labs": [
+          "No recent labs in past year"
         ],
-        "Treatment Response": [
-          "Limited response to current preventive regimen {{12}}",
-          "Frequency increasing despite propranolol {{13}}",
-          "Sumatriptan effective but using frequently {{14}}"
+        "Recent Imaging & Diagnostics": [
+          "No recent imaging (prior brain MRI normal per neurology consult Oct 2023)"
         ],
-        "Triggers": [
-          "Stress, poor sleep, skipping meals {{15}}",
-          "Hormonal fluctuation (perimenstrual) {{16}}",
-          "Bright lights, strong odors {{17}}"
+        "Historical Procedures": [
+          "Neurology consultation (Oct 15, 2023): Started propranolol 80mg daily {{9}}",
+          "Baseline brain MRI (2023): Normal, no structural abnormalities"
+        ],
+        "Active Medications": [
+          "Propranolol 80mg daily (migraine prevention) - started 3 months ago {{9}}",
+          "Sumatriptan 100mg PRN (acute treatment) - using 2-3x/week {{10}}",
+          "Sertraline 50mg daily (anxiety) {{11}}"
+        ],
+        "Allergies": [
+          "NKDA (No Known Drug Allergies)"
+        ],
+        "Social History": [
+          "Occupation: Marketing manager (stressful role)",
+          "Lives with roommate",
+          "Migraine triggers: Stress, poor sleep, skipping meals {{15}}",
+          "Hormonal triggers: Perimenstrual migraines {{16}}",
+          "Environmental triggers: Bright lights, strong odors {{17}}",
+          "Non-smoker",
+          "Occasional alcohol (avoids due to migraine trigger)"
         ],
         "Vitals": [
-          "BP 108/70; HR 58 (on beta-blocker) {{18}}",
-          "Weight stable {{19}}"
-        ],
-        "Impact": [
-          "Missing work 1-2 days per month {{20}}",
-          "Significant effect on quality of life {{21}}",
-          "Patient interested in more effective prevention {{22}}"
+          "BP: 108/70 mmHg {{18}}",
+          "HR: 58 bpm (bradycardia on beta-blocker) {{18}}",
+          "Height: 5'5\"",
+          "Weight: 135 lbs (stable) {{19}}",
+          "BMI: 22.5 (normal)"
         ]
       },
       citations: [
@@ -1125,17 +1205,17 @@ export default function App() {
         {
           type: "Medication Switch",
           description: "Switch to erenumab 70mg monthly - propranolol ineffective after 3 months.",
-          highlightId: "lisa-treatment-response-1"
+          highlightId: "lisa-active-problems-3"
         },
         {
           type: "Medication Overuse",
           description: "Assess for MOH - sumatriptan 2-3x/week approaching threshold.",
-          highlightId: "lisa-current-medications-1"
+          highlightId: "lisa-active-medications-1"
         },
         {
           type: "Lifestyle Management",
           description: "Refer to behavioral health for stress and sleep hygiene.",
-          highlightId: "lisa-triggers-0"
+          highlightId: "lisa-social-history-2"
         }
       ],
       dataSources: [
@@ -1307,9 +1387,9 @@ export default function App() {
     }
     
     // Add medications with citations
-    if (patient.sections['Current Medications']) {
-      subjective += `\n\nCurrent Medications: `;
-      const medItems = patient.sections['Current Medications'];
+    if (patient.sections['Active Medications']) {
+      subjective += `\n\nActive Medications: `;
+      const medItems = patient.sections['Active Medications'];
       medItems.forEach((item, idx) => {
         // Already has citation markers embedded, just use as-is
         subjective += item;
