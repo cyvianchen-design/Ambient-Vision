@@ -559,8 +559,8 @@ export default function App() {
         ],
         "Recent Imaging & Diagnostics": [
           "X-ray bilateral knees (Jan 10): {{10}}{{11}}",
-          "  • Right knee: Severe joint space narrowing, large osteophytes, subchondral sclerosis (KL Grade 4)",
-          "  • Left knee: Moderate OA changes (KL Grade 2-3)",
+          "Right knee: Severe joint space narrowing, large osteophytes, subchondral sclerosis (KL Grade 4)",
+          "Left knee: Moderate OA changes (KL Grade 2-3)",
           "Prior X-ray (Oct 20, 2023): Confirmed bilateral OA, R>L {{2}}"
         ],
         "Historical Procedures": [
@@ -732,13 +732,13 @@ export default function App() {
         ],
         "Historical Procedures": [
           "Arthroscopic right rotator cuff repair (Jan 3, 2024): {{19}}{{20}}{{21}}{{22}}",
-          "  • Procedure: Double-row repair technique with 4 suture anchors",
-          "  • Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial)",
-          "  • Outcome: No complications intraoperatively",
+          "Procedure: Double-row repair technique with 4 suture anchors",
+          "Tears: Supraspinatus (2.5cm full-thickness), infraspinatus (partial)",
+          "Outcome: No complications intraoperatively",
           "Physical therapy - started week 2 post-op: {{8}}{{9}}{{24}}{{25}}",
-          "  • Passive ROM protocol (forward flexion 110°, abduction 80°)",
-          "  • Scapular strengthening exercises initiated",
-          "  • No active ROM yet per protocol"
+          "Passive ROM protocol (forward flexion 110°, abduction 80°)",
+          "Scapular strengthening exercises initiated",
+          "No active ROM yet per protocol"
         ],
         "Active Medications": [
           "Tramadol 50mg every 6 hours PRN - rarely using now, 1-2 tablets/day {{12}}",
@@ -1023,11 +1023,11 @@ export default function App() {
         ],
         "Recent Labs": [
           "Lipid panel (Jan 12, 2022): {{7}}",
-          "  • Total cholesterol: 195 mg/dL",
-          "  • LDL: 118 mg/dL",
-          "  • HDL: 52 mg/dL",
-          "  • Triglycerides: 125 mg/dL",
-          "  • Due for repeat (>2 years ago)"
+          "Total cholesterol: 195 mg/dL",
+          "LDL: 118 mg/dL",
+          "HDL: 52 mg/dL",
+          "Triglycerides: 125 mg/dL",
+          "Due for repeat (>2 years ago)"
         ],
         "Recent Imaging & Diagnostics": [
           "No recent imaging"
@@ -1056,11 +1056,11 @@ export default function App() {
           "Weight: 210 lbs (stable) {{13}}",
           "BMI: 28.5 (overweight) {{12}}",
           "Preventive care due:",
-          "  • Colonoscopy (age 55 - first screening) {{6}}",
-          "  • Lipid panel (repeat due) {{7}}",
-          "  • Flu vaccine (fall season) {{14}}",
-          "  • Tdap up to date (05/2021) {{15}}",
-          "  • Consider PSA discussion {{8}}"
+          "Colonoscopy (age 55 - first screening) {{6}}",
+          "Lipid panel (repeat due) {{7}}",
+          "Flu vaccine (fall season) {{14}}",
+          "Tdap up to date (05/2021) {{15}}",
+          "Consider PSA discussion {{8}}"
         ]
       },
       citations: [
@@ -2628,22 +2628,6 @@ export default function App() {
                     ))}
                   </ul>
                 </div>
-              </div>
-            </div>
-            
-            {/* Visit Context Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
-              <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                <p className="leading-[1.2]">Visit Context</p>
-              </div>
-              <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
-                <ul className="list-disc whitespace-pre-wrap">
-                  {patients[selectedPatientIndex].details.map((item, idx) => (
-                    <li key={idx} className={idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
-                      <span className="leading-[1.4]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
             
