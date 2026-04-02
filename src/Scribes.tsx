@@ -152,7 +152,7 @@ export default function Scribes({
   const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
   const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [chatInputValue, setChatInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'clinical' | 'codes' | 'transcript' | 'previsit'>('clinical');
+  const [activeTab, setActiveTab] = useState<'clinical' | 'transcript' | 'previsit'>('clinical');
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
   const [selectedView, setSelectedView] = useState<'default' | 'highlights' | 'citation'>('default');
   const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
@@ -172,8 +172,6 @@ export default function Scribes({
   const [highlightedQuote, setHighlightedQuote] = useState<string | null>(null);
   const [previousTab, setPreviousTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [expandedChatSources, setExpandedChatSources] = useState<Set<string>>(new Set());
-  const [showSmartEditTooltip, setShowSmartEditTooltip] = useState(false);
-  const [smartEditTooltipPosition, setSmartEditTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   
   // Reset document view when switching scribes
   useEffect(() => {
@@ -257,6 +255,153 @@ export default function Scribes({
   
   // Data source content for each scribe
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
+    "Cem": {
+      "Previsit summary, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PREVISIT SUMMARY**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
+      },
+      "Intake form, today": {
+        type: "Form",
+        date: "Today",
+        content: "**PATIENT INTAKE FORM**\n\nPatient Name: Cem\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+      },
+      "Urgent care visit, 2 weeks ago": {
+        type: "Clinical Note",
+        date: "2 weeks ago",
+        content: "**URGENT CARE VISIT NOTE**\n\nPatient: Cem, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits.\n\n**EXAMINATION**\nGeneral: Well-appearing\nNeuro: Alert, oriented, no focal deficits\nCardiac: RRR\n\n**ASSESSMENT**\nDizziness, likely related to elevated blood pressure\nHypertension, uncontrolled\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nNo immediate intervention needed\nReturn precautions given"
+      },
+      "Visit transcript, 00:01:30": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Good to see you. I understand your blood pressure has been elevated — can you tell me more about how you've been feeling?" Patient: "I've been getting these headaches… kind of pounding sometimes."`
+      },
+      "Visit transcript, 00:03:15": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "When were you first told your blood pressure might be elevated?" Patient: "Maybe once when I was younger, but no one really followed up."`
+      },
+      "Visit transcript, 00:05:45": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Do you notice any symptoms with physical activity?" Patient: "Now that you mention it, my legs get tired pretty quickly… I always thought I was just out of shape."`
+      },
+      "Visit transcript, 00:09:20": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Any cramping pain in your legs when you walk?" Patient: "No, not cramping exactly. Just fatigue. My legs get tired, but it's not pain that makes me stop. More like they feel heavy."`
+      },
+      "Visit transcript, 00:12:40": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "I'm going to conduct an additional blood pressure examination. I want to check your blood pressure in your arms and legs." Patient: "Oh, okay. Is something wrong?"`
+      },
+      "Visit transcript, 00:16:50": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "That is notable — your blood pressure is significantly lower in your legs compared to your arms, which is not typical. This finding raises concern for a structural vascular cause." Patient: "What does that mean?"`
+      },
+      "Visit transcript, 00:21:15": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "I would like to obtain imaging to evaluate your blood vessels more closely. An echocardiogram and CT angiography of your chest will help us see what's going on." Patient: "Is this serious?" Provider: "It's something we need to investigate promptly. The good news is that if we confirm what I suspect, there are effective treatments available."`
+      },
+      "Visit transcript, 00:24:30": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Also, since you're 45, you're due for colorectal cancer screening. Have you had a colonoscopy previously?" Patient: "No, I haven't." Provider: "We'll arrange that as well, as it's recommended starting at age 45. We can schedule both the imaging and the colonoscopy."`
+      },
+      "ROS documentation, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**REVIEW OF SYSTEMS**\n\nPatient: Cem, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
+      },
+      "Visit vitals, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**VITAL SIGNS**\n\nPatient: Cem, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
+      },
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
+      },
+      "Physical examination (additional BP exam), today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**ADDITIONAL BLOOD PRESSURE EXAMINATION**\n\nPatient: Cem, 45M\nDate: Today\nTime: During visit (after initial exam)\nIndication: Diminished femoral pulses noted on initial exam; elevated BP without clear risk factors\n\n**AMBIENT CLINICAL NUDGE (Triggered)**\n\"Mismatch between upper body symptoms (hypertension, pulsatile headaches) and lower extremity fatigue → recommend checking femoral pulses and comparing upper vs lower extremity blood pressure\"\n\n**BLOOD PRESSURE MEASUREMENTS**\n\n**Upper Extremity (Right Arm):**\n• Patient seated, arm at heart level\n• Appropriate cuff size used\n• Reading: 150/90 mmHg\n• Repeat reading: 150/92 mmHg (consistent)\n\n**Lower Extremity (Right Leg):**\n• Patient positioned prone\n• Large cuff applied to thigh\n• Popliteal artery auscultated\n• Reading: 110/70 mmHg\n\n**FINDINGS**\n• Arm-leg blood pressure gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)\n• **This finding is pathognomonic for coarctation of the aorta**\n• Normal physiologic state: leg BP should be equal to or slightly higher than arm BP\n• Significant gradient confirms vascular obstruction between upper and lower body\n\n**CLINICAL SIGNIFICANCE**\nSignificant arm-leg BP gradient detected. This is a critical finding that narrows the differential diagnosis significantly. Pattern highly suggestive of structural vascular abnormality, specifically coarctation of the aorta."
+      },
+      "Physical examination (focused re-exam), today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**FOCUSED CARDIOVASCULAR RE-EXAMINATION**\n\nPatient: Cem, 45M\nDate: Today\nTime: Following BP gradient discovery\nIndication: Re-examine for findings consistent with coarctation of aorta\n\n**AUSCULTATION (Targeted)**\n\n**Cardiac:**\n• Auscultation in supine position with patient breath-held\n• Left infraclavicular area: Grade 1-2/6 systolic ejection murmur appreciated\n• Posterior thorax (between scapulae): Faint systolic murmur heard over thoracic spine\n• These murmurs were subtle and not appreciated on initial routine examination\n\n**Vascular:**\n• Carotid arteries: No bruits\n• Abdominal aorta: No bruits\n• Femoral arteries: Faint continuous murmur appreciated bilaterally (collateral flow)\n\n**PALPATION (Re-assessment)**\n• Radial pulses: 2+ bilaterally, brisk and bounding\n• Brachial pulses: 2+ bilaterally, strong\n• Femoral pulses: 1+ bilaterally, diminished amplitude and delayed compared to radial (\"radial-femoral delay\")\n• Dorsalis pedis: 1+ bilaterally\n• Posterior tibial: 1+ bilaterally\n\n**CLINICAL CORRELATION**\nPhysical examination findings now consistent with coarctation of aorta:\n1. Arm-leg BP gradient (40 mmHg)\n2. Diminished and delayed femoral pulses\n3. Systolic murmur over left infraclavicular area and back (turbulent flow through narrowed aorta)\n4. Bounding upper extremity pulses (pre-stenotic hypertension)\n5. Weak lower extremity pulses (post-stenotic hypoperfusion)\n\nDiagnosis elevated from low probability to high probability based on examination findings."
+      },
+      "Visit transcript, 00:01:30": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Good to see you. I understand your blood pressure has been elevated — can you tell me more about how you've been feeling?" Patient: "I've been getting these headaches… kind of pounding sometimes."`
+      },
+      "Visit transcript, 00:03:15": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "When were you first told your blood pressure might be elevated?" Patient: "Maybe once when I was younger, but no one really followed up."`
+      },
+      "Visit transcript, 00:05:45": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Do you notice any symptoms with physical activity?" Patient: "Now that you mention it, my legs get tired pretty quickly… I always thought I was just out of shape."`
+      },
+      "Visit transcript, 00:09:20": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Any cramping pain in your legs when you walk?" Patient: "No, not cramping exactly. Just fatigue. My legs get tired, but it's not pain that makes me stop. More like they feel heavy."`
+      },
+      "Visit transcript, 00:12:40": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "I'm going to conduct an additional blood pressure examination. I want to check your blood pressure in your arms and legs." Patient: "Oh, okay. Is something wrong?" Provider: "I want to be thorough. I noticed your pulses feel a bit different between your arms and legs."`
+      },
+      "Visit transcript, 00:16:50": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "That is notable — your blood pressure is significantly lower in your legs compared to your arms, which is not typical. This finding raises concern for a structural vascular cause." Patient: "What does that mean?" Provider: "It suggests there may be a narrowing in one of your major blood vessels. It's called coarctation of the aorta - a congenital condition where there's a narrowing of the main artery from your heart."`
+      },
+      "Visit transcript, 00:21:15": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "I would like to obtain imaging to evaluate your blood vessels more closely. An echocardiogram and CT angiography of your chest will help us see the exact location and severity." Patient: "Is this serious?" Provider: "It's something we need to investigate promptly. The good news is that if we confirm what I suspect, there are effective treatments available - either surgical repair or a catheter-based procedure with a stent. Many people with this condition do very well after treatment."`
+      },
+      "Visit transcript, 00:24:30": {
+        type: "Transcript",
+        date: "Today",
+        content: `Provider: "Also, since you're 45, you're due for colorectal cancer screening. Have you had a colonoscopy previously?" Patient: "No, I haven't." Provider: "We'll arrange that as well, as it's recommended starting at age 45. We can coordinate the scheduling for you."`
+      },
+      "ROS documentation, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**REVIEW OF SYSTEMS**\n\nPatient: Cem, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
+      },
+      "Visit vitals, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**VITAL SIGNS**\n\nPatient: Cem, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
+      },
+      "Physical examination, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
+      },
+      "CT angiography chest (results), 2 days post-visit": {
+        type: "Imaging",
+        date: "2 days after visit",
+        content: "**CT ANGIOGRAPHY CHEST - PRELIMINARY REPORT**\n\nPatient: Cem, 45M\nMRN: CM-445821\nExam Date: 2 days after office visit\nStudy: CT angiography chest with IV contrast\n\n**CLINICAL INDICATION**\nElevated blood pressure, arm-leg BP gradient, suspected coarctation of aorta\n\n**TECHNIQUE**\nAxial images obtained through chest with IV contrast during arterial phase. Multiplanar reconstructions performed.\n\n**FINDINGS**\n\nAORTA:\n• **Coarctation of descending thoracic aorta identified**\n• Location: Just distal to left subclavian artery origin (typical location)\n• Narrowing: Focal stenosis with luminal diameter reduced to approximately 6-7mm (normal ~20-25mm at this level)\n• Severity: Severe stenosis (>70% diameter reduction)\n• Pre-stenotic dilatation: Ascending aorta mildly dilated (38mm)\n• Post-stenotic dilatation: Descending aorta mildly dilated distal to coarctation\n• Extensive collateral circulation visible via internal mammary and intercostal arteries\n\nCARDIAC:\n• Left ventricular wall thickness: Mildly increased (concentric hypertrophy secondary to longstanding hypertension)\n• Chamber size: Normal\n• Aortic valve: Appears bicuspid (common associated anomaly with coarctation)\n\nVASCULATURE:\n• Prominent intercostal arteries (collateral circulation)\n• Dilated internal mammary arteries bilaterally\n• Subclavian arteries normal\n\nLUNGS:\n• Clear, no consolidation or nodules\n\nOTHER:\n• No significant chest wall or mediastinal abnormalities\n\n**IMPRESSION**\n1. **Severe coarctation of descending thoracic aorta** (just distal to left subclavian artery), with >70% luminal narrowing\n2. Extensive collateral circulation via internal mammary and intercostal arteries\n3. Left ventricular hypertrophy (secondary to longstanding pressure overload)\n4. Bicuspid aortic valve (associated congenital anomaly)\n5. Pre- and post-stenotic aortic dilatation\n\n**RECOMMENDATION**\nUrgent cardiothoracic surgery consultation for surgical repair vs. catheter-based intervention (stenting). Findings consistent with longstanding coarctation, likely present since birth but previously undiagnosed.\n\n---\n*Report electronically signed by Dr. Radiologist*"
+      },
+      "Echocardiogram (results), 1 day post-visit": {
+        type: "Imaging",
+        date: "1 day after visit",
+        content: "**ECHOCARDIOGRAM REPORT**\n\nPatient: Cem, 45M\nMRN: CM-445821\nExam Date: 1 day after office visit\nStudy: Transthoracic echocardiogram\n\n**CLINICAL INDICATION**\nHypertension, suspected coarctation of aorta, evaluate cardiac function\n\n**MEASUREMENTS**\nLV end-diastolic dimension: 52mm (normal)\nLV end-systolic dimension: 34mm (normal)\nEjection fraction: 60% (normal)\nLeft ventricular wall thickness:\n  - Septum: 13mm (mildly increased, upper limit normal 11mm)\n  - Posterior wall: 12mm (mildly increased)\nLeft atrial size: 38mm (normal)\n\n**FINDINGS**\n\n**Left Ventricle:**\n• Normal chamber size\n• Mild concentric left ventricular hypertrophy (wall thickness 12-13mm)\n• Ejection fraction preserved at 60%\n• No regional wall motion abnormalities\n• Diastolic function: Grade I diastolic dysfunction (impaired relaxation)\n\n**Aortic Valve:**\n• **Bicuspid aortic valve identified** (fusion of right and left coronary cusps)\n• Mild aortic valve thickening\n• No significant aortic stenosis (peak velocity 1.8 m/s)\n• Trace aortic regurgitation\n\n**Aorta:**\n• Ascending aorta: Mildly dilated (38mm, upper limit normal 37mm)\n• Aortic arch: Not well visualized (limited acoustic window)\n• Descending aorta: Turbulent flow noted in descending aorta, consistent with stenosis (seen on color Doppler)\n• **Coarctation suspected** but complete anatomy better defined by CT angiography\n\n**Other Valves:**\n• Mitral valve: Structurally normal, no stenosis or regurgitation\n• Tricuspid valve: Normal\n• Pulmonic valve: Normal\n\n**Right Ventricle:**\n• Normal size and function\n• No pulmonary hypertension\n\n**Pericardium:**\n• No effusion\n\n**IMPRESSION**\n1. **Bicuspid aortic valve** with trace regurgitation, no stenosis\n2. **Mild concentric left ventricular hypertrophy** (secondary to longstanding hypertension)\n3. Preserved left ventricular systolic function (EF 60%)\n4. Grade I diastolic dysfunction\n5. Findings suggestive of **coarctation of descending aorta** (turbulent flow on Doppler) - CT angiography recommended for definitive anatomic assessment\n6. Ascending aortic dilatation (mild, 38mm)\n\n**RECOMMENDATIONS**\n• Cardiothoracic surgery referral for coarctation repair\n• Serial imaging surveillance of ascending aortic dilatation\n• Consider endocarditis prophylaxis given bicuspid aortic valve\n\n---\n*Report electronically signed by Dr. Cardiologist*"
+      }
+    },
     "Robert Chen": {
       "Physical examination, today": {
         type: "Clinical Note",
@@ -644,92 +789,113 @@ export default function Scribes({
       date: "Thu, Dec 19 (Today)",
       scribes: [
         { 
-          name: "Maria Garcia", 
-          age: 35, 
-          gender: "F", 
-          duration: "18m 45s",
-          chiefComplaint: "Lower Back Pain",
+          name: "Cem", 
+          age: 45, 
+          gender: "M", 
+          duration: "28m 45s",
+          chiefComplaint: "Headaches / Elevated Blood Pressure",
           room: "Room 215",
-          hpi: "35-year-old female presenting with acute lower back pain x 4 days{{1}}. Pain started after moving furniture{{2}}, located in lower lumbar region. Describes sharp pain, 7/10 intensity{{3}}, worse with bending and lifting{{4}}. Pain improves with rest{{5}}. Denies radiation to legs{{6}}, no paresthesias. No bowel/bladder dysfunction{{7}}. Takes ibuprofen with moderate relief{{8}}. No prior history of back problems{{9}}.",
-          ros: "Musculoskeletal: Lower back pain as described; no other joint pain{{10}}.\nNeurologic: No numbness, tingling, or weakness in legs{{11}}.\nConstitutional: Denies fever, chills, or weight loss{{12}}.\nGU: Normal bowel and bladder function{{13}}.",
-          pe: "General: Well-appearing, mild discomfort with position changes.\nVitals: BP 118/76, HR 72, RR 14{{14}}.\nBack: Tenderness over paraspinal muscles L3-L5{{15}}; no midline tenderness. Normal spinal curvature{{16}}.\nNeuro: Strength 5/5 lower extremities bilaterally; sensation intact; negative straight leg raise bilaterally{{17}}; reflexes 2+ and symmetric{{18}}.",
-          mdm: "Assessment: Acute mechanical lower back pain, likely lumbar strain. No red flags present - no fever, no neurological deficits, no bowel/bladder dysfunction. Negative straight leg raise makes radiculopathy unlikely.\n\nRisk: Low complexity. Straightforward acute musculoskeletal complaint without complications.\n\nData Reviewed: Intake form, ROS, physical examination findings.\n\nManagement Plan:\n• Conservative management with NSAIDs (continue ibuprofen 600mg TID with food)\n• Recommend addition of cyclobenzaprine 5mg TID PRN for muscle spasm\n• Activity modification: avoid heavy lifting, prolonged bending\n• Apply heat/ice as tolerated\n• Referral to physical therapy for core strengthening and body mechanics education\n• Follow-up in 4-6 weeks if not improved, or sooner if red flags develop\n• Return precautions discussed: worsening pain, radiation to legs, numbness/weakness, bowel/bladder dysfunction",
+          templateName: "Complex Diagnostic Evaluation Note",
+          hpi: "45-year-old male presenting with recurrent headaches{{1}} and persistently elevated blood pressure{{2}}. Headaches began 6 months ago, pulsatile in quality, patient describes sensation of \"feeling heartbeat in head\"{{3}}, occurring 2-3 times per week, lasting several hours. Also reports occasional dizziness{{4}}. BP persistently elevated: urgent care 152/92 mmHg two weeks ago{{5}}, pharmacy screenings 148/88 and 155/90{{6}}, today's check-in 150/92{{7}}. Patient reports high blood pressure noted once as teenager, never fully investigated{{8}}. No traditional cardiovascular risk factors: non-obese (BMI 25.5){{9}}, no diabetes, no family history of early hypertension{{10}}. Reports intermittent exercise intolerance with leg fatigue during exertion{{11}}, previously attributed to deconditioning. No current medications{{12}}.",
+          ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain{{13}}.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits{{14}}.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain{{15}}.\nConstitutional: Denies fever, weight loss, or night sweats{{16}}.\nRespiratory: No shortness of breath at rest{{17}}.",
+          pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F{{18}}.\nHEENT: Normocephalic; no bruits over carotids{{19}}.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated{{20}}.\nLungs: Clear to auscultation bilaterally{{21}}.\nExtremities: Femoral pulses slightly diminished bilaterally{{22}}.\n\n**Additional Blood Pressure Examination (Performed During Visit):**\nUpper extremity BP (right arm): 150/90 mmHg{{23}}\nLower extremity BP (right leg): 110/70 mmHg{{24}}\n**Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference){{25}}**\n\nCardiovascular (re-examination): Faint systolic murmur appreciated over left infraclavicular area and posterior thorax{{26}}.",
+          mdm: "Assessment: Coarctation of the aorta (congenital aortic narrowing). This is a rare but important diagnosis in an adult presenting with hypertension. Clinical presentation highly suspicious: persistent hypertension without traditional risk factors, pulsatile headaches (upper body hypertension), exercise-induced leg fatigue (lower body hypoperfusion), history of elevated BP as teenager (undiagnosed congenital lesion), and critical physical exam finding of significant arm-leg BP gradient with diminished femoral pulses.\n\nAmbient Clinical Reasoning Evolution:\n• Initial differential favored essential hypertension (most common)\n• Pattern recognition triggered by: young age + no risk factors + exertional leg symptoms\n• Ambient nudge prompted thorough vascular exam\n• Arm-leg BP gradient (40 mmHg) is pathognomonic for coarctation\n• Diagnosis transitioned from broad to targeted based on real-time findings\n\nComplexity: High. Rare congenital cardiovascular diagnosis in adult patient requiring immediate advanced imaging, specialty referral, and coordination of care. Diagnosis often missed in adults; carries significant morbidity if untreated (heart failure, stroke, aortic dissection). Requires expedited cardiology evaluation and surgical planning.\n\nData Reviewed: Previsit summary with BP trend, intake form, urgent care visit record, physical examination findings including specialized BP measurements, ambient clinical reasoning output.\n\nManagement Plan:\n• **Imaging (Stat Orders):**\n  - Echocardiogram (urgent) - assess cardiac function, aortic valve, and coarctation severity\n  - CT angiography chest (urgent) - definitive anatomic imaging of aortic narrowing location and severity\n• **Specialty Referral:** Cardiology referral (expedited) - discuss surgical vs. catheter-based intervention options\n• **Preventive Care:** Colonoscopy screening (age 45, no prior screening) - order placed, will coordinate scheduling\n  - GI referral for screening colonoscopy\n• **Patient Education:** Discussed diagnosis, explained congenital nature, treatment options (surgical repair vs. stent), prognosis with treatment\n• **Follow-up:** Cardiology appointment expedited (within 1 week); imaging to be completed within 48 hours; follow-up call after imaging results\n• **Activity:** No strenuous exercise until cardiology evaluation\n• **Monitoring:** Home BP monitoring not indicated (diagnosis established)\n\nPost-Visit Coordination (Ambient-Automated):\n• Insurance authorization for imaging completed in real-time\n• Colonoscopy eligibility verified and scheduling options sent\n• Cardiology referral placed with priority flagging\n• Cost estimates generated for procedures\n• Patient-friendly explanation of condition and next steps generated\n• Referral letters auto-generated for cardiology and GI",
           citations: [
-            { number: 1, citedText: "x 4 days", quote: "The pain started about 4 days ago, on Saturday morning", source: "Visit transcript, 00:01:15" },
-            { number: 2, citedText: "moving furniture", quote: "I was helping my husband move our couch and I felt something pull in my lower back", source: "Visit transcript, 00:01:32" },
-            { number: 3, citedText: "7/10 intensity", quote: "Pain severity: 7 out of 10 at worst", source: "Intake form, 02/12/2024" },
-            { number: 4, citedText: "worse with bending and lifting", quote: "It hurts really bad when I bend forward or try to pick anything up", source: "Visit transcript, 00:02:45" },
-            { number: 5, citedText: "improves with rest", quote: "When I lie down flat it feels a bit better", source: "Visit transcript, 00:03:10" },
-            { number: 6, citedText: "Denies radiation", quote: "No, the pain stays in my back. It doesn't go down my legs at all", source: "Visit transcript, 00:03:58" },
-            { number: 7, citedText: "No bowel/bladder dysfunction", quote: "Bathroom habits are completely normal", source: "Visit transcript, 00:04:22" },
-            { number: 8, citedText: "ibuprofen with moderate relief", quote: "I've been taking ibuprofen 600mg three times a day. It helps a little but doesn't take it away completely", source: "Visit transcript, 00:05:15" },
-            { number: 9, citedText: "No prior history", quote: "Past medical history: No prior back problems or injuries", source: "Intake form, 02/12/2024" },
-            { number: 10, citedText: "no other joint pain", quote: "Just my back. My knees, hips, everything else feels fine", source: "Visit transcript, 00:06:30" },
-            { number: 11, citedText: "No numbness, tingling, or weakness", quote: "No numbness, tingling, or weakness in lower extremities reported", source: "ROS documentation, today" },
-            { number: 12, citedText: "Denies fever, chills, or weight loss", quote: "No fever, chills, night sweats, or unintentional weight changes", source: "ROS documentation, today" },
-            { number: 13, citedText: "Normal bowel and bladder", quote: "Bowel and bladder function normal, no incontinence or retention", source: "ROS documentation, today" },
-            { number: 14, citedText: "BP 118/76, HR 72, RR 14", quote: "Blood pressure 118/76 mmHg, heart rate 72 bpm, respiratory rate 14", source: "Visit vitals, today" },
-            { number: 15, citedText: "Tenderness over paraspinal muscles L3-L5", quote: "Moderate tenderness to palpation over bilateral paraspinal musculature from L3 to L5 level", source: "Physical examination, today" },
-            { number: 16, citedText: "Normal spinal curvature", quote: "Spine: Normal thoracic kyphosis and lumbar lordosis, no scoliosis", source: "Physical examination, today" },
-            { number: 17, citedText: "negative straight leg raise", quote: "Straight leg raise test negative bilaterally at 70 degrees, no radicular symptoms provoked", source: "Physical examination, today" },
-            { number: 18, citedText: "reflexes 2+ and symmetric", quote: "Deep tendon reflexes: 2+ and symmetric at patellar and Achilles tendons bilaterally", source: "Physical examination, today" }
+            { number: 1, citedText: "recurrent headaches", quote: "I've been getting these headaches that feel like pounding in my head", source: "Intake form, today" },
+            { number: 2, citedText: "persistently elevated blood pressure", quote: "Recent vitals: BP 152/92, 148/88, 155/90", source: "Previsit summary, today" },
+            { number: 3, citedText: "feeling heartbeat in head", quote: "I've been getting these headaches... kind of pounding sometimes", source: "Visit transcript, 00:01:30" },
+            { number: 4, citedText: "occasional dizziness", quote: "I went to urgent care because of dizziness and they said my blood pressure was really high", source: "Intake form, today" },
+            { number: 5, citedText: "urgent care 152/92 mmHg", quote: "Urgent Care visit (2 weeks ago): BP 152/92 mmHg", source: "Previsit summary, today" },
+            { number: 6, citedText: "pharmacy screenings 148/88 and 155/90", quote: "Pharmacy screening (1 week ago): BP 148/88 mmHg; Pharmacy screening (3 days ago): BP 155/90 mmHg", source: "Previsit summary, today" },
+            { number: 7, citedText: "today's check-in 150/92", quote: "BP 150/92 mmHg, HR 76 bpm, Temp 98.6°F", source: "Visit vitals, today" },
+            { number: 8, citedText: "high blood pressure noted once as teenager", quote: "Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it", source: "Intake form, today" },
+            { number: 9, citedText: "BMI 25.5", quote: "Height: 5'10\" (177.8 cm), Weight: 178 lbs (80.7 kg), BMI: 25.5", source: "Visit vitals, today" },
+            { number: 10, citedText: "no family history of early hypertension", quote: "Family History: No family history of early hypertension, no diabetes", source: "Previsit summary, today" },
+            { number: 11, citedText: "leg fatigue during exertion", quote: "My legs get tired pretty quickly when I exercise or climb stairs - I always thought I was just out of shape", source: "Intake form, today" },
+            { number: 12, citedText: "No current medications", quote: "Current Medications: None", source: "Intake form, today" },
+            { number: 13, citedText: "no chest pain", quote: "No chest pain or pressure. No history of angina", source: "ROS documentation, today" },
+            { number: 14, citedText: "no syncope, vision changes, or focal deficits", quote: "No loss of consciousness, no vision changes, no weakness or numbness", source: "ROS documentation, today" },
+            { number: 15, citedText: "no claudication pain", quote: "Leg fatigue but no cramping pain with walking that forces me to stop", source: "Visit transcript, 00:09:20" },
+            { number: 16, citedText: "Denies fever, weight loss, or night sweats", quote: "No constitutional symptoms: fever, chills, night sweats, or unintentional weight loss", source: "ROS documentation, today" },
+            { number: 17, citedText: "No shortness of breath at rest", quote: "No dyspnea at rest. Some mild shortness of breath with heavy exertion", source: "ROS documentation, today" },
+            { number: 18, citedText: "BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F", quote: "Blood pressure 150/92 mmHg (right arm, seated), heart rate 76 bpm, respiratory rate 14, temperature 98.6°F", source: "Visit vitals, today" },
+            { number: 19, citedText: "no bruits over carotids", quote: "HEENT examination: No carotid bruits bilaterally", source: "Physical examination, today" },
+            { number: 20, citedText: "no murmurs initially appreciated", quote: "Cardiac auscultation (initial): Regular rate and rhythm, normal S1 S2, no murmurs appreciated", source: "Physical examination, today" },
+            { number: 21, citedText: "Clear to auscultation bilaterally", quote: "Lungs: Clear breath sounds throughout all lung fields, no wheezes, rales, or rhonchi", source: "Physical examination, today" },
+            { number: 22, citedText: "Femoral pulses slightly diminished bilaterally", quote: "Peripheral vascular examination: Femoral pulses palpable but slightly diminished bilaterally compared to radial pulses", source: "Physical examination, today" },
+            { number: 23, citedText: "Upper extremity BP (right arm): 150/90 mmHg", quote: "Repeat blood pressure measurement, right arm, seated: 150/90 mmHg", source: "Physical examination (additional BP exam), today" },
+            { number: 24, citedText: "Lower extremity BP (right leg): 110/70 mmHg", quote: "Blood pressure measurement, right lower extremity (popliteal artery, patient prone): 110/70 mmHg", source: "Physical examination (additional BP exam), today" },
+            { number: 25, citedText: "Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference)", quote: "Arm-leg BP gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)", source: "Physical examination (additional BP exam), today" },
+            { number: 26, citedText: "Faint systolic murmur appreciated over left infraclavicular area and posterior thorax", quote: "Cardiac re-examination: Grade 1-2/6 systolic ejection murmur heard over left infraclavicular region and posteriorly over thoracic spine", source: "Physical examination (focused re-exam), today" }
           ],
           hccItems: [],
           nudges: [
             { 
-              type: "Documentation", 
-              description: "Missing indication of pain location laterality, please select an option to complete your note.",
-              highlightId: "maria-garcia-hpi-laterality",
-              options: [
-                { id: 'left', label: 'Left', type: 'single-select' },
-                { id: 'right', label: 'Right', type: 'single-select' }
-              ],
-              previewText: (selected: string[]) => selected.length > 0 ? `${selected[0]} side of ` : '',
-              insertLocation: 'hpi',
-              insertAfter: 'located in '
+              type: "Clinical Insight", 
+              description: "Mismatch between upper body symptoms and lower extremity fatigue → recommend checking femoral pulses and comparing upper vs lower extremity blood pressure.",
+              highlightId: "cem-ambient-nudge"
+            }
+          ],
+          diagnosisAndCodes: {
+            diagnoses: [
+              { code: "Q25.1", description: "Coarctation of aorta" },
+              { code: "I10", description: "Essential (primary) hypertension (secondary to coarctation)" },
+              { code: "R51.9", description: "Headache, unspecified" }
+            ],
+            cptCodes: [
+              { code: "99215", description: "Office visit, established patient, high complexity (40-54 minutes)" },
+              { code: "93000", description: "Electrocardiogram, routine ECG with interpretation" }
+            ]
+          },
+          postVisitWorkflows: [
+            { 
+              type: "Referral", 
+              description: "Cardiology referral (expedited) - coarctation of aorta, discuss surgical vs catheter-based repair. Referral letter auto-generated.",
+              status: "completed"
             },
             { 
-              type: "Billing Compliance", 
-              description: "Select all examination components performed to support E/M level.",
-              highlightId: "maria-garcia-pe-exam",
-              options: [
-                { id: 'back', label: 'Back examination', type: 'multi-select' },
-                { id: 'neuro', label: 'Neurological examination', type: 'multi-select' },
-                { id: 'musculoskeletal', label: 'Musculoskeletal ROM', type: 'multi-select' },
-                { id: 'gait', label: 'Gait assessment', type: 'multi-select' }
-              ],
-              previewText: (selected: string[]) => {
-                if (selected.length === 0) return '';
-                const labelMap: Record<string, string> = {
-                  back: 'comprehensive back examination', 
-                  neuro: 'neurological examination including strength, sensation, and reflexes',
-                  musculoskeletal: 'musculoskeletal range of motion assessment',
-                  gait: 'gait and stability assessment'
-                };
-                return `Examination included: ${selected.map(s => labelMap[s]).join(', ')}.`;
-              },
-              insertLocation: 'pe',
-              insertAfter: 'Normal spinal curvature.'
+              type: "Referral", 
+              description: "GI referral for screening colonoscopy (age 45, no prior screening). Referral letter auto-generated.",
+              status: "completed"
             },
-            { type: "Documentation", description: "Specify mechanism of injury timing and activity to support acute diagnosis.", highlightId: "maria-garcia-hpi-mechanism" }
+            { 
+              type: "Imaging Order", 
+              description: "Echocardiogram (STAT) - assess cardiac function and coarctation severity. Insurance authorization completed.",
+              status: "completed"
+            },
+            { 
+              type: "Imaging Order", 
+              description: "CT angiography chest (STAT) - definitive imaging of aortic narrowing. Insurance authorization completed.",
+              status: "completed"
+            },
+            { 
+              type: "Order", 
+              description: "Colonoscopy screening order placed. Eligibility verified, scheduling options sent to patient.",
+              status: "completed"
+            },
+            { 
+              type: "Patient Education", 
+              description: "Patient education document generated: Coarctation of aorta explanation, treatment options, next steps.",
+              status: "completed"
+            }
           ],
           dataSources: [
-            "Aug 10, 2023, Annual wellness visit, Athena",
-            "June 15, 2023, Lumbar spine X-ray, Athena",
-            "Feb 12, Intake form, Ambient",
-            "Feb 12, Today's visit, Ambient",
-            "Visit transcript, 00:01:15",
-            "Visit transcript, 00:01:32",
-            "Visit transcript, 00:02:45",
-            "Visit transcript, 00:03:10",
-            "Visit transcript, 00:03:58",
-            "Visit transcript, 00:04:22",
-            "Visit transcript, 00:05:15",
-            "Visit transcript, 00:06:30",
-            "Intake form, 02/12/2024",
+            "Previsit summary, today",
+            "Intake form, today",
+            "Urgent care visit, 2 weeks ago",
+            "Visit transcript, 00:01:30",
+            "Visit transcript, 00:03:15",
+            "Visit transcript, 00:05:45",
+            "Visit transcript, 00:09:20",
+            "Visit transcript, 00:12:40",
+            "Visit transcript, 00:16:50",
+            "Visit transcript, 00:21:15",
+            "Visit transcript, 00:24:30",
             "ROS documentation, today",
             "Visit vitals, today",
-            "Physical examination, today"
+            "Physical examination, today",
+            "Physical examination (additional BP exam), today",
+            "Physical examination (focused re-exam), today"
           ]
         },
         { 
@@ -739,6 +905,7 @@ export default function Scribes({
           duration: "22m 15s",
           chiefComplaint: "Right Shoulder Post-Op",
           room: "Room 301",
+          templateName: "Post-Operative Follow-Up Note",
           hpi: "58-year-old male presenting for 6-week post-operative visit following shoulder arthroscopic rotator cuff repair{{1}}. Surgery performed January 3rd{{2}} for large full-thickness supraspinatus tear (2.5cm){{3}} and partial infraspinatus tear{{4}}. Repair with double-row technique{{5}}. Patient reports good pain control{{6}}, currently 2-4/10 with PT exercises. Incisions well-healed{{7}}, no signs of infection. Discontinued sling 2 weeks ago per PT{{8}}. Passive ROM improving: forward flexion 110°, abduction 80°{{9}}. Sleeping better, able to lie on opposite side{{10}}. No numbness or tingling in hand{{11}}. Currently out of work (software engineer), interested in return-to-work timeline{{12}}.",
           ros: "Musculoskeletal: Shoulder pain improving; no other joint pain{{13}}.\nNeurologic: No numbness, tingling, or weakness in arm/hand{{14}}.\nConstitutional: No fever, chills{{15}}.\nCardiovascular: Denies chest pain or palpitations.\nRespiratory: No shortness of breath.",
           pe: "General: Well-appearing, no acute distress.\nVitals: BP 128/82, HR 74, RR 14{{16}}.\nShoulder: Incisions well-healed, no erythema or drainage{{17}}; minimal effusion{{18}}. ROM (passive): Forward flexion 110°, abduction 80°, ER 30°{{19}}. Neurovascular: Axillary nerve intact (deltoid sensation present){{20}}; radial/median/ulnar intact distally{{21}}. Strength: Deferred at this early timepoint{{22}}.",
@@ -787,6 +954,8 @@ export default function Scribes({
             { type: "Documentation", description: "Document clearance for active-assisted ROM progression - standard at 6-8 weeks post-op.", highlightId: "robert-chen-note-header" },
             { type: "Billing Compliance", description: "Document return-to-work restrictions for modified duty desk work.", highlightId: "robert-chen-hpi-work" }
           ],
+          diagnosisAndCodes: {},
+          postVisitWorkflows: [],
           dataSources: [
             "Operative report, 01/03/2024",
             "PT progress note, 02/05/2024",
@@ -803,6 +972,7 @@ export default function Scribes({
           duration: "19m 30s",
           chiefComplaint: "Left Knee Pain",
           room: "Room 408",
+          templateName: "Sports Medicine / Orthopedic Note",
           hpi: "28-year-old female recreational runner presenting with 3-week history of knee pain{{1}}. Pain started during half-marathon training{{2}}, gradual onset without acute injury. Located medial joint line{{3}}, 5-6/10 intensity with activity{{4}}, improves with rest{{5}}. Describes clicking sensation{{6}} and occasional giving way{{7}}. Denies locking or true instability. Pain worse with stairs, squatting, twisting motions{{8}}. Running limited to 1 mile before pain forces stop{{9}}. Has been icing and taking ibuprofen with minimal relief{{10}}. No prior knee problems{{11}}.",
           ros: "Musculoskeletal: Knee pain as described; no other joint pain{{12}}.\nNeurologic: No numbness, tingling, or weakness in leg{{13}}.\nConstitutional: Denies fever, chills.\nCardiovascular: No chest pain or palpitations with exercise.",
           pe: "General: Well-appearing, athletic build.\nVitals: BP 118/72, HR 68, RR 14{{14}}.\nKnee: No effusion{{15}}; tenderness to palpation at medial joint line{{16}}. ROM: Full extension, flexion to 135°{{17}}. McMurray test positive for medial meniscus{{18}}. Thessaly test positive{{19}}. Lachman, anterior drawer negative{{20}}. Valgus/varus stress stable{{21}}. No patellar apprehension{{22}}.",
@@ -859,6 +1029,8 @@ export default function Scribes({
             },
             { type: "Billing Compliance", description: "Document functional limitations for appropriate E/M level - inability to continue running training.", highlightId: "lisa-anderson-hpi-running" }
           ],
+          diagnosisAndCodes: {},
+          postVisitWorkflows: [],
           dataSources: [
             "Visit transcript, 00:01:45",
             "Intake form, 02/12/2024",
@@ -879,6 +1051,7 @@ export default function Scribes({
           duration: "21m 33s",
           chiefComplaint: "Diabetes Follow-up",
           room: "Room 112",
+          templateName: "Chronic Disease Management Note",
           hpi: "42-year-old female with Type 2 diabetes mellitus{{1}} presents for routine 3-month follow-up. Recent A1c 7.8%{{2}}, up from 7.2% three months ago{{3}}. Patient reports good medication compliance with metformin 1000mg BID{{4}}. Admits to dietary indiscretions during holidays{{5}}. No hypoglycemic episodes{{6}}. Denies polyuria, polydipsia, or changes in vision{{7}}. Checking blood sugars 2-3 times per week{{8}}, fasting values range 130-150 mg/dL{{9}}. No new symptoms. Co-morbid hypertension and hyperlipidemia well-controlled{{10}}.",
           ros: "Endocrine: No polyuria, polydipsia, or polyphagia{{11}}.\nCardiovascular: Denies chest pain, palpitations, or leg swelling{{12}}.\nNeurologic: Denies numbness, tingling in feet{{13}}.\nOphthalmic: No vision changes; last eye exam 8 months ago{{14}}.\nConstitutional: Weight stable{{15}}.",
           pe: "General: Well-appearing, comfortable.\nVitals: BP 132/84, HR 76, RR 16, Weight 185 lbs (stable){{16}}.\nCardiac: RRR, no murmurs{{17}}.\nExtremities: No edema; pedal pulses 2+ bilaterally{{18}}; monofilament sensation intact{{19}}.",
@@ -935,6 +1108,8 @@ export default function Scribes({
             },
             { type: "Billing Compliance", description: "Consider 'with complications' for diabetes - rising A1c and overdue screening warrant higher specificity.", highlightId: "sarah-johnson-note-header" }
           ],
+          diagnosisAndCodes: {},
+          postVisitWorkflows: [],
           dataSources: [
             "Previous visit note, 11/10/2025",
             "Lab results, 02/05/2024",
@@ -954,6 +1129,7 @@ export default function Scribes({
           duration: "26m 08s",
           chiefComplaint: "Annual Check-up",
           room: "Room 203",
+          templateName: "Annual Wellness Visit Note",
           hpi: "55-year-old male presents for annual wellness examination{{1}}. No acute concerns. History of hypertension{{2}}, well-controlled on lisinopril 20mg daily{{3}}. Former smoker (quit 2020, 30 pack-year history){{4}}. Exercises 2-3 times per week (walking){{5}}. Diet could be improved{{6}}. No new symptoms. Interested in age-appropriate health screenings{{7}}. Last colonoscopy never done (now age-appropriate){{8}}. Last lipid panel 2 years ago{{9}}.",
           ros: "Cardiovascular: Denies chest pain, palpitations, or dyspnea{{10}}.\nRespiratory: No cough or SOB{{11}}; former smoker, quit 4 years ago{{12}}.\nGI: Normal bowel habits; no rectal bleeding{{13}}.\nGU: Normal urination; no nocturia{{14}}.\nConstitutional: Feels well; weight stable{{15}}.",
           pe: "General: Well-appearing, no acute distress.\nVitals: BP 128/78, HR 68, RR 14, BMI 28.5{{16}}.\nCardiac: RRR, no murmurs{{17}}.\nLungs: Clear to auscultation bilaterally{{18}}.\nAbdomen: Soft, non-tender, no masses{{19}}.",
@@ -1006,6 +1182,8 @@ export default function Scribes({
             },
             { type: "Billing Compliance", description: "Add BMI 28.5 (overweight) to problem list - supports lifestyle counseling billing.", highlightId: "james-wilson-pe-bmi" }
           ],
+          diagnosisAndCodes: {},
+          postVisitWorkflows: [],
           dataSources: [
             "Visit scheduling, today",
             "Previous visit note, 02/15/2025",
@@ -1075,6 +1253,7 @@ export default function Scribes({
   // Helper to check if text should be highlighted for nudges
   const getHighlightMapping = () => {
     return {
+      "cem-ambient-nudge": "intermittent exercise intolerance with leg fatigue",
       "maria-garcia-hpi-laterality": "lower lumbar region",
       "maria-garcia-hpi-mechanism": "Pain started after moving furniture",
       "maria-garcia-pe-exam": "Back: Tenderness over paraspinal muscles L3-L5",
@@ -2424,12 +2603,11 @@ export default function Scribes({
               variant="primary"
               tabs={[
                 { id: 'clinical', label: 'Clinical Note' },
-                { id: 'codes', label: 'ICD10/CPT Codes' },
                 { id: 'transcript', label: 'Transcript' },
                 { id: 'previsit', label: 'Previsit' }
               ]}
               defaultTab={activeTab}
-              onTabChange={(id) => setActiveTab(id as 'clinical' | 'codes' | 'transcript' | 'previsit')}
+              onTabChange={(id) => setActiveTab(id as 'clinical' | 'transcript' | 'previsit')}
               className="w-full"
             />
           </div>
@@ -2576,7 +2754,7 @@ export default function Scribes({
                 }`}
                 style={{ fontFeatureSettings: "'ss07'" }}
               >
-                Clinical Note
+                {currentScribe.templateName || 'Clinical Note'}
               </p>
             </div>
             
@@ -3075,25 +3253,107 @@ export default function Scribes({
             )}
           </div>
           
-          {/* Bottom Action Bar - only show for clinical note */}
+          {/* Floating Toolbar - only show for clinical note */}
           {activeTab !== 'previsit' && (
-          <div className="bg-[var(--surface-base,white)] content-stretch flex items-center gap-[8px] max-w-[800px] pb-[24px] pt-[8px] relative shrink-0 w-full">
-            <Button 
-              variant="secondary" 
-              size="large"
-              icon={<InlineIcon name="content_copy" size={24} />}
-              onClick={() => {}}
-            >
-              Copy All
-            </Button>
-            <Button 
-              variant="primary" 
-              size="large"
-              icon={<InlineIcon name="cloud_upload" size={24} />}
-              onClick={() => {}}
-            >
-              Sync to EHR
-            </Button>
+          <div className="sticky bottom-[20px] z-10 flex justify-center w-full max-w-[800px] pointer-events-none">
+            <div className="bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid flex gap-[16px] items-center px-[8px] py-[4px] rounded-[12px] shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)] pointer-events-auto">
+              {/* Button Group with "All Markdowns" - only selected shows label */}
+              <div className="flex items-center shrink-0">
+                <div className="bg-[var(--surface-2,#f2f2f2)] flex items-center overflow-clip p-[2px] rounded-[8px] shrink-0">
+                  {[
+                    { id: 'all', label: 'All Markdowns', icon: null },
+                    { id: 'icon1', label: '', icon: <InlineIcon name="sparkle" size={16} /> },
+                    { id: 'icon2', label: '', icon: <InlineIcon name="stethoscope" size={16} /> },
+                    { id: 'icon3', label: '', icon: <InlineIcon name="school" size={16} /> },
+                    { id: 'icon4', label: '', icon: <InlineIcon name="close_small" size={16} /> },
+                  ].map((option) => {
+                    const isSelected = selectedView === 'default' && option.id === 'all';
+                    const showLabel = isSelected && option.label;
+                    
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => {}}
+                        className={`flex items-center justify-center min-h-[28px] px-[6px] py-[4px] rounded-[6px] shrink-0 transition-all ${
+                          isSelected
+                            ? 'bg-[var(--surface-base,white)] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.07)]'
+                            : 'bg-transparent'
+                        } ${showLabel ? 'gap-[4px]' : ''} ${!showLabel && option.icon ? 'w-[28px]' : ''}`}
+                      >
+                        {option.icon && (
+                          <div className="overflow-clip shrink-0 size-[16px]">
+                            {option.icon}
+                          </div>
+                        )}
+                        {showLabel && (
+                          <p
+                            className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px] whitespace-nowrap"
+                            style={{ fontFeatureSettings: "'ss07'" }}
+                          >
+                            {option.label}
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Smart Edit Button */}
+              <div className="flex items-center py-[4px] shrink-0">
+                <Button 
+                  variant="tertiary" 
+                  size="small"
+                  icon={<InlineIcon name="magic_edit" size={16} />}
+                  showPrefix={true}
+                  onClick={() => {}}
+                >
+                  Smart Edit
+                </Button>
+              </div>
+              
+              {/* Dictate Button */}
+              <div className="flex items-center py-[4px] shrink-0">
+                <Button 
+                  variant="tertiary" 
+                  size="small"
+                  icon={<InlineIcon name="mic" size={16} />}
+                  showPrefix={true}
+                  onClick={() => {}}
+                >
+                  Dictate
+                </Button>
+              </div>
+              
+              {/* New Letter / Docs Button */}
+              <div className="flex items-center py-[4px] shrink-0">
+                <Button 
+                  variant="tertiary" 
+                  size="small"
+                  icon={<InlineIcon name="description" size={16} />}
+                  showPrefix={true}
+                  onClick={() => {}}
+                >
+                  New Letter / Docs
+                </Button>
+              </div>
+              
+              {/* Divider */}
+              <div className="flex items-center self-stretch shrink-0">
+                <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-full w-px" />
+              </div>
+              
+              {/* Sync to EHR Button */}
+              <Button 
+                variant="primary" 
+                size="small"
+                icon={<InlineIcon name="cloud_upload" size={16} />}
+                showPrefix={true}
+                onClick={() => {}}
+              >
+                Sync to EHR
+              </Button>
+            </div>
           </div>
           )}
         </div>
@@ -3505,89 +3765,6 @@ export default function Scribes({
           ) : (
             /* Actions View */
             <>
-              {/* Views & Highlights */}
-              <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                Views & Highlights
-              </p>
-              <IconButton 
-                variant="tertiary" 
-                size="small"
-                icon={<InlineIcon name={isViewsHighlightsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
-                onClick={() => setIsViewsHighlightsExpanded(!isViewsHighlightsExpanded)}
-                aria-label={isViewsHighlightsExpanded ? "Collapse views & highlights" : "Expand views & highlights"}
-                className="text-[color:var(--text-subheading,#666)]"
-              />
-            </div>
-            
-            {isViewsHighlightsExpanded && (
-              <ButtonGroup
-                orientation="horizontal"
-                size="small"
-                options={[
-                  { id: 'default', label: 'All' },
-                  { id: 'highlights', label: 'Highlights' },
-                  { id: 'citation', label: 'Citation' },
-                  { id: 'none', label: 'None' }
-                ]}
-                value={selectedView}
-                onChange={(id) => setSelectedView(id as 'default' | 'highlights' | 'citation')}
-                className="w-full"
-              />
-            )}
-          </div>
-          
-          {/* Edit Tools */}
-          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                Edit Tools
-              </p>
-              <IconButton 
-                variant="tertiary" 
-                size="small"
-                icon={<InlineIcon name={isEditToolsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
-                onClick={() => setIsEditToolsExpanded(!isEditToolsExpanded)}
-                aria-label={isEditToolsExpanded ? "Collapse edit tools" : "Expand edit tools"}
-                className="text-[color:var(--text-subheading,#666)]"
-              />
-            </div>
-            
-            {isEditToolsExpanded && (
-              <div className="content-stretch flex gap-[8px] items-start py-[4px] relative shrink-0 w-full">
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[8px] items-start min-h-px min-w-px relative">
-                  <Button 
-                    variant="tertiary-neutral" 
-                    size="small"
-                    icon={<InlineIcon name="dashboard" size={16} />}
-                    onClick={() => {}}
-                  >
-                    Change Template
-                  </Button>
-                  <Button 
-                    variant="tertiary-neutral" 
-                    size="small"
-                    icon={<InlineIcon name="sync" size={16} />}
-                    onClick={() => {}}
-                  >
-                    Regenerate
-                  </Button>
-                </div>
-                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[8px] items-start min-h-px min-w-px relative">
-                  <Button 
-                    variant="tertiary-neutral" 
-                    size="small"
-                    icon={<InlineIcon name="add" size={16} />}
-                    onClick={() => {}}
-                  >
-                    New Letters / Docs
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          
           {/* Improve Scribe */}
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
@@ -4008,6 +4185,94 @@ export default function Scribes({
                     )}
                   </div>
                 )}
+                
+                {/* Diagnosis and Codes */}
+                {currentScribe.diagnosisAndCodes && (
+                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full mt-[12px] pt-[12px] border-t border-[var(--neutral-200,#e0e0e0)]">
+                    <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                      Diagnosis and Codes
+                    </p>
+                    
+                    <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+                      {/* ICD-10 Diagnoses */}
+                      {currentScribe.diagnosisAndCodes.diagnoses && currentScribe.diagnosisAndCodes.diagnoses.length > 0 && (
+                        <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                          <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                            ICD-10 Diagnoses
+                          </p>
+                          <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                            {currentScribe.diagnosisAndCodes.diagnoses.map((diagnosis: any, idx: number) => (
+                              <div key={idx} className="flex gap-[8px] items-start w-full">
+                                <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] shrink-0" style={{ fontFeatureSettings: "'ss07'" }}>
+                                  {diagnosis.code}
+                                </span>
+                                <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] flex-1">
+                                  {diagnosis.description}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* CPT Codes */}
+                      {currentScribe.diagnosisAndCodes.cptCodes && currentScribe.diagnosisAndCodes.cptCodes.length > 0 && (
+                        <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                          <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                            CPT Codes
+                          </p>
+                          <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                            {currentScribe.diagnosisAndCodes.cptCodes.map((cpt: any, idx: number) => (
+                              <div key={idx} className="flex gap-[8px] items-start w-full">
+                                <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] shrink-0" style={{ fontFeatureSettings: "'ss07'" }}>
+                                  {cpt.code}
+                                </span>
+                                <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] flex-1">
+                                  {cpt.description}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Post-Visit Workflows */}
+                {currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 && (
+                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full mt-[12px] pt-[12px] border-t border-[var(--neutral-200,#e0e0e0)]">
+                    <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                      Post-Visit Workflows
+                    </p>
+                    
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                      {currentScribe.postVisitWorkflows.map((workflow: any, idx: number) => (
+                        <div 
+                          key={idx}
+                          className="border border-[var(--neutral-200,#ccc)] flex items-center gap-[8px] p-[12px] relative rounded-[6px] w-full"
+                        >
+                          <input 
+                            type="checkbox" 
+                            className="shrink-0 w-[16px] h-[16px] cursor-pointer"
+                            checked={workflow.status === 'completed'}
+                            onChange={() => {
+                              // Handle checkbox change if needed
+                            }}
+                          />
+                          <div className="flex flex-col gap-[4px] items-start flex-1">
+                            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                              {workflow.type}
+                            </p>
+                            <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                              {workflow.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -4016,31 +4281,7 @@ export default function Scribes({
         </div>
         
         {/* Chat Input at Bottom */}
-        <div className="content-stretch flex gap-[8px] items-start pb-[20px] pl-[8px] pr-[16px] pt-[8px] relative shrink-0 w-full">
-          <div 
-            className="relative"
-            onMouseEnter={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setSmartEditTooltipPosition({
-                x: rect.left + rect.width / 2,
-                y: rect.top
-              });
-              setShowSmartEditTooltip(true);
-            }}
-            onMouseLeave={() => {
-              setShowSmartEditTooltip(false);
-              setSmartEditTooltipPosition(null);
-            }}
-          >
-            <IconButton 
-              variant="tertiary" 
-              size="large"
-              icon={<InlineIcon name="magic_edit" size={24} />}
-              onClick={() => {}}
-              aria-label="Smart Edit"
-              className="shrink-0 text-[color:var(--text-brand,#1132ee)]"
-            />
-          </div>
+        <div className="content-stretch flex gap-[8px] items-start pb-[20px] px-[16px] pt-[8px] relative shrink-0 w-full">
           <div className="flex-[1_0_0] min-w-px">
             <ChatInput
               placeholder="Ask assistant"
@@ -4207,27 +4448,6 @@ export default function Scribes({
               <p className="leading-[1.2]">{isSecondaryNavCollapsed ? 'Open Sidebar' : 'Hide Sidebar'}</p>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Smart Edit Tooltip - Fixed positioning to avoid clipping */}
-      {showSmartEditTooltip && smartEditTooltipPosition && (
-        <div 
-          className="fixed z-[9999] flex flex-col items-center pointer-events-none leading-[0]"
-          style={{
-            left: `${smartEditTooltipPosition.x}px`,
-            top: `${smartEditTooltipPosition.y}px`,
-            transform: 'translate(-50%, calc(-100% - 8px))'
-          }}
-        >
-          <div className="bg-[var(--surface-semantic-info,#f1f3fe)] flex items-center px-[12px] py-[8px] rounded-[4px]">
-            <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic text-[13px] text-[color:var(--shape-brand,#1132ee)] tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
-              <p className="leading-[1.2]">Smart Edit</p>
-            </div>
-          </div>
-          <svg width="12" height="6" viewBox="0 0 12 6" fill="none" className="block" style={{ marginTop: '-1px' }}>
-            <path d="M6 6L0.803847 0L11.1962 0L6 6Z" fill="#f1f3fe"/>
-          </svg>
         </div>
       )}
     </div>

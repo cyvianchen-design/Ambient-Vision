@@ -338,6 +338,23 @@ export default function App() {
 
   // Data source content for each patient
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
+    "Cem": {
+      "Previsit summary, today": {
+        type: "Clinical Note",
+        date: "Today",
+        content: "**PREVISIT SUMMARY**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
+      },
+      "Intake form, today": {
+        type: "Form",
+        date: "Today",
+        content: "**PATIENT INTAKE FORM**\n\nPatient Name: Cem\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+      },
+      "Urgent care visit, 2 weeks ago": {
+        type: "Clinical Note",
+        date: "2 weeks ago",
+        content: "**URGENT CARE VISIT NOTE**\n\nPatient: Cem, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits.\n\n**EXAMINATION**\nGeneral: Well-appearing\nNeuro: Alert, oriented, no focal deficits\nCardiac: RRR\n\n**ASSESSMENT**\nDizziness, likely related to elevated blood pressure\nHypertension, uncontrolled\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nNo immediate intervention needed\nReturn precautions given"
+      }
+    },
     "Sarah Johnson": {
       "Feb 12, Today's exam, Ambient": {
         type: "Clinical Note",
@@ -427,43 +444,6 @@ export default function App() {
         content: "**PRE-OPERATIVE CLEARANCE**\n\nPatient: Robert Chen, 58M\nDate: 12/15/2023\nReason: Surgical clearance for right shoulder rotator cuff repair\n\n**CURRENT MEDICATIONS**\n• Lisinopril 10mg daily\n\n**MEDICAL HISTORY**\n• Hypertension - well-controlled\n• No diabetes, no cardiac disease\n• No prior surgeries\n\n**PHYSICAL EXAMINATION**\nVitals: BP 128/76, HR 72, RR 14\nCardiac: RRR, no murmurs\nLungs: Clear bilaterally\nGeneral: Good surgical candidate\n\n**ASSESSMENT**\n58-year-old male with well-controlled hypertension, good general health\n\n**CLEARANCE**\nMedically cleared for elective orthopedic surgery under general anesthesia\n\n**RECOMMENDATIONS**\n• Continue lisinopril through surgery\n• No additional testing needed\n• Follow up post-operatively PRN"
       }
     },
-    "Maria Garcia": {
-      "Aug 10, 2023, Annual wellness visit, Athena": {
-        type: "Clinical Note",
-        date: "Aug 10, 2023",
-        content: "**ANNUAL WELLNESS VISIT**\n\nPatient: Maria Garcia, 35F\nDate: 08/10/2023\nVisit Type: Annual wellness examination\n\n**CHIEF COMPLAINT**\nRoutine health maintenance\n\n**HISTORY OF PRESENT ILLNESS**\nPatient presents for annual wellness visit. Reports feeling well overall. No acute concerns or complaints. Maintaining active lifestyle with regular exercise (running 3x/week). Healthy diet, no tobacco use, occasional alcohol.\n\n**PHYSICAL EXAMINATION**\nGeneral: Well-appearing, no acute distress. No chronic medical conditions identified.\nVitals: BP 120/75, HR 72, Temp 98.6°F, Weight 145 lbs, BMI 23.5\nHEENT: Normocephalic, atraumatic. PERRLA. TMs clear bilaterally.\nCardiac: Regular rate and rhythm, no murmurs.\nLungs: Clear to auscultation bilaterally.\nAbdomen: Soft, non-tender, no masses.\nExtremities: No edema, full range of motion.\n\n**ASSESSMENT**\n35-year-old healthy female, here for preventive care. No concerning findings on examination.\n\n**PLAN**\n• Age-appropriate screening labs ordered (CBC, CMP, lipid panel)\n• Counseled on healthy lifestyle maintenance\n• Discussed contraception options (patient currently using OCPs)\n• Return for annual exam in 12 months\n• Call with any concerns in interim\n\n**Counseled on preventive care and scheduled follow-up in 12 months.**\n\n---\nDr. Sarah Martinez, MD\nFamily Medicine"
-      },
-      "June 15, 2023, Lumbar spine X-ray, Athena": {
-        type: "Imaging",
-        date: "June 15, 2023",
-        content: "**RADIOLOGY REPORT - LUMBAR SPINE X-RAY**\n\nPatient: Maria Garcia\nDOB: 03/15/1989\nMRN: MG-334567\nExam Date: 06/15/2023\nStudy: Lumbar spine radiographs (AP and lateral views)\n\n**CLINICAL INDICATION**\nLower back pain\n\n**TECHNIQUE**\nStanding AP and lateral views of the lumbar spine obtained.\n\n**FINDINGS**\n\nAlignment:\n• Normal thoracic kyphosis and lumbar lordosis\n• No scoliosis\n• No spondylolisthesis\n\nVertebral Bodies:\n• Normal height and alignment\n• No compression fractures\n• No lytic or blastic lesions\n\nDisc Spaces:\n• Mild degenerative disc disease at L4-L5 and L5-S1\n• Disc heights preserved\n• No severe disc space narrowing\n\nFacet Joints:\n• Mild facet arthropathy at L4-L5 and L5-S1\n• No significant hypertrophy\n\nSoft Tissues:\n• No significant abnormality\n\n**IMPRESSION**\n1. Mild degenerative disc disease at L4-L5 and L5-S1 with preserved disc heights\n2. Mild facet arthropathy at L4-L5 and L5-S1\n3. No acute fracture, listhesis, or significant stenosis\n4. No concerning findings\n\n**RECOMMENDATION**\nClinical correlation recommended. Follow-up imaging as clinically indicated."
-      },
-      "Feb 12, Intake form, Ambient": {
-        type: "Form",
-        date: "Feb 12, 2024",
-        content: "**INTAKE FORM**\n\nPatient: Maria Garcia, 35F\n\n**CHIEF COMPLAINT**\nLower back pain x4 days\n\n**HPI**\nSharp pain in L4-L5 region, 7/10 severity, improves with rest. Started after moving furniture. No radiation, numbness, tingling.\n\n**RED FLAGS**\nNo fever, bowel/bladder dysfunction, trauma, night pain, or history of cancer.\n\n**CURRENT MEDS**\nNone (occasional ibuprofen OTC)"
-      },
-      "Visit transcript, 00:01:15": {
-        type: "Transcript",
-        date: "Feb 12, 2024",
-        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:01:15]\nDoctor: So tell me, when did this back pain start?\n\nPatient: The pain started about 4 days ago, on Saturday morning."
-      },
-      "Visit transcript, 00:01:30": {
-        type: "Transcript",
-        date: "Feb 12, 2024",
-        content: "**VISIT TRANSCRIPT EXCERPT**\n\n[00:01:30]\nDoctor: What were you doing when it started?\n\nPatient: I was helping my daughter move some furniture when I felt this sharp pain in my lower back. It was like something pulled or tweaked."
-      },
-      "ROS documentation, today": {
-        type: "Clinical Note",
-        date: "Feb 12, 2024",
-        content: "**REVIEW OF SYSTEMS**\n\nPatient: Maria Garcia\nDate: 02/12/2024\n\n**Constitutional:**\nDenies fever, chills, night sweats. No unintentional weight loss or gain.\n\n**Musculoskeletal:**\nLower back pain as described in HPI. No other joint pain, swelling, or stiffness.\n\n**Neurologic:**\nNo numbness, no tingling, no weakness in lower extremities. No loss of coordination or balance.\n\n**Genitourinary:**\nNormal bowel and bladder function. No incontinence, retention, or changes in habits.\n\n**All Other Systems:**\nNegative per template."
-      },
-      "Feb 12, Today's visit, Ambient": {
-        type: "Clinical Note",
-        date: "Feb 12, 2024",
-        content: "**VISIT NOTE**\n\nPatient: Maria Garcia\n\n**VITALS**\nBP: 118/72\nHR: 76\nTemp: 98.4°F\n\n**EXAM**\nGeneral: Well-appearing\nMSK: Normal gait, negative SLR bilaterally, tenderness over paraspinal muscles L3-L5, full ROM with mild discomfort\nNeuro: No deficits\n\n**ASSESSMENT**\nAcute mechanical low back pain\n\n**PLAN**\nConservative management with NSAIDs, PT referral, follow-up PRN"
-      }
-    },
     "James Wilson": {
       "Feb 12, Today's visit, Ambient": {
         type: "Clinical Note",
@@ -522,10 +502,104 @@ export default function App() {
 
   const patients = [
     { 
+      name: "Cem", 
+      age: 45, 
+      gender: "M", 
+      time: "9:00 am", 
+      status: "In Queue", 
+      chiefComplaint: "Headaches / Elevated BP",
+      atAGlance: [
+        "45-year-old male with recurrent headaches and elevated BP (recent readings: 152/92, 148/88, 155/90).",
+        "Reports pulsatile headaches, occasional dizziness, and intermittent leg fatigue with exercise.",
+        "History of elevated BP as teenager (never followed up). Colonoscopy screening also due."
+      ],
+      sections: {
+        "Last Visit (12 months ago)": [
+          "Previous annual wellness visit - March 2025",
+          "Patient mentioned occasional headaches, attributed to stress at that time",
+          "Blood pressure mildly elevated: 138/86 mmHg - advised lifestyle modifications and follow-up",
+          "Patient reported moderate exercise tolerance, generally feeling well",
+          "Routine labs normal (CBC, CMP, lipid panel) - all values within reference range",
+          "Counseled on blood pressure monitoring and healthy lifestyle"
+        ],
+        "Vitals (Today, 9:00 am)": [
+          "**Recent elevated readings (past 2 weeks)**",
+          "Urgent Care visit (2 weeks ago): BP 152/92 mmHg",
+          "Pharmacy screening (1 week ago): BP 148/88 mmHg",
+          "Pharmacy screening (3 days ago): BP 155/90 mmHg",
+          "**Vitals at check-in today**",
+          "BP 150/92 mmHg, HR 76 bpm, Temp 98.6°F"
+        ],
+        "Active Problems": [
+          "Elevated blood pressure (not yet diagnosed as hypertension - needs confirmation)",
+          "Recurrent headaches (under evaluation)"
+        ],
+        "Lab Results": [
+          "**Recent Labs (since last visit)**",
+          "No recent labs on file.",
+          "",
+          "**Historical trends and prior abnormals (18 months)**",
+          "Last labs: March 2025 annual wellness labs - all within normal limits",
+          "Creatinine 0.9 mg/dL, eGFR >90 mL/min (normal renal function)",
+          "No prior abnormal values requiring monitoring"
+        ],
+        "Imaging & Diagnostics": [
+          "No imaging on file."
+        ],
+        "Historical Procedures": [
+          "No procedures on file.",
+          "No prior colonoscopy (screening now due at age 45)"
+        ],
+        "Active Meds": [
+          "No active medication on file."
+        ],
+        "Allergies": [
+          "No allergies on file."
+        ],
+        "Social History": [
+          "Employment: Active, employed in office setting",
+          "Tobacco: Non-smoker (never smoked)",
+          "Alcohol: Social drinker (1-2 drinks per week)",
+          "Exercise: Moderate activity, reports leg fatigue with exertion",
+          "Diet: Generally healthy",
+          "Family History: No family history of early hypertension, no diabetes"
+        ]
+      },
+      citations: [
+        { number: 1, citedText: "elevated BP", quote: "Recent vitals: BP 152/92, 148/88, 155/90", source: "Previsit summary, today" },
+        { number: 2, citedText: "recurrent headaches", quote: "Chief complaint: Recurrent headaches, occasional dizziness", source: "Intake form, today" },
+        { number: 3, citedText: "elevated BP as teenager", quote: "Had high blood pressure noted once as a teenager (not fully worked up)", source: "Previsit summary, today" },
+        { number: 4, citedText: "leg fatigue", quote: "Reports intermittent exercise intolerance", source: "Previsit summary, today" }
+      ],
+      dataSources: [
+        "Previsit summary, today",
+        "Intake form, today",
+        "Urgent care visit, 2 weeks ago"
+      ],
+      careNudges: [
+        {
+          type: "Diagnostic",
+          description: "Elevated BP without clear risk factors - confirm with repeat measurements and consider secondary causes.",
+          highlightId: "cem-bp-0"
+        },
+        {
+          type: "Preventive Care",
+          description: "Colorectal cancer screening due - patient age 45, no prior screening on file.",
+          highlightId: "cem-screening-0"
+        },
+        {
+          type: "History Taking",
+          description: "Explore exercise intolerance and leg symptoms - may relate to cardiovascular findings.",
+          highlightId: "cem-exercise-0"
+        }
+      ],
+      trends: []
+    },
+    { 
       name: "Sarah Johnson", 
       age: 62, 
       gender: "F", 
-      time: "9:00 am", 
+      time: "9:30 am", 
       status: "In Queue", 
       chiefComplaint: "Right Knee Pain",
       atAGlance: [
@@ -696,7 +770,7 @@ export default function App() {
       name: "Robert Chen", 
       age: 58, 
       gender: "M", 
-      time: "9:30 am", 
+      time: "10:00 am", 
       status: "In Queue", 
       chiefComplaint: "Right Shoulder Post-Op",
       atAGlance: [
@@ -870,125 +944,6 @@ export default function App() {
           yAxisDomain: [0, 180] as [number, number],
           referenceRange: { min: 150, max: 180, label: "Normal", color: "#2f6a32" },
           xAxisTicks: ["1/14", "1/28", "2/11"]
-        }
-      ]
-    },
-    { 
-      name: "Maria Garcia", 
-      age: 35, 
-      gender: "F", 
-      time: "10:00 am", 
-      status: "In Queue", 
-      chiefComplaint: "Lower Back Pain",
-      atAGlance: [
-        "35-year-old otherwise healthy patient with acute lower back pain x 4 days after lifting furniture.",
-        "No chronic conditions. No red flags for serious pathology (no fever, trauma, neurological deficits).",
-        "Today's visit: Start conservative management - NSAIDs, PT referral for core strengthening."
-      ],
-      details: [
-        "New visit for acute back pain",
-        "No chronic conditions; otherwise healthy"
-      ],
-      sections: {
-        "Last Visit Summary": [
-          "Patient established care 6 months ago for annual wellness visit. {{1}}",
-          "Physical exam was unremarkable, no chronic medical conditions identified. {{2}}",
-          "Vitals were within normal limits, patient reported regular exercise and healthy diet. {{3}}",
-          "Counseled on preventive care and scheduled follow-up in 12 months. {{4}}"
-        ],
-        "Active Problems": [
-          "Acute lower back pain (4 days duration) - likely musculoskeletal strain",
-          "Sharp pain localized to L4-L5 area, 7/10 severity, improves with rest {{5}}{{6}}",
-          "No radiation to legs, no numbness or tingling {{7}}",
-          "Started after helping move furniture {{8}}",
-          "No red flags: No fever, bowel/bladder dysfunction, trauma, night pain, or weight loss {{10}}{{11}}{{12}}"
-        ],
-        "Recent Labs": [
-          "No recent labs (not indicated for acute mechanical back pain)"
-        ],
-        "Recent Imaging & Diagnostics": [
-          "No imaging ordered - no red flags present, conservative management appropriate {{19}}"
-        ],
-        "Historical Procedures": [
-          "No prior procedures"
-        ],
-        "Active Medications": [
-          "None - takes occasional ibuprofen OTC as needed {{18}}"
-        ],
-        "Allergies": [
-          "NKDA (No Known Drug Allergies)"
-        ],
-        "Social History": [
-          "Occupation: Elementary school teacher",
-          "Lives with husband and two children",
-          "Regular exercise routine (running, yoga)",
-          "Non-smoker",
-          "Minimal alcohol use",
-          "Active lifestyle - incident occurred while helping son move furniture"
-        ],
-        "Vitals": [
-          "BP: 118/72 mmHg {{16}}",
-          "HR: 76 bpm {{16}}",
-          "Temp: 98.4°F {{16}}",
-          "Height: 5'6\"",
-          "Weight: 145 lbs",
-          "Exam: Normal gait, negative SLR bilaterally, tenderness L3-L5 paraspinals {{13}}{{14}}{{15}}",
-          "No signs of systemic illness {{17}}"
-        ]
-      },
-      citations: [
-        { number: 1, citedText: "wellness visit", quote: "Annual wellness visit - August 10, 2023. Chief Complaint: Routine health maintenance.", source: "Aug 10, 2023, Annual wellness visit, Athena" },
-        { number: 2, citedText: "exam findings", quote: "Physical Examination: General: Well-appearing, no acute distress. No chronic medical conditions identified.", source: "Aug 10, 2023, Annual wellness visit, Athena" },
-        { number: 3, citedText: "vitals and lifestyle", quote: "Vitals: BP 120/75, HR 72, Temp 98.6°F. Patient reports regular exercise and maintains healthy diet.", source: "Aug 10, 2023, Annual wellness visit, Athena" },
-        { number: 4, citedText: "preventive counseling", quote: "Counseled on age-appropriate health maintenance. Follow-up scheduled in 12 months.", source: "Aug 10, 2023, Annual wellness visit, Athena" },
-        { number: 5, citedText: "pain location", quote: "Sharp pain localized to lower lumbar region, L4-L5 area", source: "Feb 12, Intake form, Ambient" },
-        { number: 6, citedText: "pain severity", quote: "Pain severity 7/10 at worst, improves with rest", source: "Feb 12, Intake form, Ambient" },
-        { number: 7, citedText: "radiation", quote: "No radiation to legs, no numbness or tingling", source: "Feb 12, Intake form, Ambient" },
-        { number: 8, citedText: "onset", quote: "Started after helping son move furniture 4 days ago", source: "Feb 12, Intake form, Ambient" },
-        { number: 9, citedText: "progression", quote: "Gradual onset, pain worsened over first 24 hours", source: "Feb 12, Intake form, Ambient" },
-        { number: 10, citedText: "constitutional", quote: "No fever, no bowel/bladder dysfunction", source: "Feb 12, Intake form, Ambient" },
-        { number: 11, citedText: "trauma and night pain", quote: "No trauma, no night pain", source: "Feb 12, Intake form, Ambient" },
-        { number: 12, citedText: "oncologic history", quote: "No history of cancer or recent weight loss", source: "Feb 12, Intake form, Ambient" },
-        { number: 13, citedText: "gait and SLR", quote: "Normal gait, negative straight leg raise test bilaterally", source: "Feb 12, Today's visit, Ambient" },
-        { number: 14, citedText: "tenderness", quote: "Tenderness over paraspinal muscles L3-L5", source: "Feb 12, Today's visit, Ambient" },
-        { number: 15, citedText: "ROM and neuro", quote: "Full range of motion with mild discomfort, no neurological deficits", source: "Feb 12, Today's visit, Ambient" },
-        { number: 16, citedText: "vitals", quote: "BP 118/72, HR 76, Temp 98.4°F", source: "Feb 12, Today's visit, Ambient" },
-        { number: 17, citedText: "general appearance", quote: "Well-appearing, no acute distress, no signs of systemic illness", source: "Feb 12, Today's visit, Ambient" },
-        { number: 18, citedText: "medications", quote: "Current medications: None. Takes occasional ibuprofen OTC as needed.", source: "Feb 12, Intake form, Ambient" },
-        { number: 19, citedText: "no red flags", quote: "Assessment: Acute mechanical low back pain, no red flags present", source: "Feb 12, Today's visit, Ambient" },
-        { number: 20, citedText: "PT referral", quote: "Physical therapy referral for core strengthening and body mechanics education", source: "Feb 12, Today's visit, Ambient" },
-        { number: 21, citedText: "follow-up", quote: "Follow-up in 2 weeks if no improvement or if symptoms worsen", source: "Feb 12, Today's visit, Ambient" }
-      ],
-      dataSources: [
-        "Feb 12, Intake form, Ambient",
-        "Feb 12, Today's visit, Ambient"
-      ],
-      careNudges: [
-        {
-          type: "Treatment Plan",
-          description: "Start ibuprofen 600mg TID with food for pain and inflammation.",
-          highlightId: "maria-active-problems-1"
-        },
-        {
-          type: "Physical Therapy",
-          description: "Refer to PT for core strengthening and body mechanics education.",
-          highlightId: "maria-active-problems-0"
-        }
-      ],
-      trends: [
-        {
-          title: "Pain Score (0-10)",
-          section: "Active Problems",
-          data: [
-            { date: "2/15", value: 4, label: "Feb 15 (Onset)" },
-            { date: "2/16", value: 6, label: "Feb 16" },
-            { date: "2/17", value: 7, label: "Feb 17" },
-            { date: "2/18", value: 7, label: "Feb 18 (Today)" }
-          ],
-          unit: "/10",
-          color: "#ab2973",
-          yAxisDomain: [0, 10] as [number, number],
-          xAxisTicks: ["2/15", "2/16", "2/17", "2/18"]
         }
       ]
     },
@@ -1288,7 +1243,7 @@ export default function App() {
     {
       date: "Thu, Dec 19 (Today)",
       scribes: [
-        { name: "Maria Garcia", age: 35, gender: "F", duration: "18m 45s" },
+        { name: "Cem", age: 45, gender: "M", duration: "28m 45s" },
         { name: "Robert Chen", age: 58, gender: "M", duration: "22m 15s" },
         { name: "Lisa Anderson", age: 28, gender: "F", duration: "19m 30s" },
       ]
@@ -2621,11 +2576,29 @@ export default function App() {
               <div className="content-stretch flex flex-col items-start justify-center relative rounded-[8px] shrink-0 w-full">
                 <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
                   <ul className="list-disc whitespace-pre-wrap">
-                    {patients[selectedPatientIndex].atAGlance.map((item, idx) => (
-                      <li key={idx} className={idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
-                        <span className="leading-[1.4]">{item}</span>
-                      </li>
-                    ))}
+                    {patients[selectedPatientIndex].atAGlance.map((item, idx) => {
+                      const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
+                                          item.includes('not yet recorded') ||
+                                          (item.startsWith('_') && item.endsWith('_'));
+                      const isHeader = item.startsWith('**') && item.endsWith('**');
+                      const isEmpty = item === '';
+                      
+                      if (isEmpty) {
+                        return <li key={idx} className="list-none h-[8px]"></li>;
+                      }
+                      
+                      return (
+                        <li key={idx} className={`${idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"} ${(isEmptyState || isHeader) ? 'list-none ms-0' : ''}`}>
+                          {isHeader ? (
+                            <span className="leading-[1.4] font-bold text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.13px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                              {item.replace(/\*\*/g, '')}
+                            </span>
+                          ) : (
+                            <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>{item}</span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
@@ -2678,19 +2651,32 @@ export default function App() {
                       {items.map((item, idx) => {
                         const highlightId = getHighlightId(sectionTitle, idx);
                         const isHighlighted = hoveredHighlightId === highlightId;
+                        const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
+                                            item.includes('not yet recorded') ||
+                                            (item.startsWith('_') && item.endsWith('_'));
+                        const isHeader = item.startsWith('**') && item.endsWith('**');
+                        const isEmpty = item === '';
+                        
+                        if (isEmpty) {
+                          return <li key={idx} className="list-none h-[8px]"></li>;
+                        }
                         
                         return (
                           <li 
                             key={idx} 
-                            className={idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}
+                            className={`${idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"} ${(isEmptyState || isHeader) ? 'list-none ms-0' : ''}`}
                             data-highlight-id={highlightId}
                           >
-                            {isHighlighted ? (
+                            {isHeader ? (
+                              <span className="leading-[1.4] font-bold text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.13px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                {item.replace(/\*\*/g, '')}
+                              </span>
+                            ) : isHighlighted ? (
                               <mark className="bg-[#f1f3fe] text-inherit leading-[1.4]" style={{ padding: 0 }}>
                                 {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
                               </mark>
                             ) : (
-                              <span className="leading-[1.4]">
+                              <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>
                                 {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
                               </span>
                             )}

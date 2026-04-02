@@ -3,12 +3,12 @@ import { Patient } from '../components/PatientListItem';
 export const mockPatients: Patient[] = [
   {
     id: '1',
-    name: 'Jane Doe',
-    age: 38,
+    name: 'Cem',
+    age: 45,
     gender: 'M',
     time: '9:00 am',
     status: 'Generated',
-    initial: 'J',
+    initial: 'C',
     isSelected: true,
   },
   {
