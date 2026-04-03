@@ -179,7 +179,16 @@ export default function App() {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type !== 'DEMO_STATE') return;
-      const { step, scrollTo, spotlight, emptyNote, isMobile } = e.data;
+      const { step, scrollTo, spotlight, emptyNote, isMobile, isPreview } = e.data;
+
+      // ── Visit overview preview (shows recording layout, no animations) ──
+      if (isPreview) {
+        setCurrentView('scribes');
+        setSelectedPatientIndex(0);
+        setDemoEmptyNote(false);
+        setIsMobileRecording(isMobile);
+        return;
+      }
 
       // ── Pre-visit (step 0) ──
       if (step === 0) {

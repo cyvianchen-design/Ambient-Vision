@@ -1807,14 +1807,16 @@ function mobileNoteView(newNote=false) {
 // emptyNote: render scribes with blank sections (during-visit only)
 const STATES = [
   // ── PRE-VISIT (step 0) ───────────────────────────────────
-  { stage: 'pre',    desc: 'Pre-visit summary',     scrollTo: 'at-a-glance',  spotlight: null, emptyNote: false },
+  { stage: 'pre',    reactStep: 0, desc: 'Pre-visit summary',      scrollTo: 'at-a-glance', spotlight: null, emptyNote: false },
+  // ── VISIT OVERVIEW (preview — no audio, no animations) ───
+  { stage: 'during', isPreview: true, desc: 'During visit overview', scrollTo: null,          spotlight: null, emptyNote: false },
   // ── DURING VISIT (steps 1–4) ─────────────────────────────
-  { stage: 'during', desc: 'Symptoms captured',   scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip01.mp3', 'clip02.mp3'] },
-  { stage: 'during', desc: 'BP exam',             scrollTo: null, spotlight: null, emptyNote: true,  audio: ['clip03.mp3', 'clip04.mp3'] },
-  { stage: 'during', desc: 'Diagnosis confirmed', scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip05.mp3', 'clip06.mp3', 'clip07.mp3'] },
-  { stage: 'during', desc: 'Preventive care',     scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip08.mp3', 'clip09.mp3'] },
-  // ── POST-VISIT (step 5) ───────────────────────────────────
-  { stage: 'post',   desc: 'Post-visit summary',    scrollTo: null,           spotlight: null, emptyNote: false },
+  { stage: 'during', reactStep: 1, desc: 'Symptoms captured',   scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip01.mp3', 'clip02.mp3'] },
+  { stage: 'during', reactStep: 2, desc: 'BP exam',             scrollTo: null, spotlight: null, emptyNote: true,  audio: ['clip03.mp3', 'clip04.mp3'] },
+  { stage: 'during', reactStep: 3, desc: 'Diagnosis confirmed', scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip05.mp3', 'clip06.mp3', 'clip07.mp3'] },
+  { stage: 'during', reactStep: 4, desc: 'Preventive care',     scrollTo: null, spotlight: null, emptyNote: false, audio: ['clip08.mp3', 'clip09.mp3'] },
+  // ── POST-VISIT (step 6) ───────────────────────────────────
+  { stage: 'post',   reactStep: 5, desc: 'Post-visit summary',  scrollTo: null,          spotlight: null, emptyNote: false },
 ];
 
 let currentStep = 0;
@@ -1866,14 +1868,15 @@ function goToState(step) {
 
   if (state.audio) {
     audioQueue = [...state.audio];
-    const delay = (step === 1) ? 2000 : 0;
+    const delay = (state.reactStep === 1) ? 2000 : 0;
     setTimeout(() => playNextClip(), delay);
   }
 
   updateNav();
   const baseMsg = {
     type: 'DEMO_STATE',
-    step,
+    step:      state.isPreview ? -1 : (state.reactStep ?? step),
+    isPreview: !!state.isPreview,
     scrollTo:  state.scrollTo  || null,
     emptyNote: state.emptyNote || false,
   };
