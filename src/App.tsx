@@ -258,6 +258,41 @@ export default function App() {
   
   // Shared chat state - indexed by patient name
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({
+    "John Smith": [
+      { type: 'user', content: "What BP readings do we have and what has already been ruled out?" },
+      {
+        type: 'assistant',
+        content: "The patient has multiple elevated readings across settings:\n\n**BP history:**\n• Urgent care (2 weeks ago): 152/92 mmHg{{1}}\n• Pharmacy screenings: 148/88 and 155/90 mmHg{{1}}\n• Today's check-in: 150/92 mmHg (right arm){{2}}\n• Today's exam — right arm: 150/90, left leg: 110/70 mmHg — **40 mmHg arm-leg gradient**{{3}}\n\n**Already ruled out:**\n• Renal causes: normal creatinine and aldosterone{{4}}\n• Endocrine causes: normal TSH{{4}}\n• No family history of early hypertension, no traditional CV risk factors{{5}}\n\nThe 40 mmHg arm-leg gradient and diminished femoral pulses today point strongly toward a congenital structural etiology — specifically coarctation of the aorta — rather than a secondary medical cause.",
+        citations: [
+          { number: 1, source: "Previsit summary, today", quote: "Recent vitals: BP 152/92, 148/88, 155/90" },
+          { number: 2, source: "Visit vitals, today", quote: "Blood Pressure: 150/92 mmHg (right arm, seated)" },
+          { number: 3, source: "Visit transcript, 00:16:50", quote: "Your arm reads 150 over 90, but your leg is 110 over 70, and your femoral pulses are diminished — that gap isn't normal." },
+          { number: 4, source: "Previsit summary, today", quote: "Recent labs ruled out renal/endocrine causes. Structural cause still undetermined." },
+          { number: 5, source: "Intake form, today", quote: "No family history of early cardiovascular disease or hypertension. No diabetes, no smoking." },
+        ]
+      },
+      { type: 'user', content: "What are the treatment options for coarctation of the aorta?" },
+      {
+        type: 'assistant',
+        content: "There are two main treatment approaches — the choice depends on the anatomy and severity confirmed on imaging:\n\n**1. Catheter-based intervention (preferred for most adults)**{{1}}\n• Balloon angioplasty with stent placement\n• Less invasive, shorter recovery\n• First-line for discrete, non-complex coarctations\n• Long-term re-intervention rate ~15–20%\n\n**2. Surgical repair**{{2}}\n• Resection with end-to-end anastomosis or patch repair\n• Preferred for complex anatomy, long-segment narrowing, or re-coarctation\n• More durable but higher procedural risk\n\n**After repair, both approaches:**{{3}}\n• Hypertension often persists — up to 75% of adults require ongoing antihypertensive therapy\n• Lifelong cardiology follow-up with periodic imaging\n• Risk of re-coarctation, aortic aneurysm, and bicuspid aortic valve complications\n\nFor this patient, echocardiogram and CT angiography{{4}} will define the anatomy and guide the decision.",
+        citations: [
+          { number: 1, source: "ACC/AHA Guidelines — Adult Congenital Heart Disease", quote: "Transcatheter stent implantation is recommended as first-line therapy for discrete coarctation in adults when anatomy is suitable.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000603" },
+          { number: 2, source: "ACC/AHA Guidelines — Adult Congenital Heart Disease", quote: "Surgical repair is indicated when catheter-based intervention is not feasible due to complex anatomy, including long-segment coarctation or significant arch hypoplasia.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000603" },
+          { number: 3, source: "ACC/AHA Guidelines — Adult Congenital Heart Disease", quote: "Residual hypertension is common following coarctation repair in adults. Lifelong cardiology surveillance is recommended given risk of re-coarctation, aortic aneurysm, and associated bicuspid valve disease.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000603" },
+          { number: 4, source: "Visit transcript, 00:16:50", quote: "I want to order an echo and a CT of your chest." },
+        ]
+      },
+      { type: 'user', content: "What should I watch for while we wait for imaging results?" },
+      {
+        type: 'assistant',
+        content: "Key things to monitor and counsel the patient on:\n\n**Urgent red flags — return immediately:**\n• Sudden severe headache or visual changes (hypertensive urgency/emergency)\n• Chest pain or back pain (aortic dissection risk, though low at this stage)\n• Sudden leg weakness or claudication\n\n**BP management in the interim:**{{1}}\n• Start antihypertensive therapy now — beta-blockers are preferred in coarctation as they reduce aortic wall stress\n• Avoid ACE inhibitors as monotherapy until anatomy is confirmed\n• Target BP <130/80 mmHg\n\n**Activity:**{{2}}\n• Avoid heavy isometric exercise (weightlifting, heavy straining) until anatomy is confirmed — these cause acute BP spikes\n• Light aerobic activity (walking) is acceptable\n\n**Patient counseling:**{{3}}\n• Reassure him that effective treatments exist and outcomes are generally excellent with timely intervention\n• Typical timeline: imaging results in 1–2 weeks, cardiology referral to follow",
+        citations: [
+          { number: 1, source: "ACC/AHA Guidelines — Adult Congenital Heart Disease", quote: "Beta-blockers are the preferred antihypertensive agent in coarctation of the aorta to reduce aortic wall stress and risk of dissection.", isExternal: true, externalUrl: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000603" },
+          { number: 2, source: "Physical examination (focused re-exam), today", quote: "Findings consistent with coarctation of the aorta: arm-leg BP gradient, diminished femoral pulses, systolic murmur." },
+          { number: 3, source: "Visit transcript, 00:16:50", quote: "The good news is that if we confirm what I suspect, there are effective treatments available — either surgical repair or a catheter-based procedure with a stent. Many people with this condition do very well after treatment." },
+        ]
+      },
+    ],
     "Sarah Johnson": [
       { type: 'user', content: "When was the patient's most recent knee imaging?" },
       { 
