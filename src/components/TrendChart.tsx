@@ -89,15 +89,18 @@ export const TrendChart: React.FC<TrendChartProps> = ({
             <ReferenceArea
               y1={referenceRange.min}
               y2={referenceRange.max}
-              fill={referenceRange.color || '#2f6a32'}
-              fillOpacity={0.1}
+              fill={referenceRange.color || '#16a34a'}
+              fillOpacity={0.12}
+              stroke={referenceRange.color || '#16a34a'}
+              strokeOpacity={0.3}
+              strokeWidth={1}
               label={{
                 value: referenceRange.label,
                 position: 'insideTopRight',
-                fill: referenceRange.color || '#2f6a32',
+                fill: referenceRange.color || '#16a34a',
                 fontSize: 11,
                 fontFamily: 'Lato, sans-serif',
-                fontWeight: 600
+                fontWeight: 700
               }}
               isAnimationActive={false}
             />

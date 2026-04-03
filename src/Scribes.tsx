@@ -356,7 +356,7 @@ export default function Scribes({
       "Visit transcript, 00:16:50": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "That is notable — your blood pressure is significantly lower in your legs compared to your arms, which is not typical. This finding raises concern for a structural vascular cause." Patient: "What does that mean?" Provider: "It suggests there may be a narrowing in one of your major blood vessels. It's called coarctation of the aorta - a congenital condition where there's a narrowing of the main artery from your heart."`
+        content: `Provider: "I'm going to check your blood pressure in your arms and legs." Provider: "Your arm reads 150 over 90, but your leg is 110 over 70, and your femoral pulses are diminished — that gap isn't normal. I want to order an echo and a CT of your chest." Patient: "What does that mean?" Provider: "It suggests there may be a narrowing in one of your major blood vessels. It's called coarctation of the aorta — a congenital condition where there's a narrowing of the main artery from your heart."`
       },
       "Visit transcript, 00:21:15": {
         type: "Transcript",
@@ -805,20 +805,20 @@ export default function Scribes({
             { number: 10, citedText: "no family history of early hypertension", quote: "Family History: No family history of early hypertension, no diabetes", source: "Previsit summary, today" },
             { number: 11, citedText: "leg fatigue during exertion", quote: "My legs wear out fast — even just walking short distances", source: "Visit transcript, 00:01:30" },
             { number: 12, citedText: "No current medications", quote: "Current Medications: None", source: "Intake form, today" },
-            { number: 13, citedText: "no chest pain", quote: "No chest pain or pressure. No history of angina", source: "ROS documentation, today" },
-            { number: 14, citedText: "no syncope, vision changes, or focal deficits", quote: "No loss of consciousness, no vision changes, no weakness or numbness", source: "ROS documentation, today" },
-            { number: 15, citedText: "no claudication pain", quote: "Leg fatigue with exertion; no calf pain or claudication", source: "ROS documentation, today" },
-            { number: 16, citedText: "Denies fever, weight loss, or night sweats", quote: "No constitutional symptoms: fever, chills, night sweats, or unintentional weight loss", source: "ROS documentation, today" },
-            { number: 17, citedText: "No shortness of breath at rest", quote: "No dyspnea at rest. Some mild shortness of breath with heavy exertion", source: "ROS documentation, today" },
+            { number: 13, citedText: "no chest pain", quote: "No chest pain at all — nothing like pressure or tightness", source: "Visit transcript, 00:01:30" },
+            { number: 14, citedText: "no syncope, vision changes, or focal deficits", quote: "No fainting, no blackouts. No vision changes. No weakness or numbness anywhere", source: "Visit transcript, 00:01:30" },
+            { number: 15, citedText: "no claudication pain", quote: "It's more like fatigue in my legs, not really pain — I don't get calf cramping or anything like that", source: "Visit transcript, 00:01:30" },
+            { number: 16, citedText: "Denies fever, weight loss, or night sweats", quote: "No fevers, no night sweats, weight's been stable", source: "Visit transcript, 00:01:30" },
+            { number: 17, citedText: "No shortness of breath at rest", quote: "I'm fine at rest, maybe a little winded with really heavy exercise but nothing that stops me", source: "Visit transcript, 00:01:30" },
             { number: 18, citedText: "BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F", quote: "Blood pressure 150/92 mmHg (right arm, seated), heart rate 76 bpm, respiratory rate 14, temperature 98.6°F", source: "Visit vitals, today" },
-            { number: 19, citedText: "no bruits over carotids", quote: "HEENT examination: No carotid bruits bilaterally", source: "Physical examination, today" },
-            { number: 20, citedText: "no murmurs initially appreciated", quote: "Cardiac auscultation (initial): Regular rate and rhythm, normal S1 S2, no murmurs appreciated", source: "Physical examination, today" },
-            { number: 21, citedText: "Clear to auscultation bilaterally", quote: "Lungs: Clear breath sounds throughout all lung fields, no wheezes, rales, or rhonchi", source: "Physical examination, today" },
-            { number: 22, citedText: "Femoral pulses slightly diminished bilaterally", quote: "Peripheral vascular examination: Femoral pulses palpable but slightly diminished bilaterally compared to radial pulses", source: "Physical examination, today" },
-            { number: 23, citedText: "Upper extremity BP (right arm): 150/90 mmHg", quote: "Repeat blood pressure measurement, right arm, seated: 150/90 mmHg", source: "Physical examination (additional BP exam), today" },
-            { number: 24, citedText: "Lower extremity BP (right leg): 110/70 mmHg", quote: "Blood pressure measurement, right lower extremity (popliteal artery, patient prone): 110/70 mmHg", source: "Physical examination (additional BP exam), today" },
-            { number: 25, citedText: "Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference)", quote: "Arm-leg BP gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)", source: "Physical examination (additional BP exam), today" },
-            { number: 26, citedText: "Faint systolic murmur appreciated over left infraclavicular area and posterior thorax", quote: "Cardiac re-examination: Grade 1-2/6 systolic ejection murmur heard over left infraclavicular region and posteriorly over thoracic spine", source: "Physical examination (focused re-exam), today" },
+            { number: 19, citedText: "no bruits over carotids", quote: "No carotid bruits bilaterally", source: "Physical examination, today" },
+            { number: 20, citedText: "no murmurs initially appreciated", quote: "Regular rate and rhythm, normal S1 S2, no murmurs on initial auscultation", source: "Physical examination, today" },
+            { number: 21, citedText: "Clear to auscultation bilaterally", quote: "Lungs clear to auscultation bilaterally, no wheezes, rales, or rhonchi", source: "Physical examination, today" },
+            { number: 22, citedText: "Femoral pulses slightly diminished bilaterally", quote: "your femoral pulses are diminished", source: "Visit transcript, 00:16:50" },
+            { number: 23, citedText: "Upper extremity BP (right arm): 150/90 mmHg", quote: "Your arm reads 150 over 90", source: "Visit transcript, 00:16:50" },
+            { number: 24, citedText: "Lower extremity BP (right leg): 110/70 mmHg", quote: "your leg is 110 over 70", source: "Visit transcript, 00:16:50" },
+            { number: 25, citedText: "Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference)", quote: "that gap isn't normal", source: "Visit transcript, 00:16:50" },
+            { number: 26, citedText: "Faint systolic murmur appreciated over left infraclavicular area and posterior thorax", quote: "Cardiac re-examination: Grade 1-2/6 systolic ejection murmur heard over left infraclavicular region and posteriorly", source: "Physical examination (focused re-exam), today" },
             { number: 27, citedText: "normal renal function, aldosterone, and TSH", quote: "BMP: Creatinine 0.9 mg/dL, eGFR >90 mL/min — renal function normal; Aldosterone: 9.2 ng/dL — normal range; TSH: 2.1 mIU/L — thyroid function normal", source: "Lab results, 2 weeks ago" }
           ],
           hccItems: [],
@@ -3591,7 +3591,7 @@ export default function Scribes({
         {/* White Card Content */}
         <div className="bg-[var(--surface-base,white)] content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-clip relative rounded-[8px] shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)] w-full">
           {/* Content Area - Scrollable */}
-        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto relative w-full px-[16px] py-[8px]">
+        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto relative w-full px-[16px] pt-[8px] pb-[20px]">
           {viewingDataSource ? (
             /* Data Source View */
             <>

@@ -204,6 +204,7 @@ export default function App() {
         setDemoEmptyNote(false);
         setIsMobileRecording(false);
         setRightTab('actions');
+        setDemoStep(step);
       }
 
       // Spotlight overlay
@@ -722,7 +723,7 @@ export default function App() {
           unit: "mmHg",
           color: "#e03535",
           yAxisDomain: [110, 170],
-          referenceRange: { min: 90, max: 120, label: "Normal <120", color: "rgba(0,180,80,0.08)" },
+          referenceRange: { min: 90, max: 120, label: "Normal <120", color: "#16a34a" },
           xAxisTicks: ["6w ago", "4w ago", "2w ago", "1w ago", "3d ago", "Today"],
           data: [
             { date: "6w ago",  value: 134, label: "Home" },
@@ -2464,7 +2465,7 @@ export default function App() {
           
           {/* New Instant Visit Button */}
           <div className="content-stretch flex flex-col items-start relative shrink-0">
-            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-end overflow-clip pb-[12px] pt-[4px] px-[12px] relative shrink-0 w-[220px]">
               <Button 
                 variant="secondary" 
                 size="large"
@@ -2573,7 +2574,7 @@ export default function App() {
           
           {/* New Instant Visit Button */}
           <div className="content-stretch flex flex-col items-start relative shrink-0">
-            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-end overflow-clip pb-[12px] pt-[4px] px-[12px] relative shrink-0 w-[220px]">
               <Button 
                 variant="secondary" 
                 size="large"
@@ -4017,7 +4018,7 @@ export default function App() {
         </div>
         
         {/* Chat Input at Bottom */}
-        <div className="content-stretch flex gap-[8px] items-start pb-[8px] md:pb-[20px] pl-[20px] md:pl-[8px] pr-[20px] md:pr-[16px] pt-[8px] relative shrink-0 w-full">
+        <div className="content-stretch flex gap-[8px] items-start pb-[20px] px-[16px] pt-[8px] relative shrink-0 w-full">
           <div className="flex-[1_0_0] min-w-px">
             <ChatInput
               placeholder="Ask about the patient"
