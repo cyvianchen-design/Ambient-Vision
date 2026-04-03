@@ -28,6 +28,7 @@ interface MobileRecordingScreenProps {
   chiefComplaint: string;
   nudges?: CareNudge[];
   demoStep?: number;
+  isDemoPreview?: boolean;
   onPause?: () => void;
   onEnd?: () => void;
 }
@@ -49,6 +50,7 @@ export const MobileRecordingScreen = ({
   chiefComplaint,
   nudges = [],
   demoStep = 1,
+  isDemoPreview = false,
   onPause,
   onEnd,
 }: MobileRecordingScreenProps) => {
@@ -249,6 +251,9 @@ export const MobileRecordingScreen = ({
     };
     setDisplayedNudges(snapshots[demoStep] ?? []);
 
+    // Preview mode: show initial nudge state without starting any timers
+    if (isDemoPreview) return;
+
     // ── Timers: changes that happen *during* the step ──
     if (demoStep === 1) {
       // 5s: dismiss "Follow up on elevated BP"
@@ -323,7 +328,7 @@ export const MobileRecordingScreen = ({
       itemTimersRef.current = [];
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demoStep]);
+  }, [demoStep, isDemoPreview]);
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

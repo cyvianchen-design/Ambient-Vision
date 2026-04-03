@@ -2206,6 +2206,7 @@ export default function App() {
         chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
         nudges={patients[selectedPatientIndex].careNudges || []}
         demoStep={demoStep}
+        isDemoPreview={isDemoPreview}
         onPause={() => setIsMobileRecording(false)}
         onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); setDemoStep(1); }}
       />
@@ -3498,6 +3499,7 @@ export default function App() {
           chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
           nudges={patients[selectedPatientIndex].careNudges || []}
           demoStep={demoStep}
+          isDemoPreview={isDemoPreview}
           onPause={() => setIsMobileRecording(false)}
           onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); setDemoStep(1); }}
         />
