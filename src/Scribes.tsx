@@ -135,6 +135,7 @@ export default function Scribes({
   logoTooltipPosition,
   setLogoTooltipPosition,
   demoEmptyNote = false,
+  demoStep = 0,
 }: {
   onNavigateToVisits?: () => void;
   chatMessages: Record<string, ChatMessage[]>;
@@ -150,6 +151,7 @@ export default function Scribes({
   logoTooltipPosition: { x: number; y: number } | null;
   setLogoTooltipPosition: (position: { x: number; y: number } | null) => void;
   demoEmptyNote?: boolean;
+  demoStep?: number;
 }) {
   const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
   const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -166,6 +168,26 @@ export default function Scribes({
   const [isDiagnosisExpanded, setIsDiagnosisExpanded] = useState(true);
   const [isPostVisitExpanded, setIsPostVisitExpanded] = useState(true);
   const [activeCode, setActiveCode] = useState<{type: 'diagnosis' | 'cpt', idx: number} | null>(null);
+  const [hpiPhase, setHpiPhase] = useState<'prechart' | 'highlight' | 'fading' | 'updated'>('prechart');
+  const [legPhase, setLegPhase] = useState<'hidden' | 'highlight' | 'fading' | 'updated'>('hidden');
+  const [liveDiagnoses, setLiveDiagnoses] = useState<Array<{code: string; description: string}>>([]);
+  const [liveCptCodes, setLiveCptCodes] = useState<Array<{code: string; description: string}>>([]);
+  const [liveWorkflows, setLiveWorkflows] = useState<Array<{type: string; description: string}>>([]);
+  const [ordersPlacedLocal, setOrdersPlacedLocal] = useState(false);
+  type MdmKey = 'assessment' | 'complexity' | 'dataReviewed' | 'planImaging' | 'planReferral' | 'planColonoscopy';
+  type LiveMdm = Partial<Record<MdmKey, { text: string; settled: boolean }>>;
+  const [liveMdm, setLiveMdm] = useState<LiveMdm>({});
+  const [rosPePhase, setRosPePhase] = useState<'hidden' | 'fading' | 'settled'>('hidden');
+  const [flashScreen, setFlashScreen] = useState(false);
+  const [pePhase, setPePhase] = useState<'base' | 'exam-in' | 'exam' | 'femoral-in' | 'femoral'>('base');
+  const hpiTimersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+  const noteScrollRef = React.useRef<HTMLDivElement>(null);
+  const rosSectionRef = React.useRef<HTMLDivElement>(null);
+  const peSectionRef = React.useRef<HTMLDivElement>(null);
+  const peExamRef = React.useRef<HTMLSpanElement>(null);
+  const mdmSectionRef = React.useRef<HTMLDivElement>(null);
+  const mdmReferralRef = React.useRef<HTMLSpanElement>(null);
+  const mdmColonoscopyRef = React.useRef<HTMLSpanElement>(null);
   const [editingSection, setEditingSection] = useState<'hpi' | 'ros' | 'pe' | 'mdm' | null>(null);
   const [editedContent, setEditedContent] = useState<{hpi: string; ros: string; pe: string; mdm: string}>({
     hpi: '',
@@ -769,7 +791,7 @@ export default function Scribes({
           hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure{{2}}. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH{{27}}, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches most mornings{{1}}, pulsatile in quality{{3}}, 2–3 times per week, lasting several hours. Also reports leg fatigue with exertion{{11}} — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness{{4}}. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago{{5}}, pharmacy screenings 148/88 and 155/90{{6}}, today's check-in 150/92{{7}}. History of elevated BP noted once as teenager, never investigated{{8}}. No traditional cardiovascular risk factors: BMI 25.5{{9}}, no diabetes, no family history of early hypertension{{10}}. No current medications{{12}}.",
           ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain{{13}}.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits{{14}}.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain{{15}}.\nConstitutional: Denies fever, weight loss, or night sweats{{16}}.\nRespiratory: No shortness of breath at rest{{17}}.",
           pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F{{18}}.\nHEENT: Normocephalic; no bruits over carotids{{19}}.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated{{20}}.\nLungs: Clear to auscultation bilaterally{{21}}.\nExtremities: Femoral pulses slightly diminished bilaterally{{22}}.\n\n**Additional Blood Pressure Examination (Performed During Visit):**\nUpper extremity BP: 150/90 mmHg{{23}}\nLower extremity BP: 110/70 mmHg{{24}}\n**Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference){{25}}**\n\nCardiovascular (re-examination): Faint systolic murmur appreciated over left infraclavicular area and posterior thorax{{26}}.",
-          mdm: "Assessment: Coarctation of the aorta (congenital aortic narrowing). This is a rare but important diagnosis in an adult presenting with hypertension. Clinical presentation highly suspicious: persistent hypertension without traditional risk factors, pulsatile headaches (upper body hypertension), exercise-induced leg fatigue (lower body hypoperfusion), history of elevated BP as teenager (undiagnosed congenital lesion), and critical physical exam finding of significant arm-leg BP gradient with diminished femoral pulses.\n\nAmbient Clinical Reasoning Evolution:\n• Pre-visit labs (BMP, aldosterone, TSH) had excluded renal and endocrine secondary causes\n• Visit-start differential: essential hypertension most likely, coarctation low probability\n• Pattern recognition triggered by spontaneously reported exertional leg fatigue in a young patient without traditional risk factors\n• Arm-leg BP differential check ordered based on clinical suspicion\n• Arm-leg BP gradient (40 mmHg) is pathognomonic for coarctation\n• Diagnosis elevated from low probability to confirmed based on real-time exam findings\n\nComplexity: High. Rare congenital cardiovascular diagnosis in adult patient requiring immediate advanced imaging, specialty referral, and coordination of care. Diagnosis often missed in adults; carries significant morbidity if untreated (heart failure, stroke, aortic dissection). Requires expedited cardiology evaluation and surgical planning.\n\nData Reviewed: Previsit summary with BP trend, intake form, urgent care visit record, physical examination findings including specialized BP measurements, ambient clinical reasoning output.\n\nManagement Plan:\n• **Imaging (Stat Orders):**\n  - Echocardiogram (urgent) - assess cardiac function, aortic valve, and coarctation severity\n  - CT angiography chest (urgent) - definitive anatomic imaging of aortic narrowing location and severity\n• **Specialty Referral:** Cardiology referral (expedited) - discuss surgical vs. catheter-based intervention options\n• **Preventive Care:** Colonoscopy screening (age 45, no prior screening) - order placed, will coordinate scheduling\n  - GI referral for screening colonoscopy\n• **Patient Education:** Discussed diagnosis, explained congenital nature, treatment options (surgical repair vs. stent), prognosis with treatment\n• **Follow-up:** Cardiology appointment expedited (within 1 week); imaging to be completed within 48 hours; follow-up call after imaging results\n• **Activity:** No strenuous exercise until cardiology evaluation\n• **Monitoring:** Home BP monitoring not indicated (diagnosis established)\n\nPost-Visit Coordination (Ambient-Automated):\n• Insurance authorization for imaging completed in real-time\n• Colonoscopy eligibility verified and scheduling options sent\n• Cardiology referral placed with priority flagging\n• Cost estimates generated for procedures\n• Patient-friendly explanation of condition and next steps generated\n• Referral letters auto-generated for cardiology and GI",
+          mdm: "Assessment: Coarctation of the aorta (congenital aortic narrowing) in a 45-year-old male presenting with persistent hypertension, pulsatile headaches, and exertional leg fatigue. Diagnosis confirmed by a 40 mmHg arm-leg blood pressure gradient and diminished femoral pulses on exam. History of elevated BP since adolescence without traditional cardiovascular risk factors further supports a congenital etiology. Pre-visit workup had already excluded renal and endocrine secondary causes.\n\nComplexity: High. Rare congenital cardiovascular diagnosis in an adult requiring urgent advanced imaging and specialty referral. Carries significant morbidity if untreated, including risk of heart failure, aortic dissection, and stroke. Expedited cardiology evaluation and surgical planning required.\n\nData Reviewed: BP trend from previsit summary and urgent care records, intake form, upper and lower extremity BP measurements, physical exam including femoral pulse assessment.\n\nManagement Plan:\n• Imaging (stat): Echocardiogram to assess cardiac function and aortic valve; CT angiography chest to define anatomic location and severity of narrowing\n• Specialty referral: Cardiology (expedited) to discuss surgical vs. catheter-based intervention options\n• Preventive care: Colonoscopy screening indicated (age 45, no prior screening on record) — GI referral placed\n• Patient education: Discussed diagnosis, congenital nature, treatment options (surgical repair vs. endovascular stenting), and prognosis with treatment\n• Activity: No strenuous exercise until cardiology evaluation\n• Follow-up: Cardiology within 1 week; imaging within 48 hours; follow-up call after imaging results",
           citations: [
             { number: 1, citedText: "pounding headaches most mornings", quote: "Pounding headaches, sometimes feel heartbeat in head — 2-3 times per week, lasting several hours", source: "Intake form, today" },
             { number: 2, citedText: "persistently elevated blood pressure", quote: "Recent vitals: BP 152/92, 148/88, 155/90", source: "Previsit summary, today" },
@@ -834,38 +856,34 @@ export default function Scribes({
             ],
             cptCodes: [
               { code: "99215", description: "Office visit, established patient, high complexity (40-54 minutes)", highlightTexts: ["Complexity: High"] },
-              { code: "93000", description: "Electrocardiogram, routine ECG with interpretation", highlightTexts: ["Faint systolic murmur appreciated"] }
+              { code: "93306", description: "Echocardiography, transthoracic, with Doppler", highlightTexts: ["Echocardiogram"] },
+              { code: "71275", description: "CT angiography, chest", highlightTexts: ["CT angiography chest"] }
             ]
           },
           postVisitWorkflows: [
             { 
-              type: "Referral", 
-              description: "Cardiology referral (expedited) - coarctation of aorta, discuss surgical vs catheter-based repair. Referral letter auto-generated.",
-              status: "completed"
-            },
-            { 
-              type: "Referral", 
-              description: "GI referral for screening colonoscopy (age 45, no prior screening). Referral letter auto-generated.",
+              type: "Imaging Order", 
+              description: "Echocardiogram (STAT)",
               status: "completed"
             },
             { 
               type: "Imaging Order", 
-              description: "Echocardiogram (STAT) - assess cardiac function and coarctation severity. Insurance authorization completed.",
+              description: "CT angiography chest (STAT)",
               status: "completed"
             },
             { 
-              type: "Imaging Order", 
-              description: "CT angiography chest (STAT) - definitive imaging of aortic narrowing. Insurance authorization completed.",
+              type: "Referral", 
+              description: "Cardiology referral (expedited) — coarctation of aorta",
               status: "completed"
             },
             { 
-              type: "Order", 
-              description: "Colonoscopy screening order placed. Eligibility verified, scheduling options sent to patient.",
+              type: "Referral", 
+              description: "GI referral — screening colonoscopy",
               status: "completed"
             },
             { 
               type: "Patient Education", 
-              description: "Patient education document generated: Coarctation of aorta explanation, treatment options, next steps.",
+              description: "CoA explanation, treatment options, next steps",
               status: "completed"
             }
           ],
@@ -1202,7 +1220,218 @@ export default function Scribes({
       }
     }
   }, [selectedPatientName, allScribes]);
-  
+
+  // Session ref: incremented each time this effect runs so stale timer callbacks are no-ops
+  const demoStepSessionRef = React.useRef(0);
+
+  // Listen for ORDERS_PLACED broadcast from the mobile iframe (same-origin BroadcastChannel)
+  useEffect(() => {
+    const bc = new BroadcastChannel('demo-events');
+    bc.onmessage = (e) => {
+      if (e.data?.type === 'ORDERS_PLACED') setOrdersPlacedLocal(true);
+    };
+    return () => bc.close();
+  }, []);
+
+  // HPI live-scribe animation for demo steps 1–2
+  useEffect(() => {
+    hpiTimersRef.current.forEach(clearTimeout);
+    hpiTimersRef.current = [];
+
+    const session = ++demoStepSessionRef.current;
+
+    // Only apply state if this effect run is still the active session (guards against StrictMode double-invoke)
+    const g = (fn: () => void) => () => { if (demoStepSessionRef.current === session) fn(); };
+
+    // Step 5: flash to signal full note reveal, then reset live states so full note takes over
+    if (demoStep === 5) {
+      setFlashScreen(true);
+      hpiTimersRef.current.push(setTimeout(g(() => setFlashScreen(false)), 700));
+    }
+
+    setHpiPhase('prechart');
+    setLegPhase('hidden');
+    setLiveDiagnoses([]);
+    setLiveCptCodes([]);
+    setLiveWorkflows([]);
+    setOrdersPlacedLocal(false);
+    setLiveMdm({});
+    setRosPePhase('hidden');
+    setPePhase('base');
+
+    // Helper: add/update an MDM section (grey), settle to black after 800ms
+    const addMdmSection = (key: MdmKey, text: string) => {
+      setLiveMdm(prev => ({ ...prev, [key]: { text, settled: false } }));
+      hpiTimersRef.current.push(
+        setTimeout(g(() => setLiveMdm(prev => {
+          const entry = prev[key];
+          if (!entry) return prev;
+          return { ...prev, [key]: { ...entry, settled: true } };
+        })), 800),
+      );
+    };
+
+    if (demoStep === 4) {
+      // Start at end-of-step-3: all step-3 content settled
+      setLiveDiagnoses([
+        { code: 'Q25.1', description: 'Coarctation of the aorta' },
+        { code: 'I10',   description: 'Essential (primary) hypertension, secondary to coarctation' },
+        { code: 'R51.9', description: 'Headache, unspecified' },
+      ]);
+      setLiveWorkflows([
+        { type: 'Imaging Order', description: 'Echocardiogram (STAT)' },
+        { type: 'Imaging Order', description: 'CT angiography chest (STAT)' },
+        { type: 'Referral', description: 'Cardiology referral (expedited) — coarctation of aorta' },
+      ]);
+      setOrdersPlacedLocal(true);
+      setRosPePhase('settled');
+      setPePhase('femoral');
+      setLiveCptCodes([
+        { code: '93306', description: 'Echocardiography, transthoracic, with Doppler' },
+        { code: '71275', description: 'CT angiography, chest' },
+        { code: '99215', description: 'Office visit, established patient, high complexity (40-54 minutes)' },
+      ]);
+      setLiveMdm({
+        assessment:   { text: MDM_ASSESSMENT,      settled: true },
+        complexity:   { text: MDM_COMPLEXITY,       settled: true },
+        dataReviewed: { text: MDM_DATA_FULL,        settled: true },
+        planImaging:  { text: MDM_PLAN_IMAGING,     settled: true },
+        planReferral: { text: MDM_PLAN_REFERRAL,    settled: true },
+      });
+      // ~5s: colonoscopy referral nudge → GI referral in side panel + colonoscopy in MDM
+      hpiTimersRef.current.push(
+        setTimeout(g(() => {
+          setLiveWorkflows(prev => [...prev, { type: 'Referral', description: 'GI referral — screening colonoscopy' }]);
+          addMdmSection('planColonoscopy', MDM_PLAN_COLONOSCOPY);
+        }), 5_000),
+      );
+    } else if (demoStep === 3) {
+      // Start at end-of-step-2: ROS/PE settled, imaging orders placed, diagnoses I10+R51.9
+      setLiveDiagnoses([
+        { code: 'I10',   description: 'Essential (primary) hypertension' },
+        { code: 'R51.9', description: 'Headache, unspecified' },
+      ]);
+      setLiveCptCodes([
+        { code: '93306', description: 'Echocardiography, transthoracic, with Doppler' },
+        { code: '71275', description: 'CT angiography, chest' },
+      ]);
+      setLiveWorkflows([
+        { type: 'Imaging Order', description: 'Echocardiogram (STAT)' },
+        { type: 'Imaging Order', description: 'CT angiography chest (STAT)' },
+      ]);
+      setOrdersPlacedLocal(true);
+      setRosPePhase('settled');
+      setPePhase('femoral');
+      setLiveMdm({
+        dataReviewed: { text: MDM_DATA_FULL,    settled: true },
+        planImaging:  { text: MDM_PLAN_IMAGING, settled: true },
+      });
+      hpiTimersRef.current.push(
+        // 0s: "Discuss CoA" nudge shown — assessment + Q25.1 appear; I10 description updated
+        setTimeout(g(() => {
+          addMdmSection('assessment', MDM_ASSESSMENT);
+          setLiveDiagnoses(prev => [
+            { code: 'Q25.1', description: 'Coarctation of the aorta' },
+            ...prev.map(d => d.code === 'I10'
+              ? { ...d, description: 'Essential (primary) hypertension, secondary to coarctation' }
+              : d),
+          ]);
+        }), 0),
+        // ~2s: complexity + 99215 CPT code appear together
+        setTimeout(g(() => {
+          addMdmSection('complexity', MDM_COMPLEXITY);
+          setLiveCptCodes(prev => [...prev, { code: '99215', description: 'Office visit, established patient, high complexity (40-54 minutes)' }]);
+        }), 2_000),
+        // ~13s: "Referral drafted" nudge → cardiology referral in side panel + MDM bullet
+        setTimeout(g(() => {
+          setLiveWorkflows(prev => [...prev, { type: 'Referral', description: 'Cardiology referral (expedited) — coarctation of aorta' }]);
+          addMdmSection('planReferral', MDM_PLAN_REFERRAL);
+        }), 13_000),
+      );
+    } else if (demoStep === 2) {
+      setLiveDiagnoses([{ code: 'I10', description: 'Essential (primary) hypertension' }, { code: 'R51.9', description: 'Headache, unspecified' }]);
+      setRosPePhase('fading');
+      hpiTimersRef.current.push(
+        setTimeout(g(() => setRosPePhase('settled')),   800),
+        setTimeout(g(() => setPePhase('exam-in')),    6_000),
+        setTimeout(g(() => setPePhase('exam')),        6_800),
+        setTimeout(g(() => setPePhase('femoral-in')), 9_000),
+        setTimeout(g(() => setPePhase('femoral')),     9_800),
+        // ~10s: femoral pulse settled → data reviewed gains physical exam phrase
+        setTimeout(g(() => addMdmSection('dataReviewed', MDM_DATA_FULL)), 10_000),
+        // ~12.5s: orders placed → imaging workflows + CPT codes + MDM imaging bullet
+        setTimeout(g(() => {
+          setLiveWorkflows([
+            { type: 'Imaging Order', description: 'Echocardiogram (STAT)' },
+            { type: 'Imaging Order', description: 'CT angiography chest (STAT)' },
+          ]);
+          setLiveCptCodes([
+            { code: '93306', description: 'Echocardiography, transthoracic, with Doppler' },
+            { code: '71275', description: 'CT angiography, chest' },
+          ]);
+          addMdmSection('planImaging', MDM_PLAN_IMAGING);
+        }), 12_500),
+      );
+    } else if (demoStep === 1) {
+      hpiTimersRef.current.push(
+        // ~5s: provider has reviewed previsit data → data reviewed base appears
+        setTimeout(g(() => addMdmSection('dataReviewed', MDM_DATA_BASE)), 5_000),
+        setTimeout(g(() => setHpiPhase('highlight')), 13_000),
+        setTimeout(g(() => setHpiPhase('fading')),    14_200),
+        setTimeout(g(() => setHpiPhase('updated')),   15_000),
+        setTimeout(g(() => setLiveDiagnoses([{ code: 'I10', description: 'Essential (primary) hypertension' }])), 7_000),
+        setTimeout(g(() => setLiveDiagnoses([{ code: 'I10', description: 'Essential (primary) hypertension' }, { code: 'R51.9', description: 'Headache, unspecified' }])), 15_800),
+        setTimeout(g(() => setLegPhase('highlight')), 17_000),
+        setTimeout(g(() => setLegPhase('fading')),    18_200),
+        setTimeout(g(() => setLegPhase('updated')),   19_000),
+      );
+    }
+
+    return () => {
+      hpiTimersRef.current.forEach(clearTimeout);
+      hpiTimersRef.current = [];
+    };
+  }, [demoStep]);
+
+  // Auto-scroll within the note content container (not window-level)
+  const scrollNoteToElement = (el: HTMLElement) => {
+    const container = noteScrollRef.current;
+    if (!container) return;
+    const containerTop = container.getBoundingClientRect().top;
+    const elTop = el.getBoundingClientRect().top;
+    const offset = elTop - containerTop + container.scrollTop - 16; // 16px top padding
+    container.scrollTo({ top: offset, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (rosPePhase === 'fading' && rosSectionRef.current) {
+      scrollNoteToElement(rosSectionRef.current);
+    }
+  }, [rosPePhase]);
+
+  useEffect(() => {
+    if ((pePhase === 'exam-in' || pePhase === 'femoral-in') && peExamRef.current) {
+      scrollNoteToElement(peExamRef.current);
+    }
+  }, [pePhase]);
+
+  // Scroll to MDM section when key sections are first added
+  const liveMdmKeys = Object.keys(liveMdm).join(',');
+  useEffect(() => {
+    if (liveMdm.dataReviewed && !liveMdm.planImaging && !liveMdm.assessment && mdmSectionRef.current) {
+      scrollNoteToElement(mdmSectionRef.current);
+    } else if (liveMdm.planImaging && mdmSectionRef.current) {
+      scrollNoteToElement(mdmSectionRef.current);
+    } else if (liveMdm.assessment && mdmSectionRef.current) {
+      scrollNoteToElement(mdmSectionRef.current);
+    } else if (liveMdm.planReferral && mdmColonoscopyRef.current) {
+      scrollNoteToElement(mdmColonoscopyRef.current);
+    } else if (liveMdm.planColonoscopy && mdmColonoscopyRef.current) {
+      scrollNoteToElement(mdmColonoscopyRef.current);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveMdmKeys]);
+
   // Function to update scribe content
   const updateScribeContent = (section: 'hpi' | 'ros' | 'pe' | 'mdm', content: string) => {
     const updatedScribesByDate = scribesByDate.map(dateGroup => ({
@@ -1239,10 +1468,84 @@ export default function Scribes({
   }
 
   const currentScribeRaw = allScribes[selectedScribeIndex];
-  // When demoEmptyNote is true, blank out all note content for the "recording starts" demo state
-  const currentScribe = demoEmptyNote
+
+  // MDM content fragments — revealed progressively across steps 3 and 4
+  const MDM_ASSESSMENT  = "Assessment: Coarctation of the aorta (congenital aortic narrowing) in a 45-year-old male presenting with persistent hypertension, pulsatile headaches, and exertional leg fatigue. Diagnosis confirmed by a 40 mmHg arm-leg blood pressure gradient and diminished femoral pulses on exam. History of elevated BP since adolescence without traditional cardiovascular risk factors further supports a congenital etiology. Pre-visit workup had already excluded renal and endocrine secondary causes.";
+  const MDM_COMPLEXITY   = "Complexity: High. Rare congenital cardiovascular diagnosis in an adult requiring urgent advanced imaging and specialty referral. Carries significant morbidity if untreated, including risk of heart failure, aortic dissection, and stroke. Expedited cardiology evaluation and surgical planning required.";
+  const MDM_DATA_BASE    = "Data Reviewed: BP trend from previsit summary and urgent care records, intake form.";
+  const MDM_DATA_FULL    = "Data Reviewed: BP trend from previsit summary and urgent care records, intake form, upper and lower extremity BP measurements, physical exam including femoral pulse assessment.";
+  const MDM_PLAN_IMAGING = "Management Plan:\n• Imaging (stat): Echocardiogram to assess cardiac function and aortic valve; CT angiography chest to define anatomic location and severity of narrowing";
+  const MDM_PLAN_REFERRAL    = "• Specialty referral: Cardiology (expedited) to discuss surgical vs. catheter-based intervention options";
+  const MDM_PLAN_COLONOSCOPY = "• Preventive care: Colonoscopy screening indicated (age 45, no prior screening on record) — GI referral placed";
+
+  // Pre-charting content for step 1: note auto-populated from previsit data only; side panel empty
+  const preChartNote = (demoStep === 1 && !demoEmptyNote && currentScribeRaw.name === 'John Smith')
+    ? {
+        ...currentScribeRaw,
+        chiefComplaint: 'Follow-up: Elevated BP',
+        hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches 2–3 times per week for approximately 6 months, pulsatile in quality, and occasional dizziness. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago, pharmacy screenings 148/88 and 155/90 mmHg, today's check-in 150/92 mmHg. History of elevated BP noted once as a teenager, never formally investigated. No traditional cardiovascular risk factors: BMI 25.5, no diabetes, no family history of early hypertension. No current medications.",
+        ros: '',
+        pe: "Vitals (check-in): BP 150/92 mmHg (right arm, seated), HR 76 bpm, RR 14, Temp 98.6°F, SpO2 98% RA, Weight 178 lbs, Height 5′10″, BMI 25.5.",
+        mdm: '',
+        citations: [],
+        nudges: [],
+        diagnosisAndCodes: null,
+        postVisitWorkflows: [],
+      }
+    : null;
+
+  // Step 2: partial note — HPI finalised from step 1, ROS + PE without advanced exam findings
+  const step2Note = (demoStep === 2 && currentScribeRaw.name === 'John Smith')
+    ? {
+        ...currentScribeRaw,
+        chiefComplaint: 'Follow-up: Elevated BP',
+        hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches most mornings, pulsatile in quality, 2–3 times per week, lasting several hours. Also reports leg fatigue with exertion — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago, pharmacy screenings 148/88 and 155/90 mmHg, today's check-in 150/92 mmHg. History of elevated BP noted once as a teenager, never formally investigated. No traditional cardiovascular risk factors: BMI 25.5, no diabetes, no family history of early hypertension. No current medications.",
+        ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain.\nConstitutional: Denies fever, weight loss, or night sweats.\nRespiratory: No shortness of breath at rest.",
+        pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F.\nHEENT: Normocephalic; no bruits over carotids.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated.\nLungs: Clear to auscultation bilaterally.",
+        mdm: '',
+        citations: [],
+        nudges: [],
+        diagnosisAndCodes: null,
+        postVisitWorkflows: [],
+      }
+    : null;
+
+  // Step 3: end-of-step-2 state — full HPI/ROS, PE with all exam findings, no MDM yet
+  const step3Note = (demoStep === 3 && currentScribeRaw.name === 'John Smith')
+    ? {
+        ...currentScribeRaw,
+        chiefComplaint: 'Follow-up: Elevated BP',
+        hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches most mornings, pulsatile in quality, 2–3 times per week, lasting several hours. Also reports leg fatigue with exertion — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago, pharmacy screenings 148/88 and 155/90 mmHg, today's check-in 150/92 mmHg. History of elevated BP noted once as a teenager, never formally investigated. No traditional cardiovascular risk factors: BMI 25.5, no diabetes, no family history of early hypertension. No current medications.",
+        ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain.\nConstitutional: Denies fever, weight loss, or night sweats.\nRespiratory: No shortness of breath at rest.",
+        pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F.\nHEENT: Normocephalic; no bruits over carotids.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated.\nLungs: Clear to auscultation bilaterally.\n\nAdditional Blood Pressure Examination (Performed During Visit):\nUpper extremity BP: 150/90 mmHg\nLower extremity BP: 110/70 mmHg\nSignificant arm-leg blood pressure gradient detected (40 mmHg systolic difference)\nExtremities: Femoral pulses slightly diminished bilaterally.",
+        mdm: '',
+        citations: [],
+        nudges: [],
+        diagnosisAndCodes: null,
+        postVisitWorkflows: [],
+      }
+    : null;
+
+  // Step 4: same note content as step 3 (MDM builds live via liveMdmSections)
+  const step4Note = (demoStep === 4 && currentScribeRaw.name === 'John Smith')
+    ? {
+        ...currentScribeRaw,
+        chiefComplaint: 'Follow-up: Elevated BP',
+        hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches most mornings, pulsatile in quality, 2–3 times per week, lasting several hours. Also reports leg fatigue with exertion — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago, pharmacy screenings 148/88 and 155/90 mmHg, today's check-in 150/92 mmHg. History of elevated BP noted once as a teenager, never formally investigated. No traditional cardiovascular risk factors: BMI 25.5, no diabetes, no family history of early hypertension. No current medications.",
+        ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain.\nConstitutional: Denies fever, weight loss, or night sweats.\nRespiratory: No shortness of breath at rest.",
+        pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F.\nHEENT: Normocephalic; no bruits over carotids.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated.\nLungs: Clear to auscultation bilaterally.\n\nAdditional Blood Pressure Examination (Performed During Visit):\nUpper extremity BP: 150/90 mmHg\nLower extremity BP: 110/70 mmHg\nSignificant arm-leg blood pressure gradient detected (40 mmHg systolic difference)\nExtremities: Femoral pulses slightly diminished bilaterally.",
+        mdm: '',
+        citations: [],
+        nudges: [],
+        diagnosisAndCodes: null,
+        postVisitWorkflows: [],
+      }
+    : null;
+
+  // When demoEmptyNote is true (step 2) — use step2Note instead of blanking; step 1 uses preChartNote
+  const currentScribe = (demoEmptyNote && demoStep !== 2)
     ? { ...currentScribeRaw, hpi: '', ros: '', pe: '', mdm: '', chiefComplaint: 'Recording in progress…', nudges: [], diagnosisAndCodes: null, postVisitWorkflows: [] }
-    : currentScribeRaw;
+    : (step4Note ?? step3Note ?? step2Note ?? preChartNote ?? currentScribeRaw);
 
   // Helper to check if text should be highlighted for nudges
   const getHighlightMapping = () => {
@@ -1360,7 +1663,7 @@ export default function Scribes({
     }
     
     const shouldShowCitations = selectedView === 'citation' || selectedView === 'default';
-    const shouldShowAbnormals = selectedView === 'highlights' || selectedView === 'default';
+    const shouldShowAbnormals = (selectedView === 'highlights' || selectedView === 'default') && !(demoStep >= 1 && demoStep <= 4);
     const shouldShowNudgeHighlights = selectedView === 'default' || selectedView === 'highlights';
     const textWithoutCitations = shouldShowCitations ? displayText : displayText.replace(/\{\{(\d+)\}\}/g, '');
     
@@ -2583,6 +2886,11 @@ export default function Scribes({
       
       {/* Main Content Area */}
       <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-[1_0_0] flex-col gap-[4px] h-full items-center min-h-px min-w-px pb-[8px] pr-[8px] pt-[4px] relative">
+        {/* Full-screen flash overlay for step 5 transition */}
+        {flashScreen && (
+          <div className="absolute inset-0 z-50 pointer-events-none"
+            style={{ background: 'white', animation: 'screen-flash 0.7s ease-out forwards' }} />
+        )}
         <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-h-px min-w-px relative w-full">
           {/* Header - on surface-1 background */}
           <div className="content-stretch flex items-center h-[48px] px-[16px] relative shrink-0 w-full">
@@ -2631,7 +2939,7 @@ export default function Scribes({
             </div>
             
             {/* Main Content */}
-            <div data-demo-id="note-content" className={`content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1 ${activeTab === 'previsit' ? '' : 'p-[12px]'}`}>
+            <div ref={noteScrollRef} data-demo-id="note-content" className={`content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1 ${activeTab === 'previsit' ? '' : 'p-[12px]'}`}>
             {activeTab === 'previsit' ? (
               /* Previsit Content - Updated Structure */
               (() => {
@@ -2840,7 +3148,34 @@ export default function Scribes({
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {renderTextWithCitations(currentScribe.hpi, 'hpi')}
+                      {demoStep === 1 ? (
+                        <>
+                          {'45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH, largely excluding renal and endocrine secondary causes. '}
+                          {/* Pounding headaches animated sentence */}
+                          <span style={{ color: hpiPhase === 'fading' ? '#9ca3af' : '#111827', transition: 'color 400ms ease' }}>
+                            {'Patient reports '}
+                            <mark style={{ background: hpiPhase !== 'prechart' ? '#fef3c7' : 'transparent', borderRadius: '2px', padding: '0 2px', transition: 'background 300ms ease' }}>
+                              {'pounding headaches'}
+                            </mark>
+                            {hpiPhase === 'updated'
+                              ? ' most mornings, pulsatile in quality, 2–3 times per week, lasting several hours.'
+                              : ' 2–3 times per week for approximately 6 months, pulsatile in quality, and occasional dizziness.'}
+                          </span>
+                          {/* Leg exertion animated sentence */}
+                          {legPhase !== 'hidden' && (
+                            <span style={{ color: legPhase === 'fading' ? '#9ca3af' : '#111827', transition: 'color 400ms ease' }}>
+                              {' Also reports '}
+                              <mark style={{ background: legPhase !== 'hidden' ? '#fef3c7' : 'transparent', borderRadius: '2px', padding: '0 2px', transition: 'background 300ms ease' }}>
+                                {'leg fatigue with exertion'}
+                              </mark>
+                              {legPhase === 'updated'
+                                ? ' — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness.'
+                                : '.'}
+                            </span>
+                          )}
+                          {' BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago, pharmacy screenings 148/88 and 155/90 mmHg, today\'s check-in 150/92 mmHg. History of elevated BP noted once as a teenager, never formally investigated. No traditional cardiovascular risk factors: BMI 25.5, no diabetes, no family history of early hypertension. No current medications.'}
+                        </>
+                      ) : renderTextWithCitations(currentScribe.hpi, 'hpi')}
                     </p>
                   </div>
                 </div>
@@ -2848,7 +3183,7 @@ export default function Scribes({
             </div>
             
             {/* ROS Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/ros">
+            <div ref={rosSectionRef} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/ros">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -2926,7 +3261,8 @@ export default function Scribes({
                   }}
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
-                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
+                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap"
+                      style={{ color: rosPePhase === 'fading' ? '#9ca3af' : '#111827', transition: 'color 600ms ease' }}>
                       {renderTextWithCitations(currentScribe.ros, 'ros')}
                     </p>
                   </div>
@@ -2935,7 +3271,7 @@ export default function Scribes({
             </div>
             
             {/* PE Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/pe">
+            <div ref={peSectionRef} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/pe">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -3013,8 +3349,25 @@ export default function Scribes({
                   }}
                 >
                   <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
-                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
+                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap"
+                      style={{ color: rosPePhase === 'fading' ? '#9ca3af' : '#111827', transition: 'color 600ms ease' }}>
                       {renderTextWithCitations(currentScribe.pe, 'pe')}
+                      {/* Additional BP exam — appears at 8s in step 2 */}
+                      {demoStep === 2 && pePhase !== 'base' && (
+                        <span ref={peExamRef} style={{ color: pePhase === 'exam-in' ? '#9ca3af' : '#111827', transition: 'color 600ms ease' }}>
+                          {'\n\n'}
+                          <mark style={{ background: '#fef3c7', borderRadius: '2px', padding: '0 2px' }}>Additional Blood Pressure Examination</mark>
+                          {' (Performed During Visit):\nUpper extremity BP: 150/90 mmHg\nLower extremity BP: 110/70 mmHg\nSignificant arm-leg blood pressure gradient detected (40 mmHg systolic difference)'}
+                        </span>
+                      )}
+                      {/* Femoral pulse — appears 3s after exam content */}
+                      {demoStep === 2 && (pePhase === 'femoral-in' || pePhase === 'femoral') && (
+                        <span style={{ color: pePhase === 'femoral-in' ? '#9ca3af' : '#111827', transition: 'color 600ms ease' }}>
+                          {'\nExtremities: '}
+                          <mark style={{ background: '#fef3c7', borderRadius: '2px', padding: '0 2px' }}>Femoral pulses</mark>
+                          {' slightly diminished bilaterally.'}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -3099,10 +3452,44 @@ export default function Scribes({
                     setEditingSection('mdm');
                   }}
                 >
-                  <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full">
-                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
-                      {currentScribe.mdm ? renderTextWithCitations(currentScribe.mdm, 'mdm') : 'No MDM content'}
-                    </p>
+                  <div className="content-stretch flex flex-col items-start p-[8px] relative rounded-[6px] shrink-0 w-full" ref={mdmSectionRef}>
+                    {Object.keys(liveMdm).length > 0 && !currentScribe.mdm ? (() => {
+                      const c = (s: { text: string; settled: boolean } | undefined) =>
+                        s ? (s.settled ? '#111827' : '#9ca3af') : undefined;
+                      const tr = { transition: 'color 600ms ease' };
+                      const sep = '\n\n';
+                      const hasPlan = liveMdm.planImaging || liveMdm.planReferral || liveMdm.planColonoscopy;
+                      const prevSections = liveMdm.assessment || liveMdm.complexity || liveMdm.dataReviewed;
+                      return (
+                        <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
+                          {/* Assessment — with highlight on "Coarctation of the aorta" */}
+                          {liveMdm.assessment && (
+                            <span style={{ color: c(liveMdm.assessment), ...tr }}>
+                              {'Assessment: '}
+                              <mark style={{ background: '#fef3c7', borderRadius: '2px', padding: '0 2px' }}>{'Coarctation of the aorta'}</mark>
+                              {' (congenital aortic narrowing) in a 45-year-old male presenting with persistent hypertension, pulsatile headaches, and exertional leg fatigue. Diagnosis confirmed by a 40 mmHg arm-leg blood pressure gradient and diminished femoral pulses on exam. History of elevated BP since adolescence without traditional cardiovascular risk factors further supports a congenital etiology. Pre-visit workup had already excluded renal and endocrine secondary causes.'}
+                            </span>
+                          )}
+                          {/* Complexity — with highlight on "Rare congenital cardiovascular diagnosis" */}
+                          {liveMdm.complexity && <>{liveMdm.assessment ? sep : ''}<span ref={mdmReferralRef} style={{ color: c(liveMdm.complexity), ...tr }}>
+                            {'Complexity: High. '}
+                            <mark style={{ background: '#fef3c7', borderRadius: '2px', padding: '0 2px' }}>{'Rare congenital cardiovascular diagnosis'}</mark>
+                            {' in an adult requiring urgent advanced imaging and specialty referral. Carries significant morbidity if untreated, including risk of heart failure, aortic dissection, and stroke. Expedited cardiology evaluation and surgical planning required.'}
+                          </span></>}
+                          {/* Data Reviewed */}
+                          {liveMdm.dataReviewed && <>{(liveMdm.assessment || liveMdm.complexity) ? sep : ''}<span style={{ color: c(liveMdm.dataReviewed), ...tr }}>{liveMdm.dataReviewed.text}</span></>}
+                          {/* Management Plan */}
+                          {hasPlan && <>{prevSections ? sep : ''}</>}
+                          {liveMdm.planImaging && <span style={{ color: c(liveMdm.planImaging), ...tr }}>{liveMdm.planImaging.text}</span>}
+                          {liveMdm.planReferral && <span ref={mdmColonoscopyRef} style={{ color: c(liveMdm.planReferral), ...tr }}>{'\n' + liveMdm.planReferral.text}</span>}
+                          {liveMdm.planColonoscopy && <span style={{ color: c(liveMdm.planColonoscopy), ...tr }}>{'\n' + liveMdm.planColonoscopy.text}</span>}
+                        </p>
+                      );
+                    })() : (
+                      <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#111827] text-[15px] tracking-[0.15px] w-full whitespace-pre-wrap">
+                        {currentScribe.mdm ? renderTextWithCitations(currentScribe.mdm, 'mdm') : 'No MDM content'}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -3597,6 +3984,11 @@ export default function Scribes({
             
             {isImproveScribeExpanded && (
               <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                {(demoStep === 1 || demoStep === 2 || demoStep === 3) && (!currentScribe.nudges || currentScribe.nudges.length === 0) && (
+                  <p className="font-['Lato',sans-serif] italic leading-[1.4] text-[13px] text-[color:var(--text-placeholder,#808080)]">
+                    Pending information
+                  </p>
+                )}
                 {(currentScribe.nudges || []).map((nudge, idx) => {
                   if (dismissedNudges[selectedScribeIndex]?.has(idx) || appliedNudges[selectedScribeIndex]?.[idx]) {
                     return null;
@@ -4000,7 +4392,7 @@ export default function Scribes({
           </div>
 
           {/* Diagnosis and Codes */}
-          {currentScribe.diagnosisAndCodes && (
+          {(currentScribe.diagnosisAndCodes || liveDiagnoses.length > 0 || demoStep === 1 || demoStep === 2) && (
             <div data-demo-id="billing" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
               <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                 <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
@@ -4017,7 +4409,43 @@ export default function Scribes({
 
               {isDiagnosisExpanded && (
                 <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
-                  {currentScribe.diagnosisAndCodes.diagnoses && currentScribe.diagnosisAndCodes.diagnoses.length > 0 && (
+                  {!currentScribe.diagnosisAndCodes && liveDiagnoses.length > 0 && (
+                    <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
+                        ICD-10 Diagnoses
+                      </p>
+                      <div className="content-stretch flex flex-col gap-[2px] relative shrink-0 w-full">
+                        {liveDiagnoses.map((d, idx) => (
+                          <div key={idx} className="grid w-full rounded-[6px] px-[6px] py-[3px]" style={{ gridTemplateColumns: '48px 1fr' }}>
+                            <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]">{d.code}</span>
+                            <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px]">{d.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!currentScribe.diagnosisAndCodes && liveCptCodes.length > 0 && (
+                    <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
+                        CPT Codes
+                      </p>
+                      <div className="content-stretch flex flex-col gap-[2px] relative shrink-0 w-full">
+                        {liveCptCodes.map((c, idx) => (
+                          <div key={c.code} className="grid w-full rounded-[6px] px-[6px] py-[3px]"
+                            style={{ gridTemplateColumns: '48px 1fr', animation: 'workflow-pop-in 0.25s ease-out forwards', animationDelay: `${idx * 60}ms`, opacity: 0 }}>
+                            <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]">{c.code}</span>
+                            <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px]">{c.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!currentScribe.diagnosisAndCodes && liveDiagnoses.length === 0 && (demoStep === 1) && (
+                    <p className="font-['Lato',sans-serif] italic leading-[1.4] text-[13px] text-[color:var(--text-placeholder,#808080)]">
+                      Pending information
+                    </p>
+                  )}
+                  {currentScribe.diagnosisAndCodes?.diagnoses && currentScribe.diagnosisAndCodes.diagnoses.length > 0 && (
                     <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
                       <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
                         ICD-10 Diagnoses
@@ -4070,7 +4498,7 @@ export default function Scribes({
                       </div>
                     </div>
                   )}
-                  {currentScribe.diagnosisAndCodes.cptCodes && currentScribe.diagnosisAndCodes.cptCodes.length > 0 && (
+                  {currentScribe.diagnosisAndCodes?.cptCodes && currentScribe.diagnosisAndCodes.cptCodes.length > 0 && (
                     <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
                       <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
                         CPT Codes
@@ -4129,7 +4557,7 @@ export default function Scribes({
           )}
 
           {/* Post-Visit Workflows */}
-          {currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 && (
+          {(currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 || liveWorkflows.length > 0 || demoStep === 1 || demoStep === 2) && (
             <div data-demo-id="orders" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
               <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
                 <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
@@ -4146,22 +4574,55 @@ export default function Scribes({
 
               {isPostVisitExpanded && (
                 <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                  {currentScribe.postVisitWorkflows.map((workflow: any, idx: number) => (
-                    <div key={idx} className="border border-[var(--neutral-200,#ccc)] flex items-center gap-[8px] p-[12px] relative rounded-[6px] w-full">
-                      <input
-                        type="checkbox"
-                        className="shrink-0 w-[16px] h-[16px] cursor-pointer"
-                        checked={workflow.status === 'completed'}
-                        onChange={() => {}}
-                      />
-                      <div className="flex flex-col gap-[4px] items-start flex-1">
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          {workflow.type}
-                        </p>
+                  {(!currentScribe.postVisitWorkflows || currentScribe.postVisitWorkflows.length === 0) && liveWorkflows.length === 0 && (demoStep === 1) && (
+                    <p className="font-['Lato',sans-serif] italic leading-[1.4] text-[13px] text-[color:var(--text-placeholder,#808080)]">
+                      Pending information
+                    </p>
+                  )}
+                  {/* Live workflows during recording steps */}
+                  {liveWorkflows.length > 0 && (!currentScribe.postVisitWorkflows || currentScribe.postVisitWorkflows.length === 0) && liveWorkflows.map((workflow, idx) => {
+                    const isImaging = workflow.type === 'Imaging Order';
+                    // Imaging orders: static once ordersPlacedLocal; referrals: always pop-in when added
+                    const popIn = isImaging ? !ordersPlacedLocal : true;
+                    return (
+                      <div key={`live-${idx}`} className="border border-[var(--neutral-200,#ccc)] flex flex-col gap-[4px] items-start p-[12px] relative rounded-[6px] w-full"
+                        style={{ animation: popIn ? 'workflow-pop-in 0.25s ease-out forwards' : undefined, animationDelay: popIn ? `${idx * 80}ms` : undefined, opacity: popIn ? 0 : 1 }}>
+                        <div className="flex items-center justify-between w-full gap-[8px]">
+                          <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                            {workflow.type}
+                          </p>
+                          {isImaging && ordersPlacedLocal && (
+                            <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full text-[11px] font-bold tracking-[0.1px]"
+                              style={demoStep >= 3
+                                ? { background: '#f0f0f0', color: '#888888' }
+                                : { background: '#e6f4ea', color: '#1e7e34' }}>
+                              <span style={{ fontSize: 10 }}>✓</span> {demoStep >= 3 ? 'Completed' : 'Placed'}
+                            </span>
+                          )}
+                        </div>
                         <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
                           {workflow.description}
                         </p>
                       </div>
+                    );
+                  })}
+                  {/* Full workflows from completed note */}
+                  {(currentScribe.postVisitWorkflows || []).map((workflow: any, idx: number) => (
+                    <div key={idx} className="border border-[var(--neutral-200,#ccc)] flex flex-col gap-[4px] items-start p-[12px] relative rounded-[6px] w-full">
+                      <div className="flex items-center justify-between w-full gap-[8px]">
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          {workflow.type}
+                        </p>
+                        {workflow.type === 'Imaging Order' && workflow.status === 'completed' && (
+                          <span className="inline-flex items-center gap-[4px] px-[8px] py-[3px] rounded-full text-[11px] font-bold tracking-[0.1px]"
+                            style={{ background: '#f0f0f0', color: '#888888' }}>
+                            <span style={{ fontSize: 10 }}>✓</span> Completed
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                        {workflow.description}
+                      </p>
                     </div>
                   ))}
                 </div>

@@ -134,6 +134,7 @@ export default function App() {
   const [selectedPatientForScribe, setSelectedPatientForScribe] = useState<string | null>(null);
   const [isVisitSettingsExpanded, setIsVisitSettingsExpanded] = useState(true);
   const [isMobileRecording, setIsMobileRecording] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
   const [isCareNudgesExpanded, setIsCareNudgesExpanded] = useState(true);
   const [editingPrechartSection, setEditingPrechartSection] = useState<'subjective' | 'objective' | 'assessment' | 'plan' | null>(null);
   const [editedPrechartContent, setEditedPrechartContent] = useState<{subjective: string; objective: string; assessment: string; plan: string}>({
@@ -195,6 +196,7 @@ export default function App() {
         setSelectedPatientIndex(0);
         setDemoEmptyNote(emptyNote ?? false);
         setIsMobileRecording(!!isMobile);
+        setDemoStep(step);
       }
       // ── Post-visit (step 5) ──
       else {
@@ -212,6 +214,17 @@ export default function App() {
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, []);
+
+  // Demo step keyboard navigation (arrow keys, only active during recording)
+  useEffect(() => {
+    if (!isMobileRecording) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setDemoStep(s => Math.min(4, s + 1));
+      if (e.key === 'ArrowLeft')  setDemoStep(s => Math.max(1, s - 1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isMobileRecording]);
 
   // Handle responsive secondary nav collapse
   useEffect(() => {
@@ -2177,8 +2190,9 @@ export default function App() {
         patientGender={patients[selectedPatientIndex].gender}
         chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
         nudges={patients[selectedPatientIndex].careNudges || []}
+        demoStep={demoStep}
         onPause={() => setIsMobileRecording(false)}
-        onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); }}
+        onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); setDemoStep(1); }}
       />
     );
   }
@@ -2206,6 +2220,7 @@ export default function App() {
           logoTooltipPosition={logoTooltipPosition}
           setLogoTooltipPosition={setLogoTooltipPosition}
           demoEmptyNote={demoEmptyNote}
+          demoStep={demoStep}
         />
       </>
     );
@@ -2744,7 +2759,7 @@ export default function App() {
             <MobileTitleBar
               title={patients[selectedPatientIndex].name}
               onBack={() => console.log('Back')}
-              onPrimaryAction={() => setIsMobileRecording(true)}
+              onPrimaryAction={() => { setDemoStep(1); setIsMobileRecording(true); }}
               primaryActionLabel="Start Visit"
               primaryActionIcon={<InlineIcon name="mic" size={16} />}
             />
@@ -3325,7 +3340,7 @@ export default function App() {
                 size="medium"
                 icon={<InlineIcon name="mic" size={16} />}
                 showPrefix={true}
-                onClick={() => setIsMobileRecording(true)}
+                onClick={() => { setDemoStep(1); setIsMobileRecording(true); }}
               >
                 Start Visit
               </Button>
@@ -3466,8 +3481,9 @@ export default function App() {
           patientGender={patients[selectedPatientIndex].gender}
           chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
           nudges={patients[selectedPatientIndex].careNudges || []}
+          demoStep={demoStep}
           onPause={() => setIsMobileRecording(false)}
-          onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); }}
+          onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); setDemoStep(1); }}
         />
       )}
 

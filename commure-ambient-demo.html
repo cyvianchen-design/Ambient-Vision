@@ -21,12 +21,16 @@ body {
   color: #fff;
   transition: background 0.5s ease;
 }
+/* Pre/post visit: no context labels at top, so shrink top padding to gain vertical space */
+body:not(.stage-during) {
+  padding-top: 24px;
+}
 /* Day/night split — split offset computed dynamically by fitDevices() */
 body.stage-during {
   background: linear-gradient(
     to right,
-    #2a1400 0%,
-    #2a1400 calc(50% - var(--split-offset, 356px)),
+    #fffbf4 0%,
+    #fffbf4 calc(50% - var(--split-offset, 356px)),
     #04091a calc(50% - var(--split-offset, 356px)),
     #04091a 100%
   );
@@ -1001,9 +1005,9 @@ body.stage-during {
   border-radius: 4px;
   white-space: nowrap;
 }
-.stage-pre    { background: rgba(17,50,238,0.25);  color: #7b96ff; }
-.stage-during { background: rgba(187,20,17,0.25);  color: #ff8a87; }
-.stage-post   { background: rgba(71,158,76,0.25);  color: #7fd984; }
+.stage-label.stage-pre    { background: rgba(17,50,238,0.25);  color: #7b96ff; }
+.stage-label.stage-during { background: rgba(128,68,255,0.12);  color: #8044ff; }
+.stage-label.stage-post   { background: rgba(71,158,76,0.25);   color: #7fd984; }
 
 .demo-step-desc {
   font-size: 11px;
@@ -1027,7 +1031,7 @@ body.stage-during {
   font-weight: 700;
   white-space: nowrap;
 }
-.ctx-panel.ctx-mobile .ctx-label  { color: rgba(255, 160, 80, 0.9); }
+.ctx-panel.ctx-mobile .ctx-label  { color: rgba(120, 80, 20, 0.7); }
 .ctx-panel.ctx-desktop .ctx-label { color: rgba(100, 140, 255, 0.9); }
 
 /* ── Bottom-left: stepper dots + stage + desc ── */
@@ -1040,6 +1044,9 @@ body.stage-during {
   gap: 10px;
   z-index: 100;
 }
+/* During visit: stepper sits over the light cream side — flip to dark ink */
+body.stage-during .step-dot { background: rgba(0,0,0,0.15); }
+body.stage-during .demo-step-desc { color: rgba(0,0,0,0.4); }
 
 /* ── Bottom-right: nav + audio ── */
 .demo-controls {
@@ -1128,7 +1135,7 @@ body.stage-during {
       <iframe
         id="desktopFrame"
         src="http://localhost:3000"
-        style="width:1280px;height:760px;border:none;transform:scale(0.80);transform-origin:top left;display:block;"
+        style="width:1440px;height:760px;border:none;transform:scale(0.80);transform-origin:top left;display:block;"
         scrolling="no"
       ></iframe>
     </div>
@@ -1798,87 +1805,15 @@ function mobileNoteView(newNote=false) {
 // spotlight: data-demo-id target for zoom overlay in React app
 // emptyNote: render scribes with blank sections (during-visit only)
 const STATES = [
-  // ── PRE-VISIT ──────────────────────────────────────────────
-  {
-    stage: 'pre',
-    desc: 'At a glance',
-    scrollTo: 'at-a-glance',
-    spotlight: null,
-    emptyNote: false,
-  },
-  {
-    stage: 'pre',
-    desc: 'Differential reasoning',
-    scrollTo: 'reasoning',
-    spotlight: 'reasoning',
-    emptyNote: false,
-  },
-  {
-    stage: 'pre',
-    desc: 'Action items',
-    scrollTo: 'action-items',
-    spotlight: 'action-items',
-    emptyNote: false,
-  },
-  // ── DURING VISIT ──────────────────────────────────────────
-  // Clip 1: Symptoms — headaches, leg fatigue → Ambient drafts HPI, nudges femoral pulse check
-  {
-    stage: 'during',
-    desc: 'Symptoms captured',
-    scrollTo: null,
-    spotlight: 'nudge',
-    emptyNote: true,
-    audio: 'clip1-symptoms.mp3',
-  },
-  // Clip 2: BP exam → arm–leg gradient detected → diagnosis & codes auto-populated
-  {
-    stage: 'during',
-    desc: 'BP exam',
-    scrollTo: null,
-    spotlight: 'billing',
-    emptyNote: true,
-    audio: 'clip2-bp-exam.mp3',
-  },
-  // Clip 3: Results back → diagnosis confirmed, treatment plan, note fully generates
-  {
-    stage: 'during',
-    desc: 'Diagnosis confirmed',
-    scrollTo: null,
-    spotlight: null,
-    emptyNote: false,
-    audio: 'clip3-diagnosis.mp3',
-  },
-  // Clip 4: Colonoscopy — pre-flagged preventive care order fires
-  {
-    stage: 'during',
-    desc: 'Preventive care flagged',
-    scrollTo: null,
-    spotlight: 'orders',
-    emptyNote: false,
-    audio: 'clip4-colonoscopy.mp3',
-  },
-  // ── POST-VISIT ────────────────────────────────────────────
-  {
-    stage: 'post',
-    desc: 'Full note generated',
-    scrollTo: null,
-    spotlight: null,
-    emptyNote: false,
-  },
-  {
-    stage: 'post',
-    desc: 'Orders & referrals',
-    scrollTo: 'orders',
-    spotlight: 'orders',
-    emptyNote: false,
-  },
-  {
-    stage: 'post',
-    desc: 'Billing & coding',
-    scrollTo: 'billing',
-    spotlight: 'billing',
-    emptyNote: false,
-  },
+  // ── PRE-VISIT (step 0) ───────────────────────────────────
+  { stage: 'pre',    desc: 'Pre-visit summary',     scrollTo: 'at-a-glance',  spotlight: null, emptyNote: false },
+  // ── DURING VISIT (steps 1–4) ─────────────────────────────
+  { stage: 'during', desc: 'Symptoms captured',     scrollTo: null,           spotlight: null, emptyNote: false, audio: 'clip1-symptoms.mp3'    },
+  { stage: 'during', desc: 'BP exam',               scrollTo: null,           spotlight: null, emptyNote: true,  audio: 'clip2-bp-exam.mp3'     },
+  { stage: 'during', desc: 'Diagnosis confirmed',   scrollTo: null,           spotlight: null, emptyNote: false, audio: 'clip3-diagnosis.mp3'   },
+  { stage: 'during', desc: 'Preventive care',       scrollTo: null,           spotlight: null, emptyNote: false, audio: 'clip4-colonoscopy.mp3' },
+  // ── POST-VISIT (step 5) ───────────────────────────────────
+  { stage: 'post',   desc: 'Post-visit summary',    scrollTo: null,           spotlight: null, emptyNote: false },
 ];
 
 let currentStep = 0;
@@ -1929,8 +1864,7 @@ function goToState(step) {
   if (state.audio) {
     audioEl.src = state.audio;
     audioEl.load();
-    // First during-visit clip: give the UI a moment to settle before playing
-    const delay = (step === 3) ? 1000 : 0;
+    const delay = (step === 1) ? 2000 : 0;
     setTimeout(() => {
       audioEl.play().then(() => {
         audioBtn.textContent = '⏸';
@@ -2038,22 +1972,26 @@ function toggleAudio() {
 
 // ── Fit devices to fill available screen space ──────────────────
 function fitDevices() {
-  const topPad = 68, botPad = 60, sidePad = 48, gap = 36, wrapPad = 40;
+  const mobileVisible = !document.getElementById('mobileWrap').classList.contains('hidden');
+  const topPad  = mobileVisible ? 68 : 24;
+  const botPad  = 60, sidePad = mobileVisible ? 48 : 24, gap = 36, wrapPad = mobileVisible ? 40 : 20;
   const availH = window.innerHeight - topPad - botPad;
   const availW = window.innerWidth - sidePad;
-  const mobileVisible = !document.getElementById('mobileWrap').classList.contains('hidden');
+
+  // During recording: taller (860px). Pre/post visit: wider (1440px), original height (760px).
+  const iframeW = mobileVisible ? 1280 : 1440;
+  const iframeH = mobileVisible ? 860  : 760;
 
   let s, sd, mW, mH, dW, dH;
 
   if (mobileVisible) {
-    // Desktop scaled to match mobile height. ratio = 844/760
-    const ratio = 844 / 760;
+    const ratio = 844 / iframeH;
     const sH = availH / 844;
-    const sW = (availW - gap - wrapPad * 2) / (390 + 1280 * ratio);
+    const sW = (availW - gap - wrapPad * 2) / (390 + iframeW * ratio);
     s  = Math.min(sH, sW, 1.0);
     sd = s * ratio;
     mW = Math.round(390 * s);  mH = Math.round(844 * s);
-    dW = Math.round(1280 * sd); dH = Math.round(760 * sd);
+    dW = Math.round(iframeW * sd); dH = Math.round(iframeH * sd);
 
     const mShell = document.querySelector('.mobile-shell');
     mShell.style.width  = mW + 'px';
@@ -2067,16 +2005,21 @@ function fitDevices() {
     document.documentElement.style.setProperty('--split-offset', splitFromCenter + 'px');
   } else {
     // Desktop only — fill full available space
-    const sH = availH / 760;
-    const sW = (availW - wrapPad) / 1280;
+    const sH = availH / iframeH;
+    const sW = (availW - wrapPad) / iframeW;
     sd = Math.min(sH, sW, 1.0);
-    dW = Math.round(1280 * sd); dH = Math.round(760 * sd);
+    dW = Math.round(iframeW * sd); dH = Math.round(iframeH * sd);
   }
+
+  // Sync iframe native resolution to match current mode
+  const df = document.getElementById('desktopFrame');
+  df.style.width  = iframeW + 'px';
+  df.style.height = iframeH + 'px';
 
   const dShell = document.querySelector('.desktop-shell');
   dShell.style.width  = dW + 'px';
   dShell.style.height = dH + 'px';
-  document.getElementById('desktopFrame').style.transform = `scale(${sd})`;
+  df.style.transform = `scale(${sd})`;
 }
 
 fitDevices();
@@ -2089,6 +2032,7 @@ window.addEventListener('load', () => {
   fitDevices();
   setTimeout(() => goToState(0), 500);
 });
+
 </script>
 </body>
 </html>

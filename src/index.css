@@ -124,3 +124,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   0%, 100% { box-shadow: 0 0 0 3px rgba(17,50,238,0.25), 0 0 32px rgba(17,50,238,0.35); }
   50%       { box-shadow: 0 0 0 5px rgba(17,50,238,0.4),  0 0 48px rgba(17,50,238,0.5); }
 }
+
+@keyframes workflow-pop-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes screen-flash {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
