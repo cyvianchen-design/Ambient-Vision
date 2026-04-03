@@ -11,6 +11,7 @@
   --surface-2: #f2f2f2;
   --surface-3: #e6e6e6;
   --surface-semantic-info: #f1f3fe;
+  --surface-transparent-dark-1: rgba(0, 0, 0, 0.01);
   --surface-transparent-dark-3: rgba(0, 0, 0, 0.03);
   --surface-transparent-dark-5: rgba(0, 0, 0, 0.05);
   --surface-transparent-dark-10: rgba(0, 0, 0, 0.1);
@@ -117,4 +118,9 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   .content-stretch {
     align-content: stretch;
   }
+}
+
+@keyframes demo-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(17,50,238,0.25), 0 0 32px rgba(17,50,238,0.35); }
+  50%       { box-shadow: 0 0 0 5px rgba(17,50,238,0.4),  0 0 48px rgba(17,50,238,0.5); }
 }

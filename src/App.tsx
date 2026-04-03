@@ -8,6 +8,8 @@ import { ChatInput } from './components/Input';
 import { Link } from './components/Link';
 import { TextField } from './components/TextField';
 import { TrendChart } from './components/TrendChart';
+import { MobileTitleBar } from './components/MobileTitleBar';
+import { MobileRecordingScreen } from './components/MobileRecordingScreen';
 import Scribes from './Scribes';
 
 // Patient List Item Component
@@ -28,14 +30,14 @@ const PatientListItem = ({
   isSelected?: boolean;
   onClick?: () => void;
 }) => {
-  const buttonClass = isSelected 
-    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
-    : "hover:bg-[var(--surface-1,#f7f7f7)]";
-    
   return (
-    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+    <div className="content-stretch flex flex-col items-start px-[4px] relative shrink-0 w-[220px]">
       <button 
-        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        className={`content-stretch cursor-pointer flex flex-col gap-[6px] items-start p-[12px] relative rounded-[8px] shrink-0 w-full transition-colors ${
+          isSelected 
+            ? "bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid"
+            : "hover:bg-[var(--surface-transparent-dark-1,rgba(0,0,0,0.01))]"
+        }`}
         onClick={onClick}
       >
         <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
@@ -77,14 +79,14 @@ const ScribeListItem = ({
   isSelected?: boolean;
   onClick?: () => void;
 }) => {
-  const buttonClass = isSelected 
-    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
-    : "hover:bg-[var(--surface-1,#f7f7f7)]";
-    
   return (
-    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+    <div className="content-stretch flex flex-col items-start px-[4px] relative shrink-0 w-[220px]">
       <button 
-        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        className={`content-stretch cursor-pointer flex flex-col gap-[6px] items-start p-[12px] relative rounded-[8px] shrink-0 w-full transition-colors ${
+          isSelected 
+            ? "bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid"
+            : "hover:bg-[var(--surface-transparent-dark-1,rgba(0,0,0,0.01))]"
+        }`}
         onClick={onClick}
       >
         <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
@@ -126,11 +128,12 @@ type ChatMessage = {
 export default function App() {
   const [currentView, setCurrentView] = useState<'visits' | 'scribes'>('visits');
   const [chatInputValue, setChatInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'previsit' | 'note'>('previsit');
+  const [activeTab, setActiveTab] = useState<'previsit'>('previsit');
   const [rightTab, setRightTab] = useState<'actions' | 'assistant' | 'sources'>('actions');
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
   const [selectedPatientForScribe, setSelectedPatientForScribe] = useState<string | null>(null);
   const [isVisitSettingsExpanded, setIsVisitSettingsExpanded] = useState(true);
+  const [isMobileRecording, setIsMobileRecording] = useState(false);
   const [isCareNudgesExpanded, setIsCareNudgesExpanded] = useState(true);
   const [editingPrechartSection, setEditingPrechartSection] = useState<'subjective' | 'objective' | 'assessment' | 'plan' | null>(null);
   const [editedPrechartContent, setEditedPrechartContent] = useState<{subjective: string; objective: string; assessment: string; plan: string}>({
@@ -139,10 +142,9 @@ export default function App() {
     assessment: '',
     plan: ''
   });
-  const [showSmartEditTooltip, setShowSmartEditTooltip] = useState(false);
-  const [smartEditTooltipPosition, setSmartEditTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [dismissedNudges, setDismissedNudges] = useState<Record<number, Set<number>>>({});
   const [hoveredNudge, setHoveredNudge] = useState<{patientIndex: number, nudgeIndex: number} | null>(null);
+  const [hoveredDiagnosis, setHoveredDiagnosis] = useState<{patientIndex: number, diagnosisIndex: number} | null>(null);
   const [showDismissedCareNudges, setShowDismissedCareNudges] = useState(false);
   const [isSecondaryNavCollapsed, setIsSecondaryNavCollapsed] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -167,6 +169,49 @@ export default function App() {
     setViewingDataSource(null);
     setRightTab('actions');
   }, [selectedPatientForScribe]);
+
+  // Demo spotlight overlay state
+  const [demoSpotlight, setDemoSpotlight] = useState<string | null>(null);
+  const [demoEmptyNote, setDemoEmptyNote] = useState(false);
+
+  // Demo step control via postMessage from wrapper page
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type !== 'DEMO_STATE') return;
+      const { step, scrollTo, spotlight, emptyNote, isMobile } = e.data;
+
+      // ── Pre-visit (steps 0–2) ──
+      if (step <= 2) {
+        setCurrentView('visits');
+        setActiveTab('previsit');
+        setSelectedPatientIndex(0);
+        setRightTab('actions');
+        setDemoEmptyNote(false);
+        setIsMobileRecording(false);
+      }
+      // ── During visit (steps 3–6) ──
+      else if (step <= 6) {
+        setCurrentView('scribes');
+        setSelectedPatientIndex(0);
+        setDemoEmptyNote(emptyNote ?? (step <= 5));
+        setIsMobileRecording(!!isMobile);
+      }
+      // ── Post-visit (steps 7–9) ──
+      else {
+        setCurrentView('scribes');
+        setDemoEmptyNote(false);
+        setIsMobileRecording(false);
+        if (step === 8) setRightTab('actions');
+      }
+
+      // Spotlight overlay
+      setDemoSpotlight(spotlight || null);
+
+      // scrollTo is intentionally not used — manual scroll in iframe is preferred
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   // Handle responsive secondary nav collapse
   useEffect(() => {
@@ -338,21 +383,61 @@ export default function App() {
 
   // Data source content for each patient
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
-    "Cem": {
-      "Previsit summary, today": {
-        type: "Clinical Note",
-        date: "Today",
-        content: "**PREVISIT SUMMARY**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
-      },
+    "John Smith": {
       "Intake form, today": {
         type: "Form",
         date: "Today",
-        content: "**PATIENT INTAKE FORM**\n\nPatient Name: Cem\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+        content: "**PATIENT INTAKE FORM**\n\nPatient Name: John Smith\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head (pulsatile quality)\nSeverity: Moderate intensity\n\n**ASSOCIATED SYMPTOMS**\nOccasional dizziness (non-positional)\nNo vision changes\nNo syncope\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**EXERCISE TOLERANCE**\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape. No chest pain or shortness of breath with exertion.\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+      },
+      "Vitals at check-in, today": {
+        type: "Vital Signs",
+        date: "Today",
+        content: "**VITAL SIGNS - CHECK-IN**\n\nPatient: John Smith, 45M\nDate: Today\nTime: 9:00 AM\n\n**MEASUREMENTS**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F (oral)\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate within normal limits\nNo fever"
       },
       "Urgent care visit, 2 weeks ago": {
         type: "Clinical Note",
         date: "2 weeks ago",
-        content: "**URGENT CARE VISIT NOTE**\n\nPatient: Cem, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits.\n\n**EXAMINATION**\nGeneral: Well-appearing\nNeuro: Alert, oriented, no focal deficits\nCardiac: RRR\n\n**ASSESSMENT**\nDizziness, likely related to elevated blood pressure\nHypertension, uncontrolled\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nNo immediate intervention needed\nReturn precautions given"
+        content: "**URGENT CARE VISIT NOTE**\n\nPatient: John Smith, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits. Denies recent illness, medication changes, or trauma.\n\n**EXAMINATION**\nGeneral: Well-appearing, alert, no distress\nHEENT: PERRL, EOMI, no nystagmus\nNeuro: Alert, oriented x3, no focal deficits, normal gait\nCardiac: RRR, no murmurs appreciated\nLungs: Clear bilaterally\n\n**ASSESSMENT**\n1. Dizziness, likely related to elevated blood pressure\n2. Hypertension, uncontrolled (first documented elevated reading)\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nRecommended home BP monitoring\nNo immediate intervention needed\nReturn precautions given for severe headache, vision changes, chest pain, syncope"
+      },
+      "Pharmacy screening, 1 week ago": {
+        type: "Vital Signs",
+        date: "1 week ago",
+        content: "**PHARMACY BLOOD PRESSURE SCREENING**\n\nPatient: John Smith\nDate: 1 week ago\nLocation: CVS Pharmacy\n\n**MEASUREMENT**\nBlood Pressure: 148/88 mmHg\nHeart Rate: 74 bpm\n\n**METHOD**\nAutomated BP cuff, seated position\nLeft arm\n\n**PHARMACIST NOTES**\nBlood pressure elevated. Patient reports recent urgent care visit for high BP. Advised to follow up with physician. Patient states appointment scheduled."
+      },
+      "Pharmacy screening, 3 days ago": {
+        type: "Vital Signs",
+        date: "3 days ago",
+        content: "**PHARMACY BLOOD PRESSURE SCREENING**\n\nPatient: John Smith\nDate: 3 days ago\nLocation: Walgreens Pharmacy\n\n**MEASUREMENT**\nBlood Pressure: 155/90 mmHg\nHeart Rate: 72 bpm\n\n**METHOD**\nAutomated BP cuff, seated position\nRight arm\n\n**PHARMACIST NOTES**\nBlood pressure significantly elevated. Patient aware of elevated readings, has appointment with PCP this week. Advised to seek medical attention if experiencing severe headache, chest pain, shortness of breath, or vision changes."
+      },
+      "Lab results, 2 weeks ago": {
+        type: "Lab Results",
+        date: "2 weeks ago",
+        content: "**LABORATORY REPORT — BP WORKUP**\n\nPatient: John Smith, 45M\nOrdered by: Urgent Care Physician\nDate: 2 weeks ago\nIndication: New-onset hypertension, rule out secondary causes\n\n**BASIC METABOLIC PANEL**\nSodium: 139 mEq/L (Ref: 136–145) ✓\nPotassium: 4.1 mEq/L (Ref: 3.5–5.1) ✓\nCreatinine: 1.0 mg/dL (Ref: 0.7–1.2) ✓\neGFR: 88 mL/min/1.73m² (Ref: >60) ✓\nGlucose: 94 mg/dL (Ref: 70–100) ✓\n\n**ENDOCRINE PANEL**\nAldosterone: 9.2 ng/dL (Ref: 3–16 ng/dL) ✓\nPlasma Renin Activity: 1.8 ng/mL/hr (Ref: 0.6–4.3) ✓\nAldosterone:Renin Ratio: 5.1 (Ref: <30) — primary hyperaldosteronism unlikely ✓\nTSH: 2.1 mIU/L (Ref: 0.4–4.0) ✓\n\n**INTERPRETATION**\nRenal function normal — renovascular or parenchymal cause unlikely\nAldosterone:renin ratio normal — primary hyperaldosteronism excluded\nTSH normal — thyroid cause excluded\n\nSecondary causes of hypertension largely ruled out by this panel. BP elevation remains unexplained. Clinical follow-up recommended to evaluate for structural or essential causes."
+      },
+      "Last visit note, March 2025": {
+        type: "Clinical Note",
+        date: "March 2025",
+        content: "**ANNUAL WELLNESS VISIT**\n\nPatient: John Smith, 44M\nDate: March 2025 (12 months ago)\nVisit Type: Annual Physical Examination\n\n**VITAL SIGNS**\nBP: 138/86 mmHg (mildly elevated)\nHR: 72 bpm\nWeight: 175 lbs\nHeight: 5'10\"\nBMI: 25.1\nTemp: 98.4°F\n\n**CHIEF COMPLAINT**\nRoutine annual exam. Patient mentioned occasional headaches, attributed to work stress.\n\n**REVIEW OF SYSTEMS**\nGeneral: No weight changes, good energy\nCardiovascular: No chest pain, palpitations, or edema. Reports moderate exercise tolerance, generally feeling well.\nNeurologic: Occasional headaches (stress-related per patient)\nOther systems: Negative\n\n**PHYSICAL EXAMINATION**\nGeneral: Well-appearing, no distress\nCardiac: RRR, normal S1/S2, no murmurs\nLungs: Clear bilaterally\nAbdomen: Soft, non-tender\nExtremities: No edema, pulses intact\n\n**LABORATORY RESULTS**\n• Complete Blood Count (CBC): Within normal limits\n• Comprehensive Metabolic Panel (CMP): Within normal limits\n• Lipid Panel: Total cholesterol 185, LDL 110, HDL 52, Triglycerides 115 (all normal)\n• Hemoglobin A1C: 5.4% (normal)\n\n**ASSESSMENT**\n1. Health maintenance visit - overall good health\n2. Blood pressure mildly elevated (138/86) - borderline\n3. Stress-related headaches\n\n**PLAN**\n1. Blood pressure: Advised lifestyle modifications (diet, exercise, stress management). Recommended home BP monitoring. Follow-up in 6-12 months or sooner if BP remains elevated.\n2. Headaches: Stress management counseling provided. OTC analgesics as needed.\n3. Preventive care: All immunizations up to date. Counseled on colorectal cancer screening starting at age 45.\n4. Follow-up: Annual physical in 12 months, sooner if concerns arise."
+      },
+      "Lab results, March 2025": {
+        type: "Laboratory",
+        date: "March 2025",
+        content: "**LABORATORY REPORT**\n\nPatient: John Smith, 44M\nCollection Date: March 2025\nReport Date: March 2025\n\n**COMPREHENSIVE METABOLIC PANEL**\nGlucose: 92 mg/dL (Normal: 70-100)\nSodium: 140 mEq/L (Normal: 136-145)\nPotassium: 4.2 mEq/L (Normal: 3.5-5.1)\nChloride: 102 mEq/L (Normal: 98-107)\nCO2: 26 mEq/L (Normal: 22-30)\nBUN: 16 mg/dL (Normal: 7-20)\nCreatinine: 0.9 mg/dL (Normal: 0.7-1.3)\neGFR: >90 mL/min/1.73m² (Normal: >60) - **Normal renal function**\nCalcium: 9.6 mg/dL (Normal: 8.5-10.5)\nTotal Protein: 7.2 g/dL (Normal: 6.3-8.2)\nAlbumin: 4.5 g/dL (Normal: 3.5-5.5)\nAST: 24 U/L (Normal: 10-40)\nALT: 28 U/L (Normal: 10-40)\n\n**COMPLETE BLOOD COUNT**\nWBC: 7.2 K/uL (Normal: 4.5-11.0)\nRBC: 5.1 M/uL (Normal: 4.5-5.9)\nHemoglobin: 15.2 g/dL (Normal: 13.5-17.5)\nHematocrit: 45% (Normal: 39-49)\nPlatelet: 245 K/uL (Normal: 150-400)\n\n**LIPID PANEL**\nTotal Cholesterol: 185 mg/dL (Normal: <200)\nLDL: 110 mg/dL (Normal: <130)\nHDL: 52 mg/dL (Normal: >40)\nTriglycerides: 115 mg/dL (Normal: <150)\n\n**HEMOGLOBIN A1C**\n5.4% (Normal: <5.7%)\n\n**INTERPRETATION**\nAll values within normal limits. No abnormal findings requiring follow-up at this time."
+      },
+      "Past medical history, EHR": {
+        type: "EHR Record",
+        date: "Historical",
+        content: "**PAST MEDICAL HISTORY**\n\nPatient: John Smith, 45M\nMRN: JS-445891\n\n**CHRONIC CONDITIONS**\nNone documented\n\n**PAST MEDICAL ISSUES**\n• Elevated blood pressure noted during adolescence (age 16)\n  - Single reading: 142/88 mmHg at sports physical\n  - No follow-up documented\n  - No diagnosis established\n  - No treatment initiated\n• No other significant medical history\n\n**HOSPITALIZATIONS**\nNone\n\n**SURGERIES**\nNone\n\n**CHILDHOOD ILLNESSES**\nUnremarkable\n\n**ALLERGIES**\nNo known drug allergies (NKDA)\n\n**IMMUNIZATIONS**\nUp to date per CDC guidelines\n• Tdap (last: 2022)\n• Influenza (annual)\n• COVID-19 (completed series + booster)\n\n**PREVENTIVE SCREENING**\n• Last lipid panel: March 2025 (normal)\n• Last A1C: March 2025 (normal)\n• Colonoscopy: None on file (DUE - patient age 45)"
+      },
+      "Social history, EHR": {
+        type: "EHR Record",
+        date: "Current",
+        content: "**SOCIAL HISTORY**\n\nPatient: John Smith, 45M\n\n**TOBACCO USE**\nStatus: Non-smoker (never smoked)\nPack-years: 0\n\n**ALCOHOL USE**\nStatus: Social drinker\nFrequency: 1-2 drinks per week\nType: Primarily wine or beer\nNo history of alcohol abuse\n\n**SUBSTANCE USE**\nDenies illicit drug use\nNo prescription medication misuse\n\n**OCCUPATION**\nEmployment: Active, employed full-time\nOccupation: Office-based administrative role\nWork stress: Moderate\n\n**EXERCISE & PHYSICAL ACTIVITY**\nActivity level: Moderate\nFrequency: 2-3 times per week\nTypes: Walking, light cardio\nNo reported exercise limitations\n\n**DIET**\nDiet quality: Generally healthy\nNo specific dietary restrictions\nNo significant weight changes recently\n\n**LIVING SITUATION**\nMarital status: Married\nChildren: 2\nHome: Single-family house\n\n**FAMILY HISTORY**\nFather: Alive, age 70, healthy\nMother: Alive, age 68, osteoarthritis\nSiblings: 1 sister, healthy\n\n**CARDIOVASCULAR FAMILY HISTORY**\n• No family history of early hypertension (onset <40 years)\n• No family history of coronary artery disease\n• No family history of stroke\n• No diabetes in immediate family\n• No hereditary cardiac conditions"
+      },
+      "Procedure history, EHR": {
+        type: "EHR Record",
+        date: "Historical",
+        content: "**PROCEDURE HISTORY**\n\nPatient: John Smith, 45M\nMRN: JS-445891\n\n**SURGICAL PROCEDURES**\nNo surgical procedures on file\n\n**DIAGNOSTIC PROCEDURES**\nNo endoscopic, cardiac, or imaging procedures documented\n\n**COLONOSCOPY SCREENING**\nStatus: **NOT COMPLETED**\nAge: 45 years old\nRecommendation: Screening colonoscopy **NOW DUE**\nRationale: Average-risk patient, first screening recommended at age 45 per USPSTF guidelines\nNo prior colonoscopy on record\nNo family history of colorectal cancer\nNo GI symptoms requiring diagnostic workup\n\n**OTHER PREVENTIVE PROCEDURES**\nNone documented"
       }
     },
     "Sarah Johnson": {
@@ -502,53 +587,53 @@ export default function App() {
 
   const patients = [
     { 
-      name: "Cem", 
+      name: "John Smith", 
       age: 45, 
       gender: "M", 
       time: "9:00 am", 
       status: "In Queue", 
-      chiefComplaint: "Headaches / Elevated BP",
+      chiefComplaint: "Follow-up: Elevated BP",
       atAGlance: [
-        "45-year-old male with recurrent headaches and elevated BP (recent readings: 152/92, 148/88, 155/90).",
-        "Reports pulsatile headaches, occasional dizziness, and intermittent leg fatigue with exercise.",
-        "History of elevated BP as teenager (never followed up). Colonoscopy screening also due."
+        "45-year-old male with recurrent headaches{{5}} and elevated BP (recent readings: 152/92{{1}}, 148/88{{2}}, 155/90{{3}}).",
+        "Reports pulsatile headaches{{6}} and occasional dizziness{{7}}.",
+        "History of elevated BP as teenager{{9}} (never followed up). Colonoscopy screening{{13}} also due."
       ],
       sections: {
         "Last Visit (12 months ago)": [
           "Previous annual wellness visit - March 2025",
-          "Patient mentioned occasional headaches, attributed to stress at that time",
-          "Blood pressure mildly elevated: 138/86 mmHg - advised lifestyle modifications and follow-up",
+          "Patient mentioned occasional headaches{{11}}, attributed to stress at that time",
+          "Blood pressure mildly elevated: 138/86 mmHg{{10}} - advised lifestyle modifications and follow-up",
           "Patient reported moderate exercise tolerance, generally feeling well",
           "Routine labs normal (CBC, CMP, lipid panel) - all values within reference range",
           "Counseled on blood pressure monitoring and healthy lifestyle"
         ],
         "Vitals (Today, 9:00 am)": [
-          "**Recent elevated readings (past 2 weeks)**",
-          "Urgent Care visit (2 weeks ago): BP 152/92 mmHg",
-          "Pharmacy screening (1 week ago): BP 148/88 mmHg",
-          "Pharmacy screening (3 days ago): BP 155/90 mmHg",
           "**Vitals at check-in today**",
-          "BP 150/92 mmHg, HR 76 bpm, Temp 98.6°F"
+          "BP 150/92 mmHg{{4}}, HR 76 bpm, Temp 98.6°F",
+          "**Recent BP readings**",
+          "Urgent Care visit (2 weeks ago): BP 152/92 mmHg{{1}}",
+          "Pharmacy screening (1 week ago): BP 148/88 mmHg{{2}}",
+          "Pharmacy screening (3 days ago): BP 155/90 mmHg{{3}}"
         ],
         "Active Problems": [
-          "Elevated blood pressure (not yet diagnosed as hypertension - needs confirmation)",
-          "Recurrent headaches (under evaluation)"
+          "Hypertension — Stage 2, confirmed across multiple readings and settings",
+          "Recurrent headaches{{5}} (under evaluation)"
         ],
         "Lab Results": [
-          "**Recent Labs (since last visit)**",
-          "No recent labs on file.",
+          "**Recent Labs (ordered at urgent care, 2 weeks ago)**",
+          "BMP: Creatinine 0.9 mg/dL, eGFR >90 mL/min — renal function normal{{12}}",
+          "Aldosterone: 9.2 ng/dL — within normal range, primary hyperaldosteronism unlikely",
+          "TSH: 2.1 mIU/L — thyroid function normal",
           "",
           "**Historical trends and prior abnormals (18 months)**",
-          "Last labs: March 2025 annual wellness labs - all within normal limits",
-          "Creatinine 0.9 mg/dL, eGFR >90 mL/min (normal renal function)",
+          "March 2025 annual wellness labs — all within normal limits",
           "No prior abnormal values requiring monitoring"
         ],
         "Imaging & Diagnostics": [
           "No imaging on file."
         ],
         "Historical Procedures": [
-          "No procedures on file.",
-          "No prior colonoscopy (screening now due at age 45)"
+          "No prior colonoscopy{{13}} (screening now due at age 45)"
         ],
         "Active Meds": [
           "No active medication on file."
@@ -558,42 +643,89 @@ export default function App() {
         ],
         "Social History": [
           "Employment: Active, employed in office setting",
-          "Tobacco: Non-smoker (never smoked)",
+          "Tobacco: Non-smoker{{14}} (never smoked)",
           "Alcohol: Social drinker (1-2 drinks per week)",
-          "Exercise: Moderate activity, reports leg fatigue with exertion",
+          "Exercise: Moderate activity (walking, light cardio 2–3x/week)",
           "Diet: Generally healthy",
-          "Family History: No family history of early hypertension, no diabetes"
+          "Family History: No family history of early hypertension{{16}}, no diabetes"
         ]
       },
       citations: [
-        { number: 1, citedText: "elevated BP", quote: "Recent vitals: BP 152/92, 148/88, 155/90", source: "Previsit summary, today" },
-        { number: 2, citedText: "recurrent headaches", quote: "Chief complaint: Recurrent headaches, occasional dizziness", source: "Intake form, today" },
-        { number: 3, citedText: "elevated BP as teenager", quote: "Had high blood pressure noted once as a teenager (not fully worked up)", source: "Previsit summary, today" },
-        { number: 4, citedText: "leg fatigue", quote: "Reports intermittent exercise intolerance", source: "Previsit summary, today" }
+        { number: 1, citedText: "152/92", quote: "Urgent Care visit (2 weeks ago): BP 152/92 mmHg", source: "Urgent care visit, 2 weeks ago" },
+        { number: 2, citedText: "148/88", quote: "Pharmacy screening (1 week ago): BP 148/88 mmHg", source: "Pharmacy screening, 1 week ago" },
+        { number: 3, citedText: "155/90", quote: "Pharmacy screening (3 days ago): BP 155/90 mmHg", source: "Pharmacy screening, 3 days ago" },
+        { number: 4, citedText: "150/92", quote: "BP 150/92 mmHg, HR 76 bpm, Temp 98.6°F", source: "Vitals at check-in, today" },
+        { number: 5, citedText: "recurrent headaches", quote: "Chief complaint: Recurrent headaches, occasional dizziness, feels heartbeat in head", source: "Intake form, today" },
+        { number: 6, citedText: "pulsatile headaches", quote: "Patient reports pulsatile quality to headaches, feels heartbeat in head", source: "Intake form, today" },
+        { number: 7, citedText: "occasional dizziness", quote: "Occasional dizziness, non-positional", source: "Intake form, today" },
+        { number: 9, citedText: "elevated BP as teenager", quote: "Had high blood pressure noted once as a teenager (not fully worked up)", source: "Past medical history, EHR" },
+        { number: 10, citedText: "138/86 mmHg", quote: "Blood pressure mildly elevated: 138/86 mmHg - advised lifestyle modifications and follow-up", source: "Last visit note, March 2025" },
+        { number: 11, citedText: "occasional headaches", quote: "Patient mentioned occasional headaches, attributed to stress at that time", source: "Last visit note, March 2025" },
+        { number: 12, citedText: "Creatinine 0.9 mg/dL", quote: "BMP: Creatinine 0.9 mg/dL, eGFR >90 mL/min — renal function normal", source: "Lab results, 2 weeks ago" },
+        { number: 13, citedText: "No prior colonoscopy", quote: "No prior colonoscopy (screening now due at age 45)", source: "Procedure history, EHR" },
+        { number: 14, citedText: "Non-smoker", quote: "Tobacco: Non-smoker (never smoked)", source: "Social history, EHR" },
+        { number: 16, citedText: "No family history of early hypertension", quote: "Family History: No family history of early hypertension, no diabetes", source: "Social history, EHR" }
       ],
       dataSources: [
-        "Previsit summary, today",
         "Intake form, today",
-        "Urgent care visit, 2 weeks ago"
+        "Vitals at check-in, today",
+        "Urgent care visit, 2 weeks ago",
+        "Pharmacy screening, 1 week ago",
+        "Pharmacy screening, 3 days ago",
+        "Lab results, 2 weeks ago",
+        "Last visit note, March 2025",
+        "Lab results, March 2025",
+        "Past medical history, EHR",
+        "Social history, EHR",
+        "Procedure history, EHR"
       ],
+      clinicalReasoning: {
+        diagnoses: [
+          { diagnosis: "Essential hypertension", likelihood: "Most Likely", reason: "Renal and endocrine causes excluded by recent labs, but structural cause (coarctation) not yet ruled out.", highlightIds: ["john-vitals-today-9-00-am-1", "john-vitals-today-9-00-am-3", "john-vitals-today-9-00-am-4", "john-vitals-today-9-00-am-5", "john-lab-results-1", "john-lab-results-2", "john-lab-results-3"] },
+          { diagnosis: "Coarctation of the aorta", likelihood: "Rare", reason: "No arm-leg BP differential or cardiac imaging on file.", highlightIds: ["john-imaging-diagnostics-0"] },
+        ]
+      },
       careNudges: [
         {
-          type: "Diagnostic",
-          description: "Elevated BP without clear risk factors - confirm with repeat measurements and consider secondary causes.",
-          highlightId: "cem-bp-0"
+          type: "Follow up on elevated BP",
+          description: "Recent labs ruled out renal/endocrine causes. Structural cause still undetermined.",
+          highlightId: "john-vitals-today-9-00-am-0"
         },
         {
-          type: "Preventive Care",
-          description: "Colorectal cancer screening due - patient age 45, no prior screening on file.",
-          highlightId: "cem-screening-0"
+          type: "Check arm-leg BP differential",
+          description: "Coarctation not yet ruled out — no arm-leg BP or cardiac imaging on file.",
+          highlightId: "john-imaging-diagnostics-0"
         },
         {
-          type: "History Taking",
-          description: "Explore exercise intolerance and leg symptoms - may relate to cardiovascular findings.",
-          highlightId: "cem-exercise-0"
+          type: "Colonoscopy due",
+          description: "Age 45, no prior colonoscopy on file — colorectal screening now indicated.",
+          highlightId: "john-historical-procedures-0"
         }
       ],
-      trends: []
+      trends: [
+        {
+          section: "Vitals (Today, 9:00 am)",
+          title: "Systolic BP — Home Measurements",
+          unit: "mmHg",
+          color: "#e03535",
+          yAxisDomain: [110, 170],
+          referenceRange: { min: 90, max: 120, label: "Normal <120", color: "rgba(0,180,80,0.08)" },
+          xAxisTicks: ["6w ago", "4w ago", "2w ago", "1w ago", "3d ago", "Today"],
+          data: [
+            { date: "6w ago",  value: 134, label: "Home" },
+            { date: "5w ago",  value: 138, label: "Home" },
+            { date: "4w ago",  value: 136, label: "Home" },
+            { date: "3w ago",  value: 141, label: "Home" },
+            { date: "2w ago",  value: 152, label: "Urgent Care" },
+            { date: "10d ago", value: 147, label: "Home" },
+            { date: "1w ago",  value: 148, label: "Pharmacy" },
+            { date: "5d ago",  value: 151, label: "Home" },
+            { date: "3d ago",  value: 155, label: "Pharmacy" },
+            { date: "2d ago",  value: 149, label: "Home" },
+            { date: "Today",   value: 150, label: "Check-in" },
+          ]
+        }
+      ]
     },
     { 
       name: "Sarah Johnson", 
@@ -1243,7 +1375,7 @@ export default function App() {
     {
       date: "Thu, Dec 19 (Today)",
       scribes: [
-        { name: "Cem", age: 45, gender: "M", duration: "28m 45s" },
+        { name: "John Smith", age: 45, gender: "M", duration: "28m 45s" },
         { name: "Robert Chen", age: 58, gender: "M", duration: "22m 15s" },
         { name: "Lisa Anderson", age: 28, gender: "F", duration: "19m 30s" },
       ]
@@ -1968,34 +2100,123 @@ export default function App() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [activeCitation]);
 
-  // If scribes view is selected, render the Scribes component
+  // ── Demo spotlight overlay ───────────────────────────────────
+  const DemoSpotlightOverlay = () => {
+    const [rect, setRect] = React.useState<DOMRect | null>(null);
+    const [label, setLabel] = React.useState('');
+    useEffect(() => {
+      if (!demoSpotlight) { setRect(null); return; }
+      const labelMap: Record<string, string> = {
+        'reasoning':    'AI-ranked differential diagnoses',
+        'action-items': 'Care gaps & nudges surfaced automatically',
+        'mdm':          'Diagnosis & code — auto-generated',
+        'nudge':        'Location-aware clinical insight',
+        'orders':       'Orders & referral letters ready to sign',
+        'billing':      'Diagnosis & codes — auto-generated',
+      };
+      setLabel(labelMap[demoSpotlight] || '');
+      const tryFind = (attempts = 0) => {
+        const el = document.querySelector(`[data-demo-id="${demoSpotlight}"]`);
+        if (el) { setRect(el.getBoundingClientRect()); }
+        else if (attempts < 10) { setTimeout(() => tryFind(attempts + 1), 100); }
+      };
+      tryFind();
+    }, [demoSpotlight]);
+
+    if (!demoSpotlight || !rect) return null;
+    const pad = 8;
+    const el = document.querySelector(`[data-demo-id="${demoSpotlight}"]`) as HTMLElement | null;
+    // Read the element's actual border-radius so the ring is concentric
+    const elRadius = el ? parseFloat(getComputedStyle(el).borderRadius) || 6 : 6;
+    const ringRadius = elRadius + pad;
+    const t = Math.max(rect.top - pad, 0);
+    const l = Math.max(rect.left - pad, 0);
+    const w = rect.width + pad * 2;
+    const h = rect.height + pad * 2;
+    const overlay = 'rgba(0,0,0,0.55)';
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none' }}>
+        {/* Single ring — large box-shadow spread replaces 4-panel backdrop, no corner seams */}
+        <div style={{
+          position: 'absolute', top: t, left: l, width: w, height: h,
+          border: '2px solid #1132ee',
+          borderRadius: ringRadius,
+          boxShadow: '0 0 0 9999px rgba(0,0,0,0.55), 0 0 0 4px rgba(17,50,238,0.2), 0 0 28px rgba(17,50,238,0.4)',
+          animation: 'demo-pulse 2s ease-in-out infinite',
+        }} />
+        {/* Label callout */}
+        {label && (
+          <div style={{
+            position: 'absolute',
+            top: t + h + 10,
+            left: l,
+            background: '#1132ee',
+            color: 'white',
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: "'Lato', sans-serif",
+            padding: '6px 12px',
+            borderRadius: 6,
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(17,50,238,0.4)',
+          }}>
+            {label}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // If mobile recording screen is active, render it full-screen
+  if (isMobileRecording) {
+    return (
+      <MobileRecordingScreen
+        patientName={patients[selectedPatientIndex].name}
+        patientAge={patients[selectedPatientIndex].age}
+        patientGender={patients[selectedPatientIndex].gender}
+        chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
+        nudges={patients[selectedPatientIndex].careNudges || []}
+        onPause={() => setIsMobileRecording(false)}
+        onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); }}
+      />
+    );
+  }
+
+  // If scribes view is selected, render the Scribes component (with spotlight overlay)
   if (currentView === 'scribes') {
-    return <Scribes 
-      onNavigateToVisits={() => {
-        setCurrentView('visits');
-        setSelectedPatientForScribe(null);
-      }} 
-      chatMessages={chatMessages}
-      setChatMessages={setChatMessages}
-      rightTab={rightTab}
-      setRightTab={setRightTab}
-      patients={patients}
-      selectedPatientName={selectedPatientForScribe}
-      isSecondaryNavCollapsed={isSecondaryNavCollapsed}
-      setIsSecondaryNavCollapsed={setIsSecondaryNavCollapsed}
-      isLogoHovered={isLogoHovered}
-      setIsLogoHovered={setIsLogoHovered}
-      logoTooltipPosition={logoTooltipPosition}
-      setLogoTooltipPosition={setLogoTooltipPosition}
-    />;
+    return (
+      <>
+        <DemoSpotlightOverlay />
+        <Scribes
+          onNavigateToVisits={() => {
+            setCurrentView('visits');
+            setSelectedPatientForScribe(null);
+          }}
+          chatMessages={chatMessages}
+          setChatMessages={setChatMessages}
+          rightTab={rightTab}
+          setRightTab={setRightTab}
+          patients={patients}
+          selectedPatientName={selectedPatientForScribe}
+          isSecondaryNavCollapsed={isSecondaryNavCollapsed}
+          setIsSecondaryNavCollapsed={setIsSecondaryNavCollapsed}
+          isLogoHovered={isLogoHovered}
+          setIsLogoHovered={setIsLogoHovered}
+          logoTooltipPosition={logoTooltipPosition}
+          setLogoTooltipPosition={setLogoTooltipPosition}
+          demoEmptyNote={demoEmptyNote}
+        />
+      </>
+    );
   }
 
   return (
     <div className="bg-white content-stretch flex items-start relative w-full h-screen">
-      {/* Left Sidebar Navigation */}
-      <div className="content-stretch flex h-full isolate items-center relative shrink-0">
+      <DemoSpotlightOverlay />
+      {/* Left Sidebar Navigation - Hidden on mobile */}
+      <div className="hidden md:flex content-stretch h-full isolate items-center relative shrink-0">
         <div className="content-stretch flex h-full items-start justify-center relative shrink-0 w-[72px] z-[2]">
-          <div className="bg-[var(--surface-1,#f7f7f7)] border-[var(--shape-outline,rgba(0,0,0,0.1))] border-r border-solid content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
+          <div className="bg-[var(--surface-3,#e6e6e6)] content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
             {/* Logo */}
             <div className="content-stretch flex h-[48px] items-center justify-center px-[8px] relative shrink-0 w-full">
               <button 
@@ -2030,11 +2251,13 @@ export default function App() {
                   }
                 }}
               >
-                <InlineIcon name={isLogoHovered ? "side_navigation" : "hexagon"} size={isLogoHovered ? 20 : 24} />
+                {isLogoHovered ? (
+                  <InlineIcon name="side_navigation" size={20} />
+                ) : (
+                  <img src="/logo.svg" alt="Logo" width="32" height="32" />
+                )}
               </button>
             </div>
-            
-            <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
             
             {/* Nav Items */}
             <div 
@@ -2117,16 +2340,6 @@ export default function App() {
               </button>
             </div>
             
-            <div 
-              className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
-              onMouseEnter={() => {
-                if (isSecondaryNavCollapsed) {
-                  clearNavHoverDelay();
-                  setHoveredPrimaryNav('visits');
-                }
-              }}
-            />
-            
             {/* Footer */}
             <div 
               className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
@@ -2157,9 +2370,9 @@ export default function App() {
         
         {/* Patient List */}
         {!isSecondaryNavCollapsed && (
-        <div className="bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
+        <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
           {/* Date Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2235,7 +2448,7 @@ export default function App() {
           
           {/* New Instant Visit Button */}
           <div className="content-stretch flex flex-col items-start relative shrink-0">
-            <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
               <Button 
                 variant="secondary" 
                 size="large"
@@ -2254,7 +2467,7 @@ export default function App() {
       {/* Overlay Secondary Nav when collapsed */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('visits');
@@ -2262,7 +2475,7 @@ export default function App() {
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Date Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2344,7 +2557,7 @@ export default function App() {
           
           {/* New Instant Visit Button */}
           <div className="content-stretch flex flex-col items-start relative shrink-0">
-            <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
               <Button 
                 variant="secondary" 
                 size="large"
@@ -2362,7 +2575,7 @@ export default function App() {
       {/* Overlay Secondary Nav when collapsed - Scribes */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('scribes');
@@ -2370,7 +2583,7 @@ export default function App() {
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2450,7 +2663,7 @@ export default function App() {
       {/* Overlay Secondary Nav when collapsed - Customize */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('customize');
@@ -2458,7 +2671,7 @@ export default function App() {
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2475,7 +2688,7 @@ export default function App() {
       {/* Overlay Secondary Nav when collapsed - Assistant */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('assistant');
@@ -2483,7 +2696,7 @@ export default function App() {
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2500,7 +2713,7 @@ export default function App() {
       {/* Overlay Secondary Nav when collapsed - Admin */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('admin');
@@ -2508,7 +2721,7 @@ export default function App() {
           onMouseLeave={() => setHoveredPrimaryNav(null)}
         >
           {/* Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2523,173 +2736,192 @@ export default function App() {
       )}
       
       {/* Main Content Area */}
-      <div className="content-stretch flex flex-[1_0_0] flex-col h-full min-h-px min-w-px relative">
-        <div className="content-stretch flex flex-[1_0_0] flex-col min-h-px min-w-px relative w-full">
-          {/* Header */}
-          <div className="content-stretch flex flex-col gap-[6px] py-[8px] relative shrink-0 w-full">
-            <div className="content-stretch flex justify-center w-full">
-              <div className="content-stretch flex flex-col gap-[6px] max-w-[800px] relative w-full px-[20px]">
-                <div className="content-stretch flex gap-[24px] items-center relative shrink-0 w-full">
-                  <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[24px] text-[color:var(--text-default,black)]">
-                    {patients[selectedPatientIndex].name}
-                  </p>
-                </div>
-                
-                {/* Patient Info */}
-                <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap">
-                  <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{patients[selectedPatientIndex].chiefComplaint}</p></div>
-                  <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-                  <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].age}</p></div>
-                  <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-                  <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].gender}</p></div>
-                </div>
-                
-                {/* Tabs */}
-                <div className="w-full">
-                  <Tabs
-                    variant="primary"
-                    tabs={[
-                      { id: 'previsit', label: 'Previsit' },
-                      { id: 'note', label: 'Prechart' }
-                    ]}
-                    defaultTab={activeTab}
-                    onTabChange={(id) => setActiveTab(id as 'previsit' | 'note')}
-                    hideBorder={false}
-                  />
-                </div>
+      <div className="bg-white md:bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-[1_0_0] flex-col gap-[4px] h-full items-center min-h-px min-w-px pb-[33vh] md:pb-[8px] pr-0 md:pr-[8px] pt-0 md:pt-[4px] pl-0 md:pl-0 relative">
+        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-h-px min-w-px relative w-full">
+          {/* Mobile: Title Bar Component */}
+          <div className="md:hidden w-full">
+            <MobileTitleBar
+              title={patients[selectedPatientIndex].name}
+              onBack={() => console.log('Back')}
+              onPrimaryAction={() => setIsMobileRecording(true)}
+              primaryActionLabel="Start Visit"
+              primaryActionIcon={<InlineIcon name="mic" size={16} />}
+            />
+          </div>
+          
+          {/* Desktop: Header - on surface-1 background */}
+          <div className="hidden md:flex content-stretch items-center h-[48px] px-[16px] relative shrink-0 w-full">
+            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[24px] text-[color:var(--text-default,black)]">
+              {patients[selectedPatientIndex].name}
+            </p>
+            
+            {/* Patient Info - on same line */}
+            <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap ml-[16px]">
+              <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{patients[selectedPatientIndex].chiefComplaint}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].age}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].gender}</p></div>
+            </div>
+            
+            <div className="flex flex-[1_0_0]" />
+          </div>
+          
+          {/* Mobile: Visit Info Section */}
+          <div className="md:hidden content-stretch flex gap-[8px] items-center px-[20px] py-[2px] relative shrink-0 w-full">
+            {/* Visit Type Badge */}
+            <div className="bg-[var(--blue-25,#f1f7fd)] content-stretch flex gap-[4px] h-[28px] items-center px-[8px] relative rounded-[8px] shrink-0">
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[12px] text-[color:var(--blue-600,#1566b7)] tracking-[0.24px]">
+                Annual Visit
+              </p>
+            </div>
+            
+            {/* Patient Details */}
+            <div className="content-stretch flex flex-[1_0_0] font-['Lato',sans-serif] gap-[4px] items-center leading-[0] min-h-px min-w-px not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap">
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].age}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{patients[selectedPatientIndex].gender}</p></div>
+              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
+              <div className="flex flex-[1_0_0] flex-col justify-center min-h-px min-w-px overflow-hidden relative text-ellipsis">
+                <p className="leading-[1.4] overflow-hidden text-ellipsis">{patients[selectedPatientIndex].chiefComplaint}</p>
               </div>
             </div>
           </div>
           
-          {/* Main Content - Scrollable */}
-          <div className="scrollable-content content-stretch flex flex-col items-center relative w-full overflow-y-auto flex-1 min-h-0">
-            <div className="content-stretch flex flex-col items-start max-w-[800px] px-[20px] relative w-full">
-            {activeTab === 'previsit' && (
-              <>
-            {/* At a Glance Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
-              <div className="content-stretch flex flex-col items-start relative shrink-0">
-                <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] min-h-[21px] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                  <p className="leading-[1.2] whitespace-pre-wrap">At a Glance</p>
-                </div>
-              </div>
-              <div className="content-stretch flex flex-col items-start justify-center relative rounded-[8px] shrink-0 w-full">
-                <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
-                  <ul className="list-disc whitespace-pre-wrap">
-                    {patients[selectedPatientIndex].atAGlance.map((item, idx) => {
-                      const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
-                                          item.includes('not yet recorded') ||
-                                          (item.startsWith('_') && item.endsWith('_'));
-                      const isHeader = item.startsWith('**') && item.endsWith('**');
-                      const isEmpty = item === '';
-                      
-                      if (isEmpty) {
-                        return <li key={idx} className="list-none h-[8px]"></li>;
-                      }
-                      
-                      return (
-                        <li key={idx} className={`${idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"} ${(isEmptyState || isHeader) ? 'list-none ms-0' : ''}`}>
-                          {isHeader ? (
-                            <span className="leading-[1.4] font-bold text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.13px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                              {item.replace(/\*\*/g, '')}
-                            </span>
-                          ) : (
-                            <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>{item}</span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            {/* Dynamic Sections */}
-            {Object.entries(patients[selectedPatientIndex].sections).map(([sectionTitle, items]) => {
-              // Helper to generate highlight IDs for content
-              const getHighlightId = (section: string, itemIdx: number) => {
-                const patientFirstName = patients[selectedPatientIndex].name.split(' ')[0].toLowerCase();
-                const sectionKey = section.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-+|-+$/g, '');
-                return `${patientFirstName}-${sectionKey}-${itemIdx}`;
-              };
-              
-              // Check if any item in this section should be highlighted
-              const hoveredHighlightId = hoveredNudge && 
-                patients[hoveredNudge.patientIndex]?.careNudges?.[hoveredNudge.nudgeIndex]?.highlightId;
-              
-              // Find charts for this section
-              const sectionCharts = patients[selectedPatientIndex].trends?.filter(
-                (trend: any) => trend.section === sectionTitle
-              ) || [];
-              
-              return (
-                <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
-                  <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                    <p className="leading-[1.2]">{sectionTitle}</p>
-                  </div>
-                  
-                  {/* Render charts if any exist for this section */}
-                  {sectionCharts.length > 0 && (
-                    <div className="content-stretch grid grid-cols-1 gap-[12px] items-start relative shrink-0 w-full mt-[8px] mb-[8px]">
-                      {sectionCharts.map((trend: any, idx: number) => (
-                        <TrendChart
-                          key={idx}
-                          title={trend.title}
-                          data={trend.data}
-                          unit={trend.unit}
-                          color={trend.color}
-                          yAxisDomain={trend.yAxisDomain}
-                          xAxisTicks={trend.xAxisTicks}
-                          referenceRange={trend.referenceRange}
-                        />
-                      ))}
+          {/* Content Card - elevated white card containing tabs and content */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col relative shrink-0 w-full flex-1 overflow-hidden rounded-none md:rounded-[8px] shadow-none md:shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)]">
+            {/* Main Content - Scrollable */}
+            <div className="content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1">
+              {(
+                <div className="content-stretch flex flex-col gap-[16px] items-start p-[20px] relative shrink-0 w-full">
+                  {/* At a Glance Section */}
+                  <div id="demo-at-a-glance" className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                    <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                      <p className="leading-[1.2]">At a Glance</p>
                     </div>
-                  )}
-                  
-                  <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
-                    <ul className="list-disc whitespace-pre-wrap">
-                      {items.map((item, idx) => {
-                        const highlightId = getHighlightId(sectionTitle, idx);
-                        const isHighlighted = hoveredHighlightId === highlightId;
-                        const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
-                                            item.includes('not yet recorded') ||
-                                            (item.startsWith('_') && item.endsWith('_'));
-                        const isHeader = item.startsWith('**') && item.endsWith('**');
-                        const isEmpty = item === '';
-                        
-                        if (isEmpty) {
-                          return <li key={idx} className="list-none h-[8px]"></li>;
-                        }
-                        
-                        return (
-                          <li 
-                            key={idx} 
-                            className={`${idx === 0 && items.length > 1 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"} ${(isEmptyState || isHeader) ? 'list-none ms-0' : ''}`}
-                            data-highlight-id={highlightId}
-                          >
-                            {isHeader ? (
-                              <span className="leading-[1.4] font-bold text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.13px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                                {item.replace(/\*\*/g, '')}
-                              </span>
-                            ) : isHighlighted ? (
-                              <mark className="bg-[#f1f3fe] text-inherit leading-[1.4]" style={{ padding: 0 }}>
-                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
-                              </mark>
-                            ) : (
-                              <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>
-                                {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <div className="content-stretch flex flex-col items-start justify-center relative rounded-[8px] shrink-0 w-full">
+                      <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                        <ul className="list-disc whitespace-pre-wrap">
+                          {patients[selectedPatientIndex].atAGlance.map((item, idx) => {
+                            const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
+                                                item.includes('not yet recorded') ||
+                                                (item.startsWith('_') && item.endsWith('_'));
+                            const isHeader = item.startsWith('**') && item.endsWith('**');
+                            const isEmpty = item === '';
+                            
+                            if (isEmpty) {
+                              return <li key={idx} className="list-none h-[8px]"></li>;
+                            }
+                            
+                            return (
+                              <li key={idx} className={`${(isEmptyState || isHeader) ? 'list-none' : `ms-[22.5px]${idx === 0 ? ' mb-0' : ''}`}`}>
+                                {isHeader ? (
+                                  <span className="leading-[1.4] font-bold text-[12px] text-[color:var(--text-subheading,#666)] tracking-[0.12px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                    {item.replace(/\*\*/g, '')}
+                                  </span>
+                                ) : (
+                                  <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>
+                                    {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
+                  
+                  {/* Dynamic Sections */}
+                  {Object.entries(patients[selectedPatientIndex].sections).map(([sectionTitle, items]) => {
+                    // Helper to generate highlight IDs for content
+                    const getHighlightId = (section: string, itemIdx: number) => {
+                      const patientFirstName = patients[selectedPatientIndex].name.split(' ')[0].toLowerCase();
+                      const sectionKey = section.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-+|-+$/g, '');
+                      return `${patientFirstName}-${sectionKey}-${itemIdx}`;
+                    };
+                    
+                    // Check if any item in this section should be highlighted
+                    const hoveredHighlightId = hoveredNudge && 
+                      patients[hoveredNudge.patientIndex]?.careNudges?.[hoveredNudge.nudgeIndex]?.highlightId;
+                    const diagnosisHighlightIds: string[] = hoveredDiagnosis
+                      ? (patients[hoveredDiagnosis.patientIndex]?.clinicalReasoning?.diagnoses?.[hoveredDiagnosis.diagnosisIndex]?.highlightIds || [])
+                      : [];
+                    
+                    // Find charts for this section
+                    const sectionCharts = patients[selectedPatientIndex].trends?.filter(
+                      (trend: any) => trend.section === sectionTitle
+                    ) || [];
+                    
+                    const sectionDemoId = `demo-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+                    return (
+                      <div key={sectionTitle} id={sectionDemoId} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                        <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          <p className="leading-[1.2]">{sectionTitle}</p>
+                        </div>
+                        
+                        {/* Render charts if any exist for this section */}
+                        {sectionCharts.length > 0 && (
+                          <div className="content-stretch grid grid-cols-1 gap-[12px] items-start relative shrink-0 w-full mt-[8px] mb-[8px]">
+                            {sectionCharts.map((trend: any, idx: number) => (
+                              <TrendChart
+                                key={idx}
+                                title={trend.title}
+                                data={trend.data}
+                                unit={trend.unit}
+                                color={trend.color}
+                                yAxisDomain={trend.yAxisDomain}
+                                xAxisTicks={trend.xAxisTicks}
+                                referenceRange={trend.referenceRange}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
+                          <ul className="list-disc whitespace-pre-wrap">
+                            {items.map((item, idx) => {
+                              const highlightId = getHighlightId(sectionTitle, idx);
+                              const isHighlighted = hoveredHighlightId === highlightId || diagnosisHighlightIds.includes(highlightId);
+                              const isEmptyState = (item.startsWith('No ') && (item.endsWith(' on file.') || item.endsWith(' on file'))) || 
+                                                  item.includes('not yet recorded') ||
+                                                  (item.startsWith('_') && item.endsWith('_'));
+                              const isHeader = item.startsWith('**') && item.endsWith('**');
+                              const isEmpty = item === '';
+                              
+                              if (isEmpty) {
+                                return <li key={idx} className="list-none h-[8px]"></li>;
+                              }
+                              
+                              return (
+                                <li 
+                                  key={idx} 
+                                  className={`${(isEmptyState || isHeader) ? 'list-none' : `ms-[22.5px]${idx === 0 && items.length > 1 ? ' mb-0' : ''}`}`}
+                                  data-highlight-id={highlightId}
+                                >
+                                  {isHeader ? (
+                                    <span className="leading-[1.4] font-bold text-[12px] text-[color:var(--text-subheading,#666)] tracking-[0.12px] block mt-[8px] mb-[4px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                      {item.replace(/\*\*/g, '')}
+                                    </span>
+                                  ) : isHighlighted ? (
+                                    <mark className="bg-[#f1f3fe] text-inherit leading-[1.4]" style={{ padding: 0 }}>
+                                      {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
+                                    </mark>
+                                  ) : (
+                                    <span className={`leading-[1.4] ${isEmptyState ? 'italic text-[color:var(--text-placeholder,#808080)]' : ''}`}>
+                                      {renderTextWithCitations(item, patients[selectedPatientIndex].citations || [], 'previsit')}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-              </>
-            )}
+              )}
             
             {activeTab === 'note' && (() => {
               const prechartContent = generatePrechartContent();
@@ -3031,18 +3263,70 @@ export default function App() {
               );
             })()}
             </div>
-          </div>
-          
-          {/* Bottom Action Bar */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex justify-center pb-[24px] pt-[8px] relative shrink-0 w-full">
-            <div className="content-stretch flex items-center max-w-[800px] px-[20px] relative w-full">
+            
+            {/* Bottom Action Bar - hidden on mobile */}
+            <div className="hidden md:flex border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid border-t content-stretch items-center justify-between p-[8px] relative shrink-0 w-full">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
+                {/* Button Group with "All Markups" */}
+                <div className="bg-[var(--surface-2,#f2f2f2)] flex items-center overflow-clip p-[2px] rounded-[8px] shrink-0">
+                  {[
+                    { id: 'all', label: 'All Markups', icon: null },
+                    { id: 'icon1', label: '', icon: <img src="/icons/outlined/tips_and_updates.svg" alt="Highlights" width="16" height="16" /> },
+                    { id: 'icon2', label: '', icon: <img src="/icons/outlined/Content.svg" alt="Citations" width="16" height="16" /> },
+                    { id: 'icon4', label: '', icon: <InlineIcon name="close_small" size={16} /> },
+                  ].map((option) => {
+                    const isSelected = option.id === 'all';
+                    const showLabel = isSelected && option.label;
+                    
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => {}}
+                        className={`flex items-center justify-center h-[32px] px-[6px] py-[4px] rounded-[6px] shrink-0 transition-all ${
+                          isSelected
+                            ? 'bg-[var(--surface-base,white)] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.07)]'
+                            : 'bg-transparent'
+                        } ${showLabel ? 'gap-[4px]' : ''} ${!showLabel && option.icon ? 'w-[32px]' : ''}`}
+                      >
+                        {option.icon && (
+                          <div className="overflow-clip shrink-0 size-[16px]">
+                            {option.icon}
+                          </div>
+                        )}
+                        {showLabel && (
+                          <p
+                            className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px] whitespace-nowrap"
+                            style={{ fontFeatureSettings: "'ss07'" }}
+                          >
+                            {option.label}
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* Add Context Button */}
+                <Button 
+                  variant="tertiary" 
+                  size="medium"
+                  icon={<InlineIcon name="magic_edit" size={16} />}
+                  showPrefix={true}
+                  onClick={() => {}}
+                >
+                  Add Context
+                </Button>
+              </div>
+              
+              {/* Start Visit Button */}
               <Button 
                 variant="primary" 
-                size="large"
-                icon={<InlineIcon name="mic" size={24} />}
-                onClick={() => {}}
+                size="medium"
+                icon={<InlineIcon name="mic" size={16} />}
+                showPrefix={true}
+                onClick={() => setIsMobileRecording(true)}
               >
-                Start Visit with {patients[selectedPatientIndex].name}
+                Start Visit
               </Button>
             </div>
           </div>
@@ -3173,38 +3457,58 @@ export default function App() {
         );
       })()}
       
-      {/* Right Sidebar - For this visit */}
-      <div className="bg-white border-l border-[var(--neutral-200,#ccc)] content-stretch flex flex-col h-full items-start overflow-hidden relative shrink-0 w-[375px]">
-        {/* Header - hidden when viewing data source */}
-        {!viewingDataSource && (
-          <div className="content-stretch flex items-center px-[20px] pt-[20px] pb-[12px] relative shrink-0 w-full">
-            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[17px] text-[color:var(--text-default,black)] tracking-[0.34px]">
-              For this visit
+      {/* Mobile Recording Screen - full screen overlay */}
+      {isMobileRecording && (
+        <MobileRecordingScreen
+          patientName={patients[selectedPatientIndex].name}
+          patientAge={patients[selectedPatientIndex].age}
+          patientGender={patients[selectedPatientIndex].gender}
+          chiefComplaint={patients[selectedPatientIndex].chiefComplaint}
+          nudges={patients[selectedPatientIndex].careNudges || []}
+          onPause={() => setIsMobileRecording(false)}
+          onEnd={() => { setIsMobileRecording(false); setCurrentView('scribes'); }}
+        />
+      )}
+
+      {/* Right Sidebar - For this visit - Desktop: sidebar, Mobile: bottom sheet */}
+      <div className="fixed md:relative bottom-0 md:bottom-auto left-0 md:left-auto right-0 md:right-auto h-[33vh] md:h-full bg-[var(--surface-base,white)] md:bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[4px] items-start overflow-hidden shrink-0 w-full md:w-[375px] pb-[8px] pl-0 md:pl-[4px] pr-0 md:pr-[8px] pt-0 md:pt-[4px] rounded-tl-[12px] rounded-tr-[12px] md:rounded-none shadow-[0_-4px_16px_2px_rgba(0,0,0,0.07)] md:shadow-none z-50">
+        {/* Mobile: Drawer Handle */}
+        <div className="md:hidden bg-[var(--surface-base,white)] content-stretch flex items-center justify-center pt-[8px] pb-[4px] relative shrink-0 w-full">
+          <div className="bg-[var(--shape-tertiary,#b3b3b3)] h-[4px] rounded-[100px] shrink-0 w-[48px]" />
+        </div>
+        
+        {/* Mobile: About this visit header */}
+        <div className="md:hidden content-stretch flex items-center px-[12px] py-[4px] relative shrink-0 w-full">
+          <div className="content-stretch flex gap-[8px] items-center px-[8px] relative shrink-0">
+            <InlineIcon name="magic_button" size={20} className="text-[color:var(--text-brand,#1132ee)]" />
+            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px]" style={{ fontFeatureSettings: "'ss07'" }}>
+              About this visit
             </p>
           </div>
-        )}
+        </div>
         
-        {/* Tabs with full width divider - hidden when viewing data source */}
+        {/* Desktop: Tabs - on surface-1 background, outside white card */}
         {!viewingDataSource && (
-          <div className="w-full border-b border-[var(--neutral-200,#ccc)]">
-            <div className="px-[20px]">
-              <Tabs
-                variant="primary"
-                tabs={[
-                  { id: 'actions', label: 'Actions' },
-                  { id: 'assistant', label: 'Assistant' },
-                  { id: 'sources', label: 'Sources' }
-                ]}
-                defaultTab={rightTab}
-                onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
-                hideBorder={true}
-              />
-            </div>
+          <div className="hidden md:flex content-stretch gap-[8px] h-[48px] items-center overflow-clip px-[16px] relative shrink-0 w-full">
+            <Tabs
+              variant="secondary"
+              tabs={[
+                { id: 'actions', label: 'Actions' },
+                { id: 'assistant', label: 'Assistant' },
+                { id: 'sources', label: 'Sources' }
+              ]}
+              defaultTab={rightTab}
+              onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
+              hideBorder={true}
+            />
           </div>
         )}
         
-        {/* Content Area - Scrollable */}
-        <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto px-[20px] relative w-full ${viewingDataSource ? 'pt-[20px] pb-[20px]' : 'py-[20px]'}`}>
+        {/* White Card Content */}
+        <div className="bg-[var(--surface-base,white)] content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-hidden relative rounded-none md:rounded-[8px] shadow-none md:shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)] w-full">
+          {/* Content Area - Scrollable */}
+        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto overflow-x-hidden relative w-full px-[20px] md:px-[16px] py-[8px]">
+          {/* Mobile: Always show actions tab content, Desktop: respect rightTab */}
           {viewingDataSource ? (
             /* Data Source View */
             <>
@@ -3258,7 +3562,7 @@ export default function App() {
                 </div>
               )}
             </>
-          ) : rightTab === 'sources' ? (
+          ) : (rightTab === 'sources' && window.innerWidth >= 768) ? (
             /* Sources View */
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
               {(() => {
@@ -3316,7 +3620,7 @@ export default function App() {
                 ));
               })()}
             </div>
-          ) : rightTab === 'assistant' ? (
+          ) : (rightTab === 'assistant' && window.innerWidth >= 768) ? (
             /* Assistant View */
             <div className="content-stretch flex flex-col gap-[16px] items-start relative w-full">
               {(chatMessages[patients[selectedPatientIndex].name] || []).map((message, idx) => (
@@ -3483,45 +3787,86 @@ export default function App() {
             </div>
             
             {isVisitSettingsExpanded && (
-            <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-              {/* Template Dropdown */}
-              <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[12px] text-[color:var(--text-default,black)] tracking-[0.24px] w-[56px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                  Template
-                </p>
-                <div className="flex-[1_0_0]">
-                  <TextField
-                    size="compact"
-                    value="SOAP template"
-                    readOnly
-                    suffix={<InlineIcon name="arrow_drop_down" size={20} />}
-                  />
-                </div>
+            <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
+              {/* Visit Type Input */}
+              <div className="flex-[1_0_0]">
+                <TextField
+                  size="compact"
+                  value="Adult Annual Visit"
+                  readOnly
+                  suffix={<InlineIcon name="arrow_drop_down" size={20} />}
+                />
               </div>
               
-              {/* Visit Type Toggle */}
-              <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[12px] text-[color:var(--text-default,black)] tracking-[0.24px] w-[56px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                  Visit Type
+              {/* In Person Chip */}
+              <div className="bg-[var(--surface-2,#f2f2f2)] flex items-center px-[12px] py-[6px] rounded-[6px] shrink-0">
+                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                  In Person
                 </p>
-                <ButtonGroup
-                  orientation="horizontal"
-                  size="small"
-                  options={[
-                    { id: 'inperson', label: 'In-Person' },
-                    { id: 'virtual', label: 'Virtual' }
-                  ]}
-                  value="inperson"
-                  onChange={() => {}}
-                  className="flex-[1_0_0]"
-                />
               </div>
             </div>
             )}
           </div>
           
-          {/* Care Suggestions Card */}
+          {/* Clinical Reasoning Card - Show on mobile and when on actions tab on desktop */}
+          {patients[selectedPatientIndex].clinicalReasoning && (
           <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+            <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
+              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                Clinical Reasoning
+              </p>
+            </div>
+            
+            <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] content-stretch flex flex-col items-start relative rounded-[8px] shrink-0 w-full overflow-hidden">
+              {/* Card subtitle */}
+              <div className="px-[12px] pt-[10px] pb-[4px] w-full">
+                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
+                  Potential Diagnoses
+                </p>
+              </div>
+
+              {/* Diagnosis rows */}
+              {patients[selectedPatientIndex].clinicalReasoning.diagnoses.map((item: any, idx: number, arr: any[]) => {
+                const l = item.likelihood;
+                const badgeBg   = (l === 'Unlikely' || l === 'Rare') ? 'bg-[var(--surface-2,#f2f2f2)]' : l === 'Likely' ? 'bg-[#f0f4ff]' : 'bg-[#edfaf3]';
+                const badgeText = (l === 'Unlikely' || l === 'Rare') ? 'text-[color:var(--text-subheading,#666)]' : l === 'Likely' ? 'text-[#1132ee]' : 'text-[#1a7a4a]';
+                return (
+                  <div key={idx} className="content-stretch flex flex-col gap-[4px] items-start px-[12px] py-[8px] w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors rounded-[6px]"
+                    onMouseEnter={() => setHoveredDiagnosis({ patientIndex: selectedPatientIndex, diagnosisIndex: idx })}
+                    onMouseLeave={() => setHoveredDiagnosis(null)}
+                    onClick={() => {
+                      const ids: string[] = item.highlightIds || [];
+                      if (ids.length === 0) return;
+                      const els = ids
+                        .map(id => document.querySelector(`[data-highlight-id="${id}"]`))
+                        .filter(Boolean) as Element[];
+                      if (els.length === 0) return;
+                      // Find the first element below the current viewport center
+                      const viewportMid = window.innerHeight / 2;
+                      const next = els.find(el => el.getBoundingClientRect().top > viewportMid + 20) || els[0];
+                      next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  >
+                    <div className="flex items-center gap-[6px]">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                        {item.diagnosis}
+                      </p>
+                      <span className={`font-['Lato',sans-serif] font-bold text-[11px] leading-[1.2] tracking-[0.11px] px-[6px] py-[3px] rounded-[4px] shrink-0 ${badgeBg} ${badgeText}`}>
+                        {l}
+                      </span>
+                    </div>
+                    <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] break-words">
+                      {item.reason}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          )}
+          
+          {/* Care Suggestions Card */}
+          <div data-demo-id="action-items" className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Care Suggestions
@@ -3546,7 +3891,7 @@ export default function App() {
                 return (
                   <div 
                     key={idx} 
-                    className="border border-[var(--neutral-200,#ccc)] content-stretch flex gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[6px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
+                    className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] content-stretch flex gap-[8px] items-start p-[12px] pr-[40px] relative rounded-[12px] shrink-0 w-full cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)] transition-colors"
                     onMouseEnter={() => setHoveredNudge({patientIndex: selectedPatientIndex, nudgeIndex: idx})}
                     onMouseLeave={() => setHoveredNudge(null)}
                     onClick={() => {
@@ -3562,7 +3907,7 @@ export default function App() {
                       <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                         {nudge.type}
                       </p>
-                      <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                      <p className="font-['Lato',sans-serif] leading-[1.4] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] break-words">
                         {nudge.description}
                       </p>
                     </div>
@@ -3655,34 +4000,10 @@ export default function App() {
         </div>
         
         {/* Chat Input at Bottom */}
-        <div className="content-stretch flex gap-[8px] items-start pb-[20px] pl-[8px] pr-[16px] pt-[8px] relative shrink-0 w-full">
-          <div 
-            className="relative"
-            onMouseEnter={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setSmartEditTooltipPosition({
-                x: rect.left + rect.width / 2,
-                y: rect.top
-              });
-              setShowSmartEditTooltip(true);
-            }}
-            onMouseLeave={() => {
-              setShowSmartEditTooltip(false);
-              setSmartEditTooltipPosition(null);
-            }}
-          >
-            <IconButton 
-              variant="tertiary" 
-              size="large"
-              icon={<InlineIcon name="magic_edit" size={24} />}
-              onClick={() => {}}
-              aria-label="Smart Edit"
-              className="shrink-0 text-[color:var(--text-brand,#1132ee)]"
-            />
-          </div>
+        <div className="content-stretch flex gap-[8px] items-start pb-[8px] md:pb-[20px] pl-[20px] md:pl-[8px] pr-[20px] md:pr-[16px] pt-[8px] relative shrink-0 w-full">
           <div className="flex-[1_0_0] min-w-px">
             <ChatInput
-              placeholder="Ask assistant"
+              placeholder="Ask about the patient"
               value={chatInputValue}
               onChange={setChatInputValue}
               onSend={() => {
@@ -3698,6 +4019,7 @@ export default function App() {
               onVoice={() => console.log('Voice input')}
             />
           </div>
+        </div>
         </div>
       </div>
       
@@ -3719,27 +4041,6 @@ export default function App() {
               <p className="leading-[1.2]">{isSecondaryNavCollapsed ? 'Open Sidebar' : 'Hide Sidebar'}</p>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Smart Edit Tooltip - Fixed positioning to avoid clipping */}
-      {showSmartEditTooltip && smartEditTooltipPosition && (
-        <div 
-          className="fixed z-[9999] flex flex-col items-center pointer-events-none leading-[0]"
-          style={{
-            left: `${smartEditTooltipPosition.x}px`,
-            top: `${smartEditTooltipPosition.y}px`,
-            transform: 'translate(-50%, calc(-100% - 8px))'
-          }}
-        >
-          <div className="bg-[var(--surface-semantic-info,#f1f3fe)] flex items-center px-[12px] py-[8px] rounded-[4px]">
-            <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic text-[13px] text-[color:var(--shape-brand,#1132ee)] tracking-[0.13px] whitespace-nowrap" style={{ fontFeatureSettings: "'ss07'" }}>
-              <p className="leading-[1.2]">Smart Edit</p>
-            </div>
-          </div>
-          <svg width="12" height="6" viewBox="0 0 12 6" fill="none" className="block" style={{ marginTop: '-1px' }}>
-            <path d="M6 6L0.803847 0L11.1962 0L6 6Z" fill="#f1f3fe"/>
-          </svg>
         </div>
       )}
     </div>

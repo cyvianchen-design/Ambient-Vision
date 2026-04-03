@@ -72,21 +72,21 @@ export const Tabs: React.FC<TabsProps> = ({
                   ? 'border-[var(--text-brand,#1132ee)] border-b-2 border-solid items-start px-[4px] py-[6px]'
                   : 'items-start px-[4px] py-[6px] hover:bg-[var(--surface-secondary,#f5f5f5)]'
                 : isActive
-                  ? 'bg-[var(--surface-semantic-info,#f1f3fe)] gap-[6px] h-[28px] items-center justify-center px-[8px] rounded-[8px]'
+                  ? 'bg-[var(--nav-button,rgba(17,50,238,0.12))] gap-[6px] h-[28px] items-center justify-center px-[8px] rounded-[8px]'
                   : 'gap-[6px] h-[28px] items-center justify-center px-[8px] rounded-[8px] hover:bg-[var(--surface-secondary,#f5f5f5)]'
             }`}
           >
             <div className={`content-stretch flex gap-[4px] items-center relative shrink-0`}>
               {tab.icon && <span>{tab.icon}</span>}
               <p 
-                className={`font-['Lato',sans-serif] leading-[1.2] not-italic relative shrink-0 text-[13px] tracking-[0.13px] ${
+                className={`font-['Lato',sans-serif] not-italic relative shrink-0 text-[13px] ${
                   isPrimary
                     ? isActive
-                      ? 'font-bold text-[color:var(--text-brand,#1132ee)]'
-                      : 'font-bold text-[color:var(--text-placeholder,#808080)]'
+                      ? 'font-bold leading-[1.2] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]'
+                      : 'font-bold leading-[1.2] text-[color:var(--text-placeholder,#808080)] tracking-[0.13px]'
                     : isActive
-                      ? 'font-bold text-[color:var(--text-brand,#1132ee)]'
-                      : 'font-normal text-[color:var(--text-subheading,#666)]'
+                      ? 'font-bold leading-[1.2] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]'
+                      : 'font-normal leading-[1.4] text-[color:var(--text-subheading,#666)] tracking-[0.065px]'
                 }`}
                 style={{ fontFeatureSettings: "'ss07'" }}
               >

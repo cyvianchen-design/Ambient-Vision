@@ -3,7 +3,7 @@ import { Patient } from '../components/PatientListItem';
 export const mockPatients: Patient[] = [
   {
     id: '1',
-    name: 'Cem',
+    name: 'John Smith',
     age: 45,
     gender: 'M',
     time: '9:00 am',

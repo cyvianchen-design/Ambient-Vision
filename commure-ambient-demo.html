@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Commure Ambient – Interactive Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  background: #0e0e18;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 68px 24px 60px;
+  color: #fff;
+  transition: background 0.5s ease;
+}
+/* Day/night split — split offset computed dynamically by fitDevices() */
+body.stage-during {
+  background: linear-gradient(
+    to right,
+    #2a1400 0%,
+    #2a1400 calc(50% - var(--split-offset, 356px)),
+    #04091a calc(50% - var(--split-offset, 356px)),
+    #04091a 100%
+  );
+}
+
+.demo-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.demo-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+  justify-content: center;
+}
+
+.device-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.device-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+/* ── Desktop shell: sized dynamically by fitDevices() ── */
+.desktop-shell {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 64px rgba(0,0,0,0.65);
+  position: relative;
+  transform-origin: top left;
+  flex-shrink: 0;
+}
+.desktop-inner {
+  width: 1280px;
+  height: 760px;
+  transform: scale(0.585);
+  transform-origin: top left;
+  display: flex;
+  overflow: hidden;
+  background: #f7f7f7;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+}
+
+/* ── Mobile shell: sized dynamically by fitDevices() ── */
+.mobile-shell {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 64px rgba(0,0,0,0.65);
+  position: relative;
+  transform-origin: top left;
+  flex-shrink: 0;
+}
+.mobile-inner {
+  width: 390px;
+  height: 844px;
+  transform: scale(0.525);
+  transform-origin: top left;
+  display: flex;
+  flex-direction: column;
+  background: #f7f7f7;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  overflow: hidden;
+}
+
+/* ── Design tokens ── */
+:root {
+  --brand: #1132ee;
+  --nav-btn: rgba(17,50,238,0.12);
+  --surface-info: #f1f3fe;
+  --surface-1: #f7f7f7;
+  --surface-2: #f2f2f2;
+  --surface-3: #e6e6e6;
+  --surface-base: #ffffff;
+  --outline: rgba(0,0,0,0.1);
+  --neutral-200: #ccc;
+  --text-default: #000000;
+  --text-body: #1a1a1a;
+  --text-sub: #666666;
+  --text-ph: #808080;
+  --text-brand: #1132ee;
+  --text-white: #ffffff;
+  --orange-200: #ffd699;
+  --green: #479e4c;
+  --red: #bb1411;
+  --magic: linear-gradient(-89.166deg, rgb(128,68,255) 2.281%, rgb(69,84,229) 50.375%, rgb(38,112,255) 98.469%);
+}
+
+/* ── Primary nav (sidebar) ── */
+.primary-nav {
+  width: 72px;
+  min-width: 72px;
+  height: 100%;
+  background: var(--surface-base);
+  border-right: 1px solid var(--outline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.nav-logo {
+  width: 72px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--outline);
+  flex-shrink: 0;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.nav-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 24px;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  width: 100%;
+}
+.nav-icon-wrap {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-sub);
+  transition: background 0.12s;
+}
+.nav-item:hover .nav-icon-wrap { background: var(--surface-3); }
+.nav-item.active .nav-icon-wrap {
+  background: var(--nav-btn);
+  color: var(--brand);
+}
+.nav-item-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: -0.36px;
+  line-height: 1.2;
+}
+.nav-item.active .nav-item-label { color: var(--brand); }
+.nav-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0 24px;
+  gap: 8px;
+  border-top: 1px solid var(--outline);
+  width: 100%;
+}
+.nav-footer-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.nav-footer-btn:hover { background: rgba(0,0,0,0.03); }
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 64px;
+  background: var(--orange-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-default);
+  cursor: pointer;
+}
+
+/* ── Secondary nav (scribe/patient list) ── */
+.secondary-nav {
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  background: var(--surface-1);
+  border-right: 1px solid var(--neutral-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sec-nav-header {
+  height: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 12px 8px;
+  flex-shrink: 0;
+}
+.sec-nav-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.15px;
+  padding: 0 4px;
+}
+.sec-nav-btns {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-brand);
+  letter-spacing: 0.13px;
+  height: 28px;
+  white-space: nowrap;
+}
+.btn-tertiary:hover { background: var(--surface-1); }
+.btn-tertiary-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: 0.13px;
+  height: 28px;
+  white-space: nowrap;
+}
+.btn-tertiary-neutral:hover { background: var(--surface-1); }
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  font-weight: 700;
+  color: var(--text-white);
+  background: var(--text-body);
+  white-space: nowrap;
+}
+.btn-primary:hover { background: #333; }
+.btn-primary.sm { padding: 6px 10px; font-size: 13px; height: 28px; letter-spacing: 0.13px; }
+.btn-primary.md { padding: 8px 16px; font-size: 15px; height: 36px; letter-spacing: 0.15px; }
+.btn-primary.lg { padding: 12px 20px; font-size: 17px; height: 48px; letter-spacing: 0.34px; }
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--text-default);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  font-weight: 700;
+  color: var(--text-default);
+  background: transparent;
+  white-space: nowrap;
+}
+.btn-secondary:hover { background: var(--surface-1); }
+.btn-secondary.lg { padding: 12px 20px; font-size: 17px; height: 48px; letter-spacing: 0.34px; }
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-brand);
+}
+.icon-btn:hover { background: var(--surface-1); }
+.icon-btn.md { width: 36px; height: 36px; }
+
+.sec-nav-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+.date-group-label {
+  font-size: 13px;
+  color: var(--text-sub);
+  letter-spacing: 0.065px;
+  padding: 8px 12px;
+  line-height: 1.2;
+}
+.list-item-wrap {
+  padding: 0 4px;
+}
+.list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  transition: background 0.1s;
+}
+.list-item:hover { background: rgba(0,0,0,0.01); }
+.list-item.selected {
+  background: var(--surface-base);
+  border: 1px solid var(--outline);
+}
+/* In App.tsx patient item style (visits tab): border-r-2 style */
+.patient-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 8px 16px 12px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 220px;
+  text-align: left;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  transition: background 0.1s;
+  border-right: 2px solid transparent;
+}
+.patient-item:hover { background: var(--surface-1); }
+.patient-item.selected {
+  background: var(--surface-info);
+  border-right: 2px solid var(--brand);
+}
+.item-row1 { display: flex; align-items: center; gap: 4px; width: 100%; }
+.item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.item-row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: 0.065px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.item-meta { color: var(--text-sub); display: flex; gap: 4px; flex: 1; }
+.item-time { color: var(--text-ph); }
+.status-generated { font-size: 13px; font-weight: 700; color: var(--green); }
+.status-processing { font-size: 13px; font-weight: 700; color: var(--brand); }
+.status-queue { font-size: 13px; font-weight: 700; color: #b45309; }
+
+/* ── Main content area ── */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: var(--surface-1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Center column */
+.center-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 4px;
+}
+
+/* Note card */
+.note-card {
+  background: var(--surface-base);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px 2px rgba(0,0,0,0.07);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Tabs */
+.tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--outline);
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.tab {
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-feature-settings: 'ss07';
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-ph);
+  letter-spacing: 0.13px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab:hover { background: #f5f5f5; }
+.tab.active { color: var(--brand); border-bottom: 2px solid var(--brand); }
+
+/* Note content */
+.note-scroll { flex: 1; overflow-y: auto; padding: 12px 0; }
+.note-template-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.15px;
+  padding: 8px 20px 32px;
+  line-height: 1.2;
+}
+.note-section {
+  padding: 12px 0;
+  border-top: 1px solid var(--outline);
+}
+.note-section-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 20px 4px;
+}
+.note-section-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  line-height: 1.2;
+  padding-left: 8px;
+}
+.note-section-actions { display: flex; gap: 4px; }
+.note-section-body {
+  padding: 8px 20px;
+  font-size: 15px;
+  color: #111827;
+  letter-spacing: 0.15px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* ── Right panel ── */
+.right-panel {
+  width: 375px;
+  min-width: 375px;
+  height: 100%;
+  background: var(--surface-1);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.right-card {
+  background: var(--surface-base);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px 2px rgba(0,0,0,0.07);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.right-tabs-wrap {
+  background: var(--surface-1);
+  padding: 12px 20px 0;
+  flex-shrink: 0;
+}
+
+/* ── Actions panel content ── */
+.actions-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.action-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.action-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  line-height: 1.2;
+}
+.action-nudge {
+  background: var(--surface-1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.action-nudge-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  line-height: 1.4;
+}
+.action-nudge-body {
+  font-size: 13px;
+  color: var(--text-sub);
+  letter-spacing: 0.065px;
+  line-height: 1.4;
+}
+.nudge-action-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Previsit (Visits view) ── */
+.visits-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.visits-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+.previsit-section {
+  padding: 12px 0;
+}
+.previsit-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  line-height: 1.2;
+  padding: 0 20px 4px;
+}
+.previsit-list {
+  padding: 0 20px;
+  font-size: 15px;
+  color: var(--text-body);
+  letter-spacing: 0.15px;
+  line-height: 1.4;
+  list-style: disc;
+  margin-left: 22.5px;
+}
+.previsit-list li { margin-bottom: 2px; }
+.visits-bottom-bar {
+  background: var(--surface-base);
+  padding: 8px 0 24px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.start-visit-area {
+  max-width: 800px;
+  width: 100%;
+  padding: 0 20px;
+}
+
+/* ── Right panel (Visits/Previsit) ── */
+.previsit-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.data-source-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface-1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.data-source-item:hover { background: var(--surface-2); }
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11px;
+  line-height: 1.2;
+}
+.ds-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.13px;
+  line-height: 1.2;
+}
+.ds-snippet {
+  font-size: 13px;
+  color: var(--text-sub);
+  letter-spacing: 0.065px;
+  line-height: 1.4;
+}
+
+/* ── Recording view ── */
+.recording-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.recording-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 24px;
+}
+.recording-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.rec-patient-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.24px;
+}
+.rec-timer {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.rec-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff0f0;
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bb1411;
+  animation: blink 1s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.rec-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #bb1411;
+  letter-spacing: 0.15px;
+}
+.waveform-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 48px;
+}
+.wbar {
+  width: 4px;
+  background: var(--brand);
+  border-radius: 2px;
+  opacity: 0.8;
+  animation: wv 1.2s ease-in-out infinite;
+}
+@keyframes wv { 0%,100%{transform:scaleY(0.2)} 50%{transform:scaleY(1)} }
+.magic-mic-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content:center;
+  background: var(--magic);
+  box-shadow: 0 8px 24px rgba(69,84,229,0.4);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%,100% { box-shadow: 0 8px 24px rgba(69,84,229,0.4); }
+  50% { box-shadow: 0 8px 40px rgba(69,84,229,0.7); }
+}
+.magic-mic-btn.stop {
+  background: #bb1411;
+  box-shadow: 0 8px 24px rgba(187,20,17,0.4);
+  animation: none;
+}
+.recording-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Processing view ── */
+.processing-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+}
+.spinner-ring {
+  width: 56px;
+  height: 56px;
+  border: 3px solid var(--surface-info);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.processing-label {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: 0.34px;
+}
+.processing-sub {
+  font-size: 15px;
+  color: var(--text-sub);
+  letter-spacing: 0.15px;
+  text-align: center;
+  line-height: 1.4;
+}
+.processing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+}
+.processing-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-sub);
+  letter-spacing: 0.065px;
+}
+.step-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--surface-info);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Mobile ── */
+.mobile-header {
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--outline);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+.mobile-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mobile-logo-text {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text-default);
+  letter-spacing: 0.17px;
+}
+.mobile-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+.mobile-search-text {
+  font-size: 15px;
+  color: var(--text-ph);
+  letter-spacing: 0.15px;
+}
+.mobile-content { flex: 1; overflow-y: auto; min-height: 0; }
+.mobile-section-label {
+  font-size: 13px;
+  color: var(--text-sub);
+  letter-spacing: 0.065px;
+  padding: 8px 16px;
+  line-height: 1.2;
+}
+.mobile-patient-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  cursor: pointer;
+  border-right: 2px solid transparent;
+  transition: background 0.1s;
+}
+.mobile-patient-item:hover { background: var(--surface-1); }
+.mobile-patient-item.selected { background: var(--surface-info); border-right: 2px solid var(--brand); }
+.mobile-bottom-nav {
+  background: var(--surface-base);
+  border-top: 1px solid var(--outline);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0 12px;
+  flex-shrink: 0;
+}
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-ph);
+  padding: 4px 16px;
+}
+.mobile-nav-item.active { color: var(--brand); }
+.mobile-nav-label { font-size: 12px; font-weight: 700; line-height: 1.2; letter-spacing: -0.36px; }
+
+/* Mobile previsit */
+.mobile-previsit { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.mobile-card {
+  background: var(--surface-base);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.mobile-card-title { font-size: 13px; font-weight: 700; color: var(--text-default); margin-bottom: 6px; letter-spacing: 0.13px; }
+.mobile-card-body { font-size: 13px; color: var(--text-body); letter-spacing: 0.065px; line-height: 1.4; }
+
+/* Mobile recording */
+.mobile-recording {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+}
+
+/* Mobile note */
+.mobile-note { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.mobile-note-section { display: flex; flex-direction: column; gap: 4px; }
+.mobile-note-section-title { font-size: 13px; font-weight: 700; color: var(--text-default); letter-spacing: 0.13px; border-bottom: 1px solid var(--outline); padding-bottom: 4px; margin-bottom: 4px; }
+.mobile-note-section-body { font-size: 13px; color: #111827; letter-spacing: 0.065px; line-height: 1.4; }
+
+/* ── Step nav ── */
+.step-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+.step-nav button {
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+.step-nav button:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+.step-nav button:disabled { opacity: 0.25; cursor: default; }
+.step-dots { display: flex; align-items: center; gap: 5px; }
+.step-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.step-dot.active { background: #1132ee; width: 18px; border-radius: 3px; }
+.step-desc { font-size: 11px; color: rgba(255,255,255,0.4); min-width: 200px; text-align: center; }
+.stage-label {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.stage-pre    { background: rgba(17,50,238,0.25);  color: #7b96ff; }
+.stage-during { background: rgba(187,20,17,0.25);  color: #ff8a87; }
+.stage-post   { background: rgba(71,158,76,0.25);  color: #7fd984; }
+
+.demo-step-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Top context labels (during visit only) ── */
+.ctx-panel {
+  position: fixed;
+  top: 24px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.ctx-panel.visible { opacity: 1; }
+.ctx-panel.ctx-mobile { left: 36px; }
+.ctx-panel.ctx-desktop { right: 36px; }
+.ctx-label {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ctx-panel.ctx-mobile .ctx-label  { color: rgba(255, 160, 80, 0.9); }
+.ctx-panel.ctx-desktop .ctx-label { color: rgba(100, 140, 255, 0.9); }
+
+/* ── Bottom-left: stepper dots + stage + desc ── */
+.demo-stepper {
+  position: fixed;
+  bottom: 24px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+
+/* ── Bottom-right: nav + audio ── */
+.demo-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+.ctrl-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  backdrop-filter: blur(8px);
+}
+.ctrl-btn:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+.ctrl-btn:disabled { opacity: 0.25; cursor: default; }
+.ctrl-btn.audio-btn {
+  background: rgba(187,20,17,0.25);
+  border-color: rgba(187,20,17,0.4);
+  color: #ff8a87;
+  font-size: 10px;
+}
+.ctrl-btn.audio-btn:hover { background: rgba(187,20,17,0.4); }
+.ctrl-btn.audio-btn.playing {
+  background: rgba(187,20,17,0.5);
+}
+/* hidden by default, shown only during "during" stage */
+.audio-btn { display: none; }
+.audio-btn.visible { display: flex; }
+
+/* ── Device wrap ── */
+.device-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  transition: opacity 0.3s ease;
+}
+.device-wrap.hidden {
+  display: none;
+}
+/* Device label hidden — context shown at top instead */
+.device-tag { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Top-left: mobile context (during visit only) -->
+<div class="ctx-panel ctx-mobile" id="mobileCtxPanel">
+  <span class="ctx-label">In the room with provider</span>
+</div>
+
+<!-- Top-right: desktop context (during visit only) -->
+<div class="ctx-panel ctx-desktop" id="desktopCtxPanel">
+  <span class="ctx-label">Processing in the background</span>
+</div>
+
+<!-- Devices -->
+<div class="demo-stage">
+
+  <!-- ── MOBILE ── -->
+  <div class="device-wrap" id="mobileWrap">
+    <div class="mobile-shell">
+      <iframe
+        id="mobileFrame"
+        src="http://localhost:3000"
+        style="width:390px;height:844px;border:none;transform:scale(0.80);transform-origin:top left;display:block;"
+        scrolling="no"
+      ></iframe>
+    </div>
+  </div>
+
+  <!-- ── DESKTOP ── -->
+  <div class="device-wrap" id="desktopWrap">
+    <div class="desktop-shell">
+      <iframe
+        id="desktopFrame"
+        src="http://localhost:3000"
+        style="width:1280px;height:760px;border:none;transform:scale(0.80);transform-origin:top left;display:block;"
+        scrolling="no"
+      ></iframe>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom-left: dots + stage badge + description -->
+<div class="demo-stepper">
+  <div id="stepDots" style="display:flex;align-items:center;gap:5px;"></div>
+  <span class="stage-label" id="stageLabel"></span>
+  <span class="demo-step-desc" id="stepDesc"></span>
+</div>
+
+<!-- Bottom-right: audio (during only) + prev/next -->
+<div class="demo-controls">
+  <audio id="audioEl"></audio>
+  <button class="ctrl-btn audio-btn" id="audioPlayBtn" onclick="toggleAudio()" title="Play narration">▶</button>
+  <button class="ctrl-btn" id="btnPrev" onclick="prevStep()" title="Previous">←</button>
+  <button class="ctrl-btn" id="btnNext" onclick="nextStep()" title="Next">→</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// SVG ICONS  (exact paths from InlineIcon.tsx)
+// ═══════════════════════════════════════
+const Icons = {
+  // stethoscope — viewBox "0 0 16.6667 16.6667"
+  stethoscope: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 16.6667 16.6667" fill="${col}"><path d="M9.58333 16.6667C8.08333 16.6667 6.80556 16.1389 5.75 15.0833C4.69444 14.0278 4.16667 12.75 4.16667 11.25V10.7708C2.97222 10.5764 1.97917 10.0174 1.1875 9.09375C0.395833 8.17014 0 7.08333 0 5.83333V1.66667C0 1.43056 0.0798611 1.23264 0.239583 1.07292C0.399306 0.913194 0.597222 0.833333 0.833333 0.833333H2.5C2.5 0.597222 2.57986 0.399306 2.73958 0.239583C2.89931 0.0798611 3.09722 0 3.33333 0C3.56944 0 3.76736 0.0798611 3.92708 0.239583C4.08681 0.399306 4.16667 0.597222 4.16667 0.833333V2.5C4.16667 2.73611 4.08681 2.93403 3.92708 3.09375C3.76736 3.25347 3.56944 3.33333 3.33333 3.33333C3.09722 3.33333 2.89931 3.25347 2.73958 3.09375C2.57986 2.93403 2.5 2.73611 2.5 2.5H1.66667V5.83333C1.66667 6.75 1.99306 7.53472 2.64583 8.1875C3.29861 8.84028 4.08333 9.16667 5 9.16667C5.91667 9.16667 6.70139 8.84028 7.35417 8.1875C8.00694 7.53472 8.33333 6.75 8.33333 5.83333V2.5H7.5C7.5 2.73611 7.42014 2.93403 7.26042 3.09375C7.10069 3.25347 6.90278 3.33333 6.66667 3.33333C6.43056 3.33333 6.23264 3.25347 6.07292 3.09375C5.91319 2.93403 5.83333 2.73611 5.83333 2.5V0.833333C5.83333 0.597222 5.91319 0.399306 6.07292 0.239583C6.23264 0.0798611 6.43056 0 6.66667 0C6.90278 0 7.10069 0.0798611 7.26042 0.239583C7.42014 0.399306 7.5 0.597222 7.5 0.833333H9.16667C9.40278 0.833333 9.60069 0.913194 9.76042 1.07292C9.92014 1.23264 10 1.43056 10 1.66667V5.83333C10 7.08333 9.60417 8.17014 8.8125 9.09375C8.02083 10.0174 7.02778 10.5764 5.83333 10.7708V11.25C5.83333 12.2917 6.19792 13.1771 6.92708 13.9062C7.65625 14.6354 8.54167 15 9.58333 15C10.625 15 11.5104 14.6354 12.2396 13.9062C12.9687 13.1771 13.3333 12.2917 13.3333 11.25V9.85417C12.8472 9.67361 12.4479 9.37153 12.1354 8.94792C11.8229 8.52431 11.6667 8.04167 11.6667 7.5C11.6667 6.80556 11.9097 6.21528 12.3958 5.72917C12.8819 5.24306 13.4722 5 14.1667 5C14.8611 5 15.4514 5.24306 15.9375 5.72917C16.4236 6.21528 16.6667 6.80556 16.6667 7.5C16.6667 8.04167 16.5104 8.52431 16.1979 8.94792C15.8854 9.37153 15.4861 9.67361 15 9.85417V11.25C15 12.75 14.4722 14.0278 13.4167 15.0833C12.3611 16.1389 11.0833 16.6667 9.58333 16.6667Z"/></svg>`,
+
+  // magic_document — viewBox "0 0 14.6417 16.4643"
+  magic_document: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 14.6417 16.4643" fill="${col}"><path d="M1.94435 16C1.40191 16 0.942215 15.8115 0.56525 15.4346C0.188417 15.0576 0 14.598 0 14.0557V1.94435C0 1.40205 0.188417 0.942414 0.56525 0.565448C0.942215 0.188483 1.40191 0 1.94435 0H7.34864C7.60405 0 7.84875 0.0461612 8.08274 0.138485C8.31685 0.230808 8.53278 0.375907 8.73052 0.573781L11.6169 3.45995C11.8148 3.65782 11.9599 3.87375 12.0522 4.10773C12.1444 4.34185 12.1905 4.58661 12.1905 4.84202V7.15798C12.1905 7.30876 12.1524 7.44394 12.0762 7.56351C12 7.68308 11.8894 7.77971 11.7445 7.85338C11.4656 8.01382 11.2056 8.20535 10.9643 8.42795C10.7231 8.65043 10.4837 8.88045 10.2461 9.118L7.08894 12.2665C6.89119 12.4643 6.74801 12.6803 6.65939 12.9142C6.57077 13.1484 6.52646 13.3931 6.52646 13.6485V15.0278C6.52646 15.2974 6.43189 15.5268 6.24275 15.7161C6.05347 15.9054 5.82398 16 5.55429 16H1.94435Z"/><path d="M7.88513 5.27752H10.2461L6.91295 1.94435V4.30534C6.91295 4.57504 7.00759 4.80452 7.19687 4.9938C7.38614 5.18294 7.61556 5.27752 7.88513 5.27752Z"/><path d="M12.9658 10.6513L13.2024 11.1442C13.2932 11.3333 13.5624 11.3333 13.6532 11.1442L13.8898 10.6513C13.9144 10.6001 13.9557 10.5587 14.007 10.5341L14.4999 10.2975C14.689 10.2067 14.689 9.93751 14.4999 9.84674L14.007 9.61014C13.9557 9.58553 13.9144 9.54419 13.8898 9.49294L13.6532 9C13.5624 8.81091 13.2932 8.81091 13.2024 9L12.9658 9.49294C12.9412 9.54419 12.8999 9.58553 12.8486 9.61014L12.3557 9.84674C12.1666 9.93751 12.1666 10.2067 12.3557 10.2975L12.8486 10.5341C12.8999 10.5587 12.9412 10.6001 12.9658 10.6513Z"/><path d="M10.0119 15.0097L10.5409 16.1715C10.7187 16.5619 11.2732 16.5619 11.451 16.1715L11.9804 15.0088C12.0307 14.8984 12.1194 14.81 12.2301 14.7602L13.3689 14.2472C13.7601 14.071 13.7622 13.5161 13.3723 13.337L12.2276 12.811C12.1185 12.7609 12.031 12.6732 11.9813 12.5639L11.451 11.3993C11.2732 11.0089 10.7187 11.0089 10.5409 11.3993L10.011 12.563C9.96097 12.6728 9.87295 12.7609 9.76314 12.8109L8.60932 13.3363C8.21734 13.5148 8.21941 14.0723 8.6127 14.2479L9.76063 14.7604C9.87198 14.8101 9.96132 14.8987 10.0119 15.0097Z"/></svg>`,
+
+  // magic_edit — viewBox "0 0 15.4238 15.8646"
+  magic_edit: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 15.4238 15.8646" fill="${col}"><path d="M13.7479 10.0516L13.9845 10.5446C14.0753 10.7337 14.3445 10.7337 14.4352 10.5446L14.6719 10.0516C14.6965 10.0004 14.7378 9.95903 14.7891 9.93443L15.282 9.69782C15.4711 9.60706 15.4711 9.33782 15.282 9.24706L14.7891 9.01045C14.7378 8.98585 14.6965 8.94451 14.6719 8.89326L14.4352 8.40032C14.3445 8.21123 14.0753 8.21123 13.9845 8.40032L13.7479 8.89326C13.7233 8.94451 13.6819 8.98585 13.6307 9.01045L13.1377 9.24706C12.9487 9.33782 12.9487 9.60706 13.1377 9.69782L13.6307 9.93443C13.6819 9.95903 13.7233 10.0004 13.7479 10.0516Z"/><path d="M10.7939 14.41L11.3229 15.5718C11.5007 15.9622 12.0553 15.9622 12.233 15.5718L12.7625 14.4092C12.8128 14.2987 12.9015 14.2103 13.0122 14.1605L14.1509 13.6475C14.5422 13.4713 14.5443 12.9165 14.1543 12.7373L13.0096 12.2114C12.9005 12.1612 12.8131 12.0735 12.7633 11.9642L12.233 10.7996C12.0553 10.4092 11.5007 10.4092 11.3229 10.7996L10.793 11.9634C10.743 12.0732 10.655 12.1612 10.5452 12.2112L9.39138 12.7366C8.9994 12.9151 9.00147 13.4726 9.39476 13.6482L10.5427 14.1607C10.654 14.2104 10.7434 14.2991 10.7939 14.41Z"/><path d="M1.26824 5.29019L1.66401 6.15757C1.79699 6.44902 2.21185 6.44902 2.34483 6.15757L2.74089 5.28955C2.77851 5.20709 2.8449 5.1411 2.92768 5.10389L3.77958 4.72092C4.07227 4.58935 4.07382 4.17513 3.78212 4.04137L2.9258 3.64872C2.84417 3.6113 2.77877 3.5458 2.74155 3.46422L2.34483 2.59475C2.21185 2.3033 1.79699 2.3033 1.66401 2.59475L1.26759 3.46356C1.23018 3.54554 1.16433 3.61126 1.08219 3.64859L0.219034 4.04084C-0.074203 4.1741 -0.0726557 4.59035 0.221564 4.72143L1.08031 5.10403C1.16361 5.14114 1.23044 5.20735 1.26824 5.29019Z"/><path d="M2.41171 12.7592H3.48588L10.4978 5.74729L9.44692 4.68479L2.41171 11.7202V12.7592ZM1.4063 14.8008C1.12491 14.8008 0.883797 14.7018 0.682964 14.5038C0.482131 14.3058 0.381714 14.0658 0.381714 13.7837V11.7152C0.381714 11.4456 0.430186 11.1872 0.527131 10.9398C0.624075 10.6926 0.776436 10.4651 0.984214 10.2573L10.7332 0.496458C10.9016 0.320069 11.0868 0.193263 11.2886 0.11604C11.4905 0.0386794 11.7016 0 11.9217 0C12.1342 0 12.3425 0.0386794 12.5467 0.11604C12.7507 0.193263 12.9448 0.31611 13.129 0.484582L14.698 2.01813C14.8664 2.19451 14.9913 2.38674 15.0725 2.59479C15.1537 2.80271 15.1942 3.01646 15.1942 3.23604C15.1942 3.46021 15.1535 3.67694 15.0719 3.88625C14.9904 4.09556 14.8657 4.28326 14.698 4.44937L4.9488 14.1983C4.74102 14.4061 4.51387 14.5585 4.26734 14.6554C4.02081 14.7524 3.76296 14.8008 3.4938 14.8008H1.4063ZM9.9688 5.21375L9.44692 4.68479L10.4978 5.74729L9.9688 5.21375Z"/></svg>`,
+
+  // sparkle — viewBox "0 0 16.1057 16.102"
+  sparkle: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 16.1057 16.102" fill="${col}"><path d="M13.8931 15.8092C13.7153 16.1996 13.1608 16.1996 12.983 15.8092L12.454 14.6474C12.4034 14.5364 12.3141 14.4478 12.2028 14.3981L11.0548 13.8856C10.6615 13.71 10.6595 13.1525 11.0514 12.974L12.2053 12.4486C12.3151 12.3986 12.4031 12.3106 12.4531 12.2007L12.983 11.037C13.1608 10.6466 13.7153 10.6466 13.8931 11.037L14.4234 12.2016C14.4732 12.3109 14.5606 12.3986 14.6697 12.4488L15.8144 12.9747C16.2043 13.1538 16.2023 13.7087 15.811 13.8849L14.6722 14.3979C14.5616 14.4477 14.4728 14.5361 14.4225 14.6466L13.8931 15.8092Z"/><path d="M4.54709 9.69355L6.25628 13.4361C6.5238 14.0218 7.35653 14.0203 7.62187 13.4335L9.31201 9.69609C9.3868 9.5307 9.51903 9.39805 9.68418 9.32273L13.4382 7.61067C14.0245 7.3433 14.0229 6.50994 13.4357 6.24475L9.68605 4.55146C9.51976 4.47636 9.38654 4.34322 9.31136 4.17696L7.62187 0.440967C7.35653 -0.145792 6.5238 -0.147337 6.25628 0.438433L4.54775 4.17949C4.47253 4.3442 4.34026 4.47614 4.17536 4.55094L0.440175 6.24527C-0.145529 6.51095 -0.147073 7.34228 0.437639 7.61014L4.17723 9.32326C4.34098 9.39828 4.47227 9.52972 4.54709 9.69355Z"/></svg>`,
+
+  // analytics — viewBox "0 0 15 15"
+  analytics: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 15 15" fill="${col}"><path d="M4.16667 7.5C3.93056 7.5 3.73264 7.57986 3.57292 7.73958C3.41319 7.89931 3.33333 8.09722 3.33333 8.33333V10.8333C3.33333 11.0694 3.41319 11.2674 3.57292 11.4271C3.73264 11.5868 3.93056 11.6667 4.16667 11.6667C4.40278 11.6667 4.60069 11.5868 4.76042 11.4271C4.92014 11.2674 5 11.0694 5 10.8333V8.33333C5 8.09722 4.92014 7.89931 4.76042 7.73958C4.60069 7.57986 4.40278 7.5 4.16667 7.5ZM10.8333 3.33333C10.5972 3.33333 10.3993 3.41319 10.2396 3.57292C10.0799 3.73264 10 3.93056 10 4.16667V10.8333C10 11.0694 10.0799 11.2674 10.2396 11.4271C10.3993 11.5868 10.5972 11.6667 10.8333 11.6667C11.0694 11.6667 11.2674 11.5868 11.4271 11.4271C11.5868 11.2674 11.6667 11.0694 11.6667 10.8333V4.16667C11.6667 3.93056 11.5868 3.73264 11.4271 3.57292C11.2674 3.41319 11.0694 3.33333 10.8333 3.33333ZM7.5 9.16667C7.26389 9.16667 7.06597 9.24653 6.90625 9.40625C6.74653 9.56597 6.66667 9.76389 6.66667 10V10.8333C6.66667 11.0694 6.74653 11.2674 6.90625 11.4271C7.06597 11.5868 7.26389 11.6667 7.5 11.6667C7.73611 11.6667 7.93403 11.5868 8.09375 11.4271C8.25347 11.2674 8.33333 11.0694 8.33333 10.8333V10C8.33333 9.76389 8.25347 9.56597 8.09375 9.40625C7.93403 9.24653 7.73611 9.16667 7.5 9.16667ZM1.66667 15C1.20833 15 0.815972 14.8368 0.489583 14.5104C0.163194 14.184 0 13.7917 0 13.3333V1.66667C0 1.20833 0.163194 0.815972 0.489583 0.489583C0.815972 0.163194 1.20833 0 1.66667 0H13.3333C13.7917 0 14.184 0.163194 14.5104 0.489583C14.8368 0.815972 15 1.20833 15 1.66667V13.3333C15 13.7917 14.8368 14.184 14.5104 14.5104C14.184 14.8368 13.7917 15 13.3333 15H1.66667ZM7.5 7.5C7.73611 7.5 7.93403 7.42014 8.09375 7.26042C8.25347 7.10069 8.33333 6.90278 8.33333 6.66667C8.33333 6.43056 8.25347 6.23264 8.09375 6.07292C7.93403 5.91319 7.73611 5.83333 7.5 5.83333C7.26389 5.83333 7.06597 5.91319 6.90625 6.07292C6.74653 6.23264 6.66667 6.43056 6.66667 6.66667C6.66667 6.90278 6.74653 7.10069 6.90625 7.26042C7.06597 7.42014 7.26389 7.5 7.5 7.5Z"/></svg>`,
+
+  // help & settings (standard 24x24)
+  help: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>`,
+  settings: (sz=20,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+  hexagon: (sz=24,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M17.2 3H6.8l-5.2 9 5.2 9h10.4l5.2-9z"/></svg>`,
+  search: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>`,
+  filter: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>`,
+  edit: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`,
+  copy: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`,
+  mic: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M12.0001 14C11.1667 14 10.4584 13.7083 9.87508 13.125C9.29174 12.5417 9.00008 11.8333 9.00008 11V5C9.00008 4.16667 9.29174 3.45833 9.87508 2.875C10.4584 2.29167 11.1667 2 12.0001 2C12.8334 2 13.5417 2.29167 14.1251 2.875C14.7084 3.45833 15.0001 4.16667 15.0001 5V11C15.0001 11.8333 14.7084 12.5417 14.1251 13.125C13.5417 13.7083 12.8334 14 12.0001 14ZM11.0001 20V17.925C9.46674 17.7083 8.15424 17.0583 7.06258 15.975C5.97091 14.8917 5.30841 13.575 5.07508 12.025C5.04174 11.7417 5.11674 11.5 5.30008 11.3C5.48341 11.1 5.71674 11 6.00008 11C6.28341 11 6.52091 11.0958 6.71258 11.2875C6.90424 11.4792 7.03341 11.7167 7.10008 12C7.33341 13.1667 7.91258 14.125 8.83758 14.875C9.76258 15.625 10.8167 16 12.0001 16C13.2001 16 14.2584 15.6208 15.1751 14.8625C16.0917 14.1042 16.6667 13.15 16.9001 12C16.9667 11.7167 17.0959 11.4792 17.2876 11.2875C17.4792 11.0958 17.7167 11 18.0001 11C18.2834 11 18.5167 11.1 18.7001 11.3C18.8834 11.5 18.9584 11.7417 18.9251 12.025C18.6917 13.5417 18.0334 14.85 16.9501 15.95C15.8667 17.05 14.5501 17.7083 13.0001 17.925V20C13.0001 20.2833 12.9042 20.5208 12.7126 20.7125C12.5209 20.9042 12.2834 21 12.0001 21C11.7167 21 11.4792 20.9042 11.2876 20.7125C11.0959 20.5208 11.0001 20.2833 11.0001 20Z"/></svg>`,
+  // magic_mic with sparkle paths
+  magic_mic: (sz=24,col='white') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M12 14C11.1667 14 10.4583 13.7083 9.87501 13.125C9.29168 12.5417 9.00001 11.8333 9.00001 11V5C9.00001 4.16667 9.29168 3.45833 9.87501 2.875C10.4583 2.29167 11.1667 2 12 2C12.8333 2 13.5417 2.29167 14.125 2.875C14.7083 3.45833 15 4.16667 15 5V11C15 11.8333 14.7083 12.5417 14.125 13.125C13.5417 13.7083 12.8333 14 12 14ZM11 20V17.925C9.46668 17.7083 8.15418 17.0583 7.06251 15.975C5.97085 14.8917 5.30835 13.575 5.07501 12.025C5.04168 11.7417 5.11668 11.5 5.30001 11.3C5.48335 11.1 5.71668 11 6.00001 11C6.28335 11 6.52085 11.0958 6.71251 11.2875C6.90418 11.4792 7.03335 11.7167 7.10001 12C7.33335 13.1667 7.91251 14.125 8.83751 14.875C9.76251 15.625 10.8167 16 12 16C13.2 16 14.2583 15.6208 15.175 14.8625C16.0917 14.1042 16.6667 13.15 16.9 12C16.9667 11.7167 17.0958 11.4792 17.2875 11.2875C17.4792 11.0958 17.7167 11 18 11C18.2833 11 18.5167 11.1 18.7 11.3C18.8833 11.5 18.9583 11.7417 18.925 12.025C18.6917 13.5417 18.0333 14.85 16.95 15.95C15.8667 17.05 14.55 17.7083 13 17.925V20C13 20.2833 12.9042 20.5208 12.7125 20.7125C12.5208 20.9042 12.2833 21 12 21C11.7167 21 11.4792 20.9042 11.2875 20.7125C11.0958 20.5208 11 20.2833 11 20Z"/><path d="M3.48614 7.88986L3.8819 8.75724C4.01489 9.04869 4.42974 9.04869 4.56273 8.75724L4.95878 7.88922C4.99641 7.80676 5.0628 7.74077 5.14557 7.70356L5.99748 7.32059C6.29017 7.18902 6.29172 6.7748 6.00002 6.64104L5.14369 6.24839C5.06207 6.21097 4.99667 6.14548 4.95944 6.06389L4.56273 5.19442C4.42974 4.90297 4.01489 4.90297 3.8819 5.19442L3.48548 6.06323C3.44808 6.14521 3.38223 6.21093 3.30008 6.24826L2.43693 6.64051C2.14369 6.77377 2.14524 7.19002 2.43946 7.3211L3.29821 7.7037C3.3815 7.74081 3.44834 7.80702 3.48614 7.88986Z"/><path d="M20.9659 10.0071L21.2025 10.5C21.2933 10.6891 21.5625 10.6891 21.6533 10.5L21.8899 10.0071C21.9145 9.95581 21.9558 9.91447 22.0071 9.88986L22.5 9.65326C22.6891 9.56249 22.6891 9.29326 22.5 9.20249L22.0071 8.96589C21.9558 8.94128 21.9145 8.89995 21.8899 8.84869L21.6533 8.35575C21.5625 8.16666 21.2933 8.16666 21.2025 8.35575L20.9659 8.84869C20.9413 8.89995 20.8999 8.94128 20.8487 8.96589L20.3558 9.20249C20.1667 9.29326 20.1667 9.56249 20.3558 9.65326L20.8487 9.88986C20.8999 9.91447 20.9413 9.95581 20.9659 10.0071Z"/><path d="M17.6953 5.15149L18.2244 6.3133C18.4021 6.70369 18.9567 6.70369 19.1344 6.3133L19.6639 5.15062C19.7142 5.04017 19.8029 4.95179 19.9136 4.90195L21.0523 4.38898C21.4436 4.21274 21.4457 3.65792 21.0557 3.47876L19.9111 2.95282C19.8019 2.90269 19.7145 2.81497 19.6648 2.70569L19.1344 1.54108C18.9567 1.15069 18.4021 1.15069 18.2244 1.54108L17.6944 2.70481C17.6444 2.81462 17.5564 2.90265 17.4466 2.95265L16.2928 3.47805C15.9008 3.65654 15.9029 4.21408 16.2962 4.38966L17.4441 4.90213C17.5554 4.95184 17.6448 5.04052 17.6953 5.15149Z"/></svg>`,
+  check: (sz=12,col='white') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+  arrow_left: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>`,
+  arrow_down: (sz=16,col='currentColor') => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="${col}"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>`,
+};
+
+// Waveform bars
+function waveform(count=36) {
+  const hs = [20,40,70,55,90,65,80,45,75,60,85,50,70,40,80,60,50,90,70,55,65,80,45,70,60,85,50,40,75,65,55,80,45,70,55,40];
+  return Array.from({length:count},(_,i)=>{
+    const h=hs[i%hs.length];
+    const d=(i*0.06).toFixed(2);
+    return `<div class="wbar" style="height:${h}%;animation-delay:${d}s"></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// PRIMARY NAV (shared)
+// ═══════════════════════════════════════
+function primaryNav(active='scribes') {
+  const items = [
+    { id:'visits',    label:'Visits',    icon: Icons.stethoscope(20) },
+    { id:'scribes',   label:'Scribes',   icon: Icons.magic_document(20) },
+    { id:'customize', label:'Customize', icon: Icons.magic_edit(20) },
+    { id:'assistant', label:'Assistant', icon: Icons.sparkle(20) },
+    { id:'admin',     label:'Admin',     icon: Icons.analytics(20) },
+  ];
+  return `
+  <div class="primary-nav">
+    <div class="nav-logo">${Icons.hexagon(24,'#1132ee')}</div>
+    <div class="nav-items">
+      ${items.map(it=>`
+        <div class="nav-item${it.id===active?' active':''}">
+          <div class="nav-icon-wrap">${it.icon}</div>
+          <span class="nav-item-label">${it.label}</span>
+        </div>`).join('')}
+    </div>
+    <div class="nav-footer">
+      <div class="nav-footer-btn">${Icons.help(20)}</div>
+      <div class="nav-footer-btn">${Icons.settings(20)}</div>
+      <div class="user-avatar">A</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const scribes = [
+  { name:'John Smith',   age:45, gender:'M', duration:'12 min', status:'Generated' },
+  { name:'Sarah Johnson',age:58, gender:'F', duration:'18 min', status:'Generated' },
+  { name:'Robert Chen',  age:36, gender:'M', duration:'9 min',  status:'Generated' },
+];
+
+const patients = [
+  { name:'John Smith',   age:45, gender:'M', time:'9:00 AM',  status:'Generated' },
+  { name:'Sarah Johnson',age:58, gender:'F', time:'9:30 AM',  status:'In Queue' },
+  { name:'Robert Chen',  age:36, gender:'M', time:'10:00 AM', status:'In Queue' },
+  { name:'Emily Torres', age:29, gender:'F', time:'10:30 AM', status:'In Queue' },
+];
+
+// ═══════════════════════════════════════
+// SECONDARY NAV PANELS
+// ═══════════════════════════════════════
+function scribesSecNav(selectedIdx=0) {
+  return `
+  <div class="secondary-nav">
+    <div class="sec-nav-header">
+      <span class="sec-nav-title">My Scribes</span>
+    </div>
+    <div class="sec-nav-btns">
+      <button class="btn-tertiary">${Icons.search(16)}Search</button>
+      <button class="btn-tertiary">${Icons.filter(16)}Filter</button>
+    </div>
+    <div class="sec-nav-scroll">
+      <div class="date-group-label">Today</div>
+      ${scribes.map((s,i)=>`
+        <div class="list-item-wrap">
+          <button class="list-item${i===selectedIdx?' selected':''}">
+            <div class="item-row1">
+              <span class="item-name">${s.name}</span>
+              <span class="status-generated">✓ Generated</span>
+            </div>
+            <div class="item-row2">
+              <div class="item-meta"><span>${s.age}</span><span>·</span><span>${s.gender}</span></div>
+              <span class="item-time">${s.duration}</span>
+            </div>
+          </button>
+        </div>`).join('')}
+      <div class="date-group-label">Yesterday</div>
+      ${[{name:'Maria Garcia',age:52,gender:'F',duration:'14 min'},{name:'David Kim',age:41,gender:'M',duration:'11 min'}].map(s=>`
+        <div class="list-item-wrap">
+          <button class="list-item">
+            <div class="item-row1">
+              <span class="item-name">${s.name}</span>
+              <span class="status-generated">✓ Generated</span>
+            </div>
+            <div class="item-row2">
+              <div class="item-meta"><span>${s.age}</span><span>·</span><span>${s.gender}</span></div>
+              <span class="item-time">${s.duration}</span>
+            </div>
+          </button>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function visitsSecNav(selectedIdx=0) {
+  return `
+  <div class="secondary-nav" style="background:white">
+    <div class="sec-nav-header" style="justify-content:space-between">
+      <span class="sec-nav-title">Mar 20, Today</span>
+      <div style="display:flex;gap:2px">
+        <button class="icon-btn">${Icons.arrow_left(16)}</button>
+        <button class="icon-btn" style="transform:scaleX(-1)">${Icons.arrow_left(16)}</button>
+      </div>
+    </div>
+    <div class="sec-nav-btns">
+      <button class="btn-tertiary">${Icons.search(16)}Search</button>
+      <button class="btn-tertiary">${Icons.filter(16)}Filter</button>
+    </div>
+    <div class="sec-nav-scroll">
+      ${patients.map((p,i)=>`
+        <div style="background:white">
+          <button class="patient-item${i===selectedIdx?' selected':''}">
+            <div class="item-row1">
+              <span class="item-name">${p.name}</span>
+              ${p.status==='Generated'?`<span class="status-generated">✓ Generated</span>`:p.status==='Processing'?`<span class="status-processing">⟳ Processing</span>`:''}
+            </div>
+            <div class="item-row2">
+              <div class="item-meta"><span>${p.age}</span><span>·</span><span>${p.gender}</span></div>
+              <span class="item-time">${p.time}</span>
+            </div>
+          </button>
+        </div>`).join('')}
+    </div>
+    <div style="background:white;padding:8px 12px 24px">
+      <button class="btn-secondary lg" style="width:100%;justify-content:center">
+        ${Icons.mic(24)}Instant Visit
+      </button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// NOTE VIEW (Scribes main content)
+// ═══════════════════════════════════════
+function noteView(activeTab='clinical', newNote=false) {
+  const hpi = `Patient is a 45-year-old male who presents for evaluation of persistently elevated blood pressure. He reports recurrent headaches over the past 6 months, occurring 2–3 times per week, described as pounding and sometimes pulsatile. He also notes intermittent dizziness and leg fatigue with exertion. BP was 152/92 at urgent care 2 weeks ago; repeat readings at pharmacy 148/88 and 155/90. Today's check-in BP: 150/92, HR 76.`;
+  const ros = `Constitutional: No fever, fatigue, or unexplained weight change. Cardiovascular: Palpitations denied. Dyspnea on exertion absent. Neurological: Headaches as above. No vision changes, no focal weakness. Musculoskeletal: Leg fatigue with exercise, denies joint swelling. All other systems reviewed and negative.`;
+  const pe = `Vital Signs: BP 150/92 mmHg, HR 76 bpm, RR 16, Temp 98.6°F, SpO2 98% RA, BMI 25.5. General: Well-appearing male in no acute distress. HEENT: Normocephalic, atraumatic. Cardiovascular: Regular rate and rhythm, no murmurs, rubs, or gallops. Peripheral pulses 2+ bilaterally. Lungs: Clear to auscultation bilaterally. Abdomen: Soft, non-tender, no bruits.`;
+  const mdm = `1. Hypertension — confirmed by repeated elevated readings. Risk stratification: low-moderate (no DM, no tobacco, no family history of early CV disease). Plan: initiate lisinopril 10mg daily, DASH diet counseling, home BP log.\n2. Recurrent headaches — likely hypertension-related. Will reassess after BP control.\n3. Leg fatigue with exertion — evaluate for peripheral vascular disease if BP treatment insufficient. Consider echo to rule out structural causes.\n4. Preventive care gap: Colorectal cancer screening due (age 45). Order colonoscopy referral.`;
+
+  const sections = [
+    { id:'hpi', label:'HPI', content: hpi },
+    { id:'ros', label:'ROS', content: ros },
+    { id:'pe',  label:'PE',  content: pe  },
+    { id:'mdm', label:'MDM / Assessment & Plan', content: mdm },
+  ];
+
+  return `
+  <div class="main-area" style="flex-direction:row">
+    <!-- Center: note card -->
+    <div class="center-col">
+      <div class="note-card">
+        <div class="tabs-bar">
+          <button class="tab${activeTab==='clinical'?' active':''}">Clinical Note</button>
+          <button class="tab${activeTab==='transcript'?' active':''}">Transcript</button>
+          <button class="tab${activeTab==='previsit'?' active':''}">Previsit</button>
+          <div style="flex:1"></div>
+          <!-- Start Visit button (top right of note) -->
+          <button class="btn-primary md" style="margin:6px 0">${Icons.mic(16)}Start Visit</button>
+        </div>
+        <div class="note-scroll">
+          <div class="note-template-title">${newNote?'<span style="display:inline-flex;align-items:center;gap:6px;background:#f1f3fe;border-radius:4px;padding:2px 8px;font-size:13px;color:#1132ee;margin-bottom:8px;margin-right:8px">Just generated</span>':''}Standard Office Visit</div>
+          ${sections.map(s=>`
+            <div class="note-section">
+              <div class="note-section-head">
+                <span class="note-section-title">${s.label}</span>
+                <div class="note-section-actions">
+                  <button class="icon-btn">${Icons.edit(16)}</button>
+                  <button class="icon-btn">${Icons.mic(16)}</button>
+                  <button class="btn-tertiary">${Icons.copy(16)}Copy</button>
+                </div>
+              </div>
+              <div class="note-section-body">${s.content}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <!-- Right panel: Actions -->
+    <div class="right-panel">
+      <div class="right-card">
+        <div class="right-tabs-wrap">
+          <div class="tabs-bar" style="border:none;padding:0">
+            <button class="tab active">Actions</button>
+            <button class="tab">Assistant</button>
+            <button class="tab">Sources</button>
+          </div>
+        </div>
+        <div class="actions-scroll">
+          <div class="action-group">
+            <div class="action-group-header">
+              <span class="action-group-title">Improve Scribe</span>
+              ${Icons.arrow_down(16,'#666')}
+            </div>
+            <div class="action-nudge">
+              <div class="action-nudge-title">Add coarctation of aorta to differential</div>
+              <div class="action-nudge-body">Young patient with leg fatigue + hypertension — consider structural causes. Upper/lower extremity BP differential may be warranted.</div>
+              <div class="nudge-action-row">
+                <button class="btn-primary sm">Apply</button>
+                <button class="btn-tertiary-neutral">Dismiss</button>
+              </div>
+            </div>
+            <div class="action-nudge">
+              <div class="action-nudge-title">Colorectal cancer screening overdue</div>
+              <div class="action-nudge-body">Patient is 45 years old with no prior colonoscopy documented. USPSTF recommends screening starting at age 45.</div>
+              <div class="nudge-action-row">
+                <button class="btn-primary sm">Add to Plan</button>
+                <button class="btn-tertiary-neutral">Dismiss</button>
+              </div>
+            </div>
+          </div>
+          <div class="action-group">
+            <div class="action-group-header">
+              <span class="action-group-title">Views & Highlights</span>
+              ${Icons.arrow_down(16,'#666')}
+            </div>
+            <button class="btn-tertiary" style="gap:6px">${Icons.sparkle(14,'#1132ee')}Show Highlights</button>
+          </div>
+          <div class="action-group">
+            <div class="action-group-header">
+              <span class="action-group-title">Edit Tools</span>
+              ${Icons.arrow_down(16,'#666')}
+            </div>
+            <button class="btn-secondary" style="padding:6px 12px;font-size:13px;width:100%;justify-content:center">${Icons.mic(16)}Dictate addendum</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// VISITS VIEW (previsit + patient info)
+// ═══════════════════════════════════════
+function visitsView() {
+  return `
+  <div class="main-area" style="flex-direction:row">
+    <div class="center-col">
+      <div class="note-card">
+        <div class="tabs-bar">
+          <button class="tab active">Previsit</button>
+          <button class="tab">Note</button>
+        </div>
+        <div class="note-scroll">
+          <div class="note-template-title">John Smith, 45M</div>
+          <div class="previsit-section">
+            <div class="previsit-section-title">At a Glance</div>
+            <ul class="previsit-list">
+              <li>Persistent elevated BP (152/92 at UC, 148/88 and 155/90 at pharmacy, 150/92 today)</li>
+              <li>Recurrent pounding headaches 2–3×/week for 6 months; occasional dizziness</li>
+              <li>Leg fatigue with exertion — possible coarctation-related symptom</li>
+              <li>No prior hypertension workup; no chronic medications; no known drug allergies</li>
+            </ul>
+          </div>
+          <div class="previsit-section">
+            <div class="previsit-section-title">Details</div>
+            <ul class="previsit-list">
+              <li>Age 45, BMI 25.5, non-smoker, alcohol social (1–2 drinks/week)</li>
+              <li>Elevated BP noted as teenager — never fully worked up</li>
+              <li>No family history of early HTN or cardiovascular disease; no diabetes</li>
+              <li>Exercise intolerance with leg fatigue — attributed to deconditioning by patient</li>
+            </ul>
+          </div>
+          <div class="previsit-section">
+            <div class="previsit-section-title">Suggested Differential</div>
+            <ul class="previsit-list">
+              <li>Essential hypertension (most likely)</li>
+              <li>Stress-related / lifestyle-related BP elevation</li>
+              <li>Secondary hypertension — renal or endocrine cause</li>
+              <li>Coarctation of aorta (low probability — consider if resistant to treatment)</li>
+            </ul>
+          </div>
+          <div class="previsit-section">
+            <div class="previsit-section-title">Care Gaps &amp; Nudges</div>
+            <ul class="previsit-list">
+              <li>Colorectal cancer screening due (age 45, no prior colonoscopy on file)</li>
+              <li>Consider secondary HTN workup if no response to first-line treatment</li>
+              <li>Echocardiogram: auto-prepared order (not yet signed)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="visits-bottom-bar">
+          <div class="start-visit-area">
+            <button class="btn-primary lg" style="width:100%;justify-content:center;gap:10px" onclick="goToState(1)">
+              ${Icons.mic(24)}Start Visit with John Smith
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Right panel: Sources -->
+    <div class="right-panel">
+      <div class="right-card">
+        <div class="right-tabs-wrap">
+          <div class="tabs-bar" style="border:none;padding:0">
+            <button class="tab">Actions</button>
+            <button class="tab">Assistant</button>
+            <button class="tab active">Sources</button>
+          </div>
+        </div>
+        <div class="actions-scroll">
+          <div class="action-group">
+            <div class="action-group-title" style="margin-bottom:8px">Data Sources</div>
+            ${[
+              {badge:'Today\'s Note',bg:'#f1f3fe',tc:'#1132ee',title:'Previsit summary, today',snippet:'Recurrent headaches, elevated BP at urgent care and pharmacy...'},
+              {badge:'Form',bg:'#f0f3f4',tc:'#576b75',title:'Intake form, today',snippet:'Chief complaint: headaches and high blood pressure since 6 months'},
+              {badge:'Past Note',bg:'#ecf8fb',tc:'#207384',title:'Urgent care visit, 2 weeks ago',snippet:'BP 152/92 mmHg, presenting with headache and dizziness'},
+            ].map(ds=>`
+              <div class="data-source-item">
+                <span class="ds-badge" style="background:${ds.bg};color:${ds.tc}">${ds.badge}</span>
+                <span class="ds-title">${ds.title}</span>
+                <span class="ds-snippet">${ds.snippet}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// RECORDING VIEW
+// ═══════════════════════════════════════
+function recordingView(withTranscript=false) {
+  return `
+  <div class="main-area">
+    <div class="recording-view">
+      <div class="recording-center">
+        <div class="recording-status">
+          <div class="rec-patient-name">John Smith · 45M</div>
+          <div class="rec-timer">${withTranscript?'03:42':'00:08'}</div>
+          <div class="rec-badge">
+            <div class="rec-dot"></div>
+            <span class="rec-label">Ambient Recording Active</span>
+          </div>
+        </div>
+        <div class="waveform-row">${waveform(40)}</div>
+        <button class="magic-mic-btn stop" onclick="goToState(3)">
+          ${Icons.magic_mic(32,'white')}
+        </button>
+        <div class="recording-actions">
+          <button class="btn-tertiary-neutral">Pause</button>
+          <button class="btn-secondary" style="padding:8px 16px;font-size:15px" onclick="goToState(3)">Stop &amp; Generate Note</button>
+        </div>
+      </div>
+      ${withTranscript ? `
+      <div style="background:white;border-top:1px solid rgba(0,0,0,0.1);padding:16px 24px;max-height:200px;overflow-y:auto">
+        <div style="font-size:13px;font-weight:700;color:#000;letter-spacing:0.13px;margin-bottom:10px">Live Transcript</div>
+        ${[
+          {speaker:'Provider',text:'Good morning John. What brings you in today?'},
+          {speaker:'Patient', text:'I\'ve been having these headaches for about six months now, and my blood pressure has been high everywhere I check it.'},
+          {speaker:'Provider',text:'Tell me more about the headaches — where do you feel them, and how often?'},
+          {speaker:'Patient', text:'Right at the top and back of my head. Pounding. Two or three times a week. And sometimes I feel my heartbeat in my head.'},
+          {speaker:'Provider',text:'Any dizziness or changes in vision with them?'},
+          {speaker:'Patient', text:'Yeah, occasional dizziness. No vision changes. Oh, and my legs get tired really quickly when I exercise, but I figured I was just out of shape.'},
+        ].map(l=>`
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start">
+            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;background:${l.speaker==='Provider'?'#f1f3fe':'#f0fdf4'};color:${l.speaker==='Provider'?'#1132ee':'#166534'}">${l.speaker==='Provider'?'Dr.':'Pt.'}</span>
+            <span style="font-size:13px;color:#1a1a1a;line-height:1.5">${l.text}</span>
+          </div>`).join('')}
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// PROCESSING VIEW
+// ═══════════════════════════════════════
+function processingView() {
+  return `
+  <div class="main-area">
+    <div class="processing-view">
+      <div class="spinner-ring"></div>
+      <div class="processing-label">Generating clinical note…</div>
+      <div class="processing-sub">Analyzing 3m 42s of ambient audio<br>Structuring note from transcript</div>
+      <div class="processing-steps">
+        ${[
+          {label:'Transcription complete',done:true},
+          {label:'Extracting clinical entities',done:true},
+          {label:'Structuring note sections (HPI, ROS, PE, MDM)',done:true},
+          {label:'Applying Standard Office Visit template',done:false},
+        ].map(s=>`
+          <div class="processing-step">
+            ${s.done?`<div class="step-check">${Icons.check(10)}</div>`:'<div class="step-spinner"></div>'}
+            <span>${s.label}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// MOBILE VIEWS
+// ═══════════════════════════════════════
+function mobileBottomNav(active='scribes') {
+  const tabs = [
+    {id:'visits',   icon:Icons.stethoscope(22), label:'Visits'},
+    {id:'scribes',  icon:Icons.magic_document(22), label:'Scribes'},
+    {id:'assistant',icon:Icons.sparkle(22), label:'Assistant'},
+  ];
+  return `
+  <div class="mobile-bottom-nav">
+    ${tabs.map(t=>`
+      <div class="mobile-nav-item${t.id===active?' active':''}">
+        ${t.icon}
+        <span class="mobile-nav-label">${t.label}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+function mobileScribesView(newNote=false) {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="mobile-header">
+      <div class="mobile-header-row">
+        <div class="mobile-logo">
+          ${Icons.hexagon(20,'#1132ee')}
+          <span class="mobile-logo-text">Ambient</span>
+        </div>
+        <div style="display:flex;gap:4px">
+          ${Icons.search(22,'#666')}
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <!-- Scribe list header -->
+      <div style="background:#f7f7f7;padding:8px 16px;border-bottom:1px solid rgba(0,0,0,0.1)">
+        <div style="font-size:17px;font-weight:700;color:black;letter-spacing:0.17px">My Scribes</div>
+      </div>
+      <!-- List -->
+      <div style="overflow-y:auto;flex:1;background:#f7f7f7">
+        <div style="padding:4px 0">
+          <div style="font-size:13px;color:#666;padding:8px 16px">Today</div>
+          ${scribes.map((s,i)=>`
+            <div style="background:white;margin:0 4px;padding:12px;border-radius:8px;margin-bottom:2px${i===0?';border:1px solid rgba(0,0,0,0.1)':''}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:15px;font-weight:700;color:black;letter-spacing:0.15px">${s.name}</span>
+                <span style="font-size:13px;font-weight:700;color:#479e4c">✓ Generated</span>
+              </div>
+              <div style="font-size:13px;color:#666;letter-spacing:0.065px">${s.age} · ${s.gender} · ${s.duration}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    ${mobileBottomNav('scribes')}
+  </div>`;
+}
+
+function mobileVisitsView(selectedIdx=0) {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="mobile-header">
+      <div class="mobile-header-row">
+        <div class="mobile-logo">
+          ${Icons.hexagon(20,'#1132ee')}
+          <span class="mobile-logo-text">Ambient</span>
+        </div>
+        <span style="font-size:15px;font-weight:700;color:black">Mar 20, Today</span>
+      </div>
+    </div>
+    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div style="overflow-y:auto;flex:1;background:white">
+        ${patients.map((p,i)=>`
+          <div class="mobile-patient-item${i===selectedIdx?' selected':''}">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:15px;font-weight:700;color:black;letter-spacing:0.15px">${p.name}</span>
+              <span style="font-size:13px;font-weight:700;color:${p.status==='Generated'?'#479e4c':'#b45309'}">${p.status==='Generated'?'✓ Generated':'In Queue'}</span>
+            </div>
+            <div style="font-size:13px;color:#666;letter-spacing:0.065px">${p.age} · ${p.gender} · ${p.time}</div>
+          </div>`).join('')}
+      </div>
+      <div style="padding:8px 16px 16px;background:white;border-top:1px solid rgba(0,0,0,0.1)">
+        <button class="btn-secondary lg" style="width:100%;justify-content:center" onclick="goToState(1)">
+          ${Icons.mic(24)}Instant Visit
+        </button>
+      </div>
+    </div>
+    ${mobileBottomNav('visits')}
+  </div>`;
+}
+
+function mobilePrevisitView() {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="mobile-header">
+      <div class="mobile-header-row">
+        <button onclick="goToState(1)" style="background:none;border:none;cursor:pointer;color:#666;padding:0">${Icons.arrow_left(24)}</button>
+        <span style="font-size:17px;font-weight:700;color:black">John Smith</span>
+        <div style="width:24px"></div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;min-height:0">
+      <div class="mobile-previsit">
+        <div class="mobile-card">
+          <div class="mobile-card-title">At a Glance</div>
+          <div class="mobile-card-body">
+            <ul style="list-style:disc;margin-left:16px;display:flex;flex-direction:column;gap:4px">
+              <li>Persistent elevated BP (150/92 today)</li>
+              <li>Recurrent pounding headaches 2–3×/week</li>
+              <li>Leg fatigue with exertion</li>
+              <li>No prior workup, no medications</li>
+            </ul>
+          </div>
+        </div>
+        <div class="mobile-card">
+          <div class="mobile-card-title">Suggested Differential</div>
+          <div class="mobile-card-body">
+            <ul style="list-style:disc;margin-left:16px;display:flex;flex-direction:column;gap:4px">
+              <li>Essential hypertension</li>
+              <li>Secondary hypertension</li>
+              <li>Coarctation of aorta (low probability)</li>
+            </ul>
+          </div>
+        </div>
+        <button class="btn-primary lg" style="width:100%;justify-content:center;gap:10px" onclick="goToState(1)">
+          ${Icons.mic(24)}Start Visit
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mobileRecordingView(withTranscript=false) {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="mobile-header">
+      <div class="mobile-header-row">
+        <span style="font-size:15px;font-weight:700;color:black">John Smith · Recording</span>
+        <div class="rec-badge" style="padding:4px 10px">
+          <div class="rec-dot"></div>
+          <span style="font-size:13px;font-weight:700;color:#bb1411">${withTranscript?'03:42':'00:08'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-recording">
+      <div class="waveform-row" style="height:40px">${waveform(22)}</div>
+      <button class="magic-mic-btn stop" onclick="goToState(3)">
+        ${Icons.magic_mic(32,'white')}
+      </button>
+      <button class="btn-secondary" style="padding:10px 20px;font-size:15px" onclick="goToState(3)">Stop &amp; Generate</button>
+    </div>
+    ${withTranscript ? `
+    <div style="flex:1;overflow-y:auto;padding:12px 16px;border-top:1px solid rgba(0,0,0,0.1)">
+      ${[
+        {speaker:'Provider',text:'Good morning John. What brings you in today?'},
+        {speaker:'Patient', text:'Headaches for six months, blood pressure has been high everywhere I check it.'},
+        {speaker:'Provider',text:'Tell me about the headaches — location, frequency?'},
+        {speaker:'Patient', text:'Top and back of my head, pounding. 2–3 times a week.'},
+      ].map(l=>`
+        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:flex-start">
+          <span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;background:${l.speaker==='Provider'?'#f1f3fe':'#f0fdf4'};color:${l.speaker==='Provider'?'#1132ee':'#166534'}">${l.speaker==='Provider'?'Dr.':'Pt.'}</span>
+          <span style="font-size:13px;color:#1a1a1a;line-height:1.4">${l.text}</span>
+        </div>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+function mobileProcessingView() {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;align-items:center;justify-content:center;gap:20px;padding:32px">
+    <div class="spinner-ring"></div>
+    <div style="font-size:19px;font-weight:700;color:black;text-align:center">Generating note…</div>
+    <div style="font-size:15px;color:#666;text-align:center;line-height:1.4">Analyzing 3m 42s of ambient audio</div>
+  </div>`;
+}
+
+function mobileNoteView(newNote=false) {
+  return `
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="mobile-header">
+      <div class="mobile-header-row">
+        <button onclick="goToState(0)" style="background:none;border:none;cursor:pointer;color:#666;padding:0">${Icons.arrow_left(24)}</button>
+        <span style="font-size:17px;font-weight:700;color:black">John Smith · Note</span>
+        <button class="btn-primary sm">Sign</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:8px;padding-bottom:4px;border-bottom:1px solid rgba(0,0,0,0.1)">
+        <button class="tab active" style="font-size:13px">Clinical Note</button>
+        <button class="tab" style="font-size:13px">Transcript</button>
+        <button class="tab" style="font-size:13px">Previsit</button>
+      </div>
+    </div>
+    <div class="mobile-note">
+      ${newNote?`<div style="display:inline-flex;align-items:center;gap:6px;background:#f1f3fe;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700;color:#1132ee;width:fit-content">${Icons.sparkle(14,'#1132ee')}Just generated</div>`:''}
+      ${[
+        {title:'HPI',body:'45M with persistent elevated BP (150/92 today). Recurrent pounding headaches 2–3×/week for 6 months, pulsatile quality. Occasional dizziness. Leg fatigue with exertion. Elevated BP noted as teenager, never fully worked up.'},
+        {title:'ROS',body:'Positive: Headaches, dizziness, leg fatigue with exertion. Negative: fever, dyspnea, vision changes, joint swelling.'},
+        {title:'PE',body:'BP 150/92, HR 76, BMI 25.5. Well-appearing male, NAD. RRR, no murmurs. CTAB. Peripheral pulses 2+ bilateral.'},
+        {title:'MDM / A&P',body:'1. Hypertension — initiate lisinopril 10mg daily, DASH diet, home BP log.\n2. Headaches — likely HTN-related, reassess after BP control.\n3. Leg fatigue — consider PVD eval if BP treatment insufficient.\n4. Colon cancer screening due — refer for colonoscopy.'},
+      ].map(s=>`
+        <div class="mobile-note-section">
+          <div class="mobile-note-section-title">${s.title}</div>
+          <div class="mobile-note-section-body" style="white-space:pre-wrap">${s.body}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// STATES
+// ═══════════════════════════════════════
+// stage: 'pre' | 'during' | 'post'
+// scrollTo: id suffix passed to React app for scrollIntoView
+// spotlight: data-demo-id target for zoom overlay in React app
+// emptyNote: render scribes with blank sections (during-visit only)
+const STATES = [
+  // ── PRE-VISIT ──────────────────────────────────────────────
+  {
+    stage: 'pre',
+    desc: 'At a glance',
+    scrollTo: 'at-a-glance',
+    spotlight: null,
+    emptyNote: false,
+  },
+  {
+    stage: 'pre',
+    desc: 'Differential reasoning',
+    scrollTo: 'reasoning',
+    spotlight: 'reasoning',
+    emptyNote: false,
+  },
+  {
+    stage: 'pre',
+    desc: 'Action items',
+    scrollTo: 'action-items',
+    spotlight: 'action-items',
+    emptyNote: false,
+  },
+  // ── DURING VISIT ──────────────────────────────────────────
+  // Clip 1: Symptoms — headaches, leg fatigue → Ambient drafts HPI, nudges femoral pulse check
+  {
+    stage: 'during',
+    desc: 'Symptoms captured',
+    scrollTo: null,
+    spotlight: 'nudge',
+    emptyNote: true,
+    audio: 'clip1-symptoms.mp3',
+  },
+  // Clip 2: BP exam → arm–leg gradient detected → diagnosis & codes auto-populated
+  {
+    stage: 'during',
+    desc: 'BP exam',
+    scrollTo: null,
+    spotlight: 'billing',
+    emptyNote: true,
+    audio: 'clip2-bp-exam.mp3',
+  },
+  // Clip 3: Results back → diagnosis confirmed, treatment plan, note fully generates
+  {
+    stage: 'during',
+    desc: 'Diagnosis confirmed',
+    scrollTo: null,
+    spotlight: null,
+    emptyNote: false,
+    audio: 'clip3-diagnosis.mp3',
+  },
+  // Clip 4: Colonoscopy — pre-flagged preventive care order fires
+  {
+    stage: 'during',
+    desc: 'Preventive care flagged',
+    scrollTo: null,
+    spotlight: 'orders',
+    emptyNote: false,
+    audio: 'clip4-colonoscopy.mp3',
+  },
+  // ── POST-VISIT ────────────────────────────────────────────
+  {
+    stage: 'post',
+    desc: 'Full note generated',
+    scrollTo: null,
+    spotlight: null,
+    emptyNote: false,
+  },
+  {
+    stage: 'post',
+    desc: 'Orders & referrals',
+    scrollTo: 'orders',
+    spotlight: 'orders',
+    emptyNote: false,
+  },
+  {
+    stage: 'post',
+    desc: 'Billing & coding',
+    scrollTo: 'billing',
+    spotlight: 'billing',
+    emptyNote: false,
+  },
+];
+
+let currentStep = 0;
+
+function renderState(step) {
+  const da = document.getElementById('desktopApp');
+  const ma = document.getElementById('mobileApp');
+
+  let desk = '', mob = '';
+  switch(step) {
+    case 0:
+      desk = primaryNav('visits') + visitsSecNav(0) + visitsView();
+      mob  = mobilePrevisitView();
+      break;
+    case 1:
+      desk = primaryNav('visits') + visitsSecNav(0) + recordingView(false);
+      mob  = mobileRecordingView(false);
+      break;
+    case 2:
+      desk = primaryNav('visits') + visitsSecNav(0) + recordingView(true);
+      mob  = mobileRecordingView(true);
+      break;
+    case 3:
+      desk = primaryNav('visits') + visitsSecNav(0) + processingView();
+      mob  = mobileProcessingView();
+      break;
+    case 4:
+      desk = primaryNav('scribes') + scribesSecNav(0) + noteView('clinical', true);
+      mob  = mobileNoteView(true);
+      break;
+  }
+  da.innerHTML = desk;
+  ma.innerHTML = mob;
+}
+
+function goToState(step) {
+  currentStep = step;
+  const state = STATES[step];
+
+  // ── Audio: stop current clip, load new one if this step has audio ──
+  audioEl.pause();
+  audioEl.src = '';
+  audioFakePlaying = false;
+  const audioBtn = document.getElementById('audioPlayBtn');
+  audioBtn.textContent = '▶';
+  audioBtn.classList.remove('playing');
+
+  if (state.audio) {
+    audioEl.src = state.audio;
+    audioEl.load();
+    // First during-visit clip: give the UI a moment to settle before playing
+    const delay = (step === 3) ? 1000 : 0;
+    setTimeout(() => {
+      audioEl.play().then(() => {
+        audioBtn.textContent = '⏸';
+        audioBtn.classList.add('playing');
+      }).catch(e => console.warn('Autoplay blocked:', e));
+    }, delay);
+  }
+
+  updateNav();
+  const baseMsg = {
+    type: 'DEMO_STATE',
+    step,
+    scrollTo:  state.scrollTo  || null,
+    emptyNote: state.emptyNote || false,
+  };
+  const mf = document.getElementById('mobileFrame');
+  const df = document.getElementById('desktopFrame');
+  if (mf) mf.contentWindow.postMessage({ ...baseMsg, spotlight: null, isMobile: true }, '*');
+  if (df) df.contentWindow.postMessage({ ...baseMsg, spotlight: state.spotlight || null, isMobile: false }, '*');
+}
+function prevStep() { if(currentStep>0){ goToState(currentStep-1); } }
+function nextStep() { if(currentStep<STATES.length-1){ goToState(currentStep+1); } }
+
+function updateNav() {
+  const state = STATES[currentStep];
+  document.getElementById('btnPrev').disabled = currentStep === 0;
+  document.getElementById('btnNext').disabled = currentStep === STATES.length - 1;
+  document.getElementById('stepDesc').textContent = state.desc;
+
+  // Stage badge
+  const stageEl = document.getElementById('stageLabel');
+  const stageMap = { pre: ['stage-pre','Pre-visit'], during: ['stage-during','During visit'], post: ['stage-post','Post-visit'] };
+  const [cls, lbl] = stageMap[state.stage];
+  stageEl.className = `stage-label ${cls}`;
+  stageEl.textContent = lbl;
+
+  // Show mobile only during visit; hide for pre/post
+  const isDuring = state.stage === 'during';
+  document.getElementById('mobileWrap').classList.toggle('hidden', !isDuring);
+  document.body.classList.toggle('stage-during', isDuring);
+  document.getElementById('mobileCtxPanel').classList.toggle('visible', isDuring);
+  document.getElementById('desktopCtxPanel').classList.toggle('visible', isDuring);
+  fitDevices();
+
+  // Audio button: only visible during "during" stage
+  const audioBtn = document.getElementById('audioPlayBtn');
+  if (state.stage === 'during') {
+    audioBtn.classList.add('visible');
+  } else {
+    audioBtn.classList.remove('visible');
+    // Pause if we navigate away from during
+    if (audioFakePlaying) {
+      clearInterval(audioFakeInterval);
+      audioFakePlaying = false;
+      audioBtn.textContent = '▶';
+      audioBtn.classList.remove('playing');
+    }
+  }
+
+  // Stepper dots — grouped by stage with a small gap
+  let prev = null;
+  document.getElementById('stepDots').innerHTML = STATES.map((s, i) => {
+    const gap = prev && s.stage !== prev ? '<div style="width:8px"></div>' : '';
+    prev = s.stage;
+    return `${gap}<div class="step-dot${i === currentStep ? ' active' : ''}" onclick="goToState(${i})" title="${s.desc}"></div>`;
+  }).join('');
+}
+
+// ── Audio player ──────────────────────────────────────────────
+const audioEl = document.getElementById('audioEl');
+let audioFakePlaying = false;
+
+audioEl.addEventListener('ended', () => {
+  const btn = document.getElementById('audioPlayBtn');
+  btn.textContent = '▶';
+  btn.classList.remove('playing');
+});
+
+function toggleAudio() {
+  const btn = document.getElementById('audioPlayBtn');
+  const hasRealAudio = !!(STATES[currentStep] && STATES[currentStep].audio);
+  if (hasRealAudio) {
+    if (audioEl.paused) {
+      audioEl.play().catch(e => console.warn('Audio play failed:', e));
+      btn.textContent = '⏸';
+      btn.classList.add('playing');
+    } else {
+      audioEl.pause();
+      btn.textContent = '▶';
+      btn.classList.remove('playing');
+    }
+  } else {
+    // No file — visual toggle only
+    if (audioFakePlaying) {
+      audioFakePlaying = false;
+      btn.textContent = '▶';
+      btn.classList.remove('playing');
+    } else {
+      audioFakePlaying = true;
+      btn.textContent = '⏸';
+      btn.classList.add('playing');
+    }
+  }
+}
+
+// ── Fit devices to fill available screen space ──────────────────
+function fitDevices() {
+  const topPad = 68, botPad = 60, sidePad = 48, gap = 36, wrapPad = 40;
+  const availH = window.innerHeight - topPad - botPad;
+  const availW = window.innerWidth - sidePad;
+  const mobileVisible = !document.getElementById('mobileWrap').classList.contains('hidden');
+
+  let s, sd, mW, mH, dW, dH;
+
+  if (mobileVisible) {
+    // Desktop scaled to match mobile height. ratio = 844/760
+    const ratio = 844 / 760;
+    const sH = availH / 844;
+    const sW = (availW - gap - wrapPad * 2) / (390 + 1280 * ratio);
+    s  = Math.min(sH, sW, 1.0);
+    sd = s * ratio;
+    mW = Math.round(390 * s);  mH = Math.round(844 * s);
+    dW = Math.round(1280 * sd); dH = Math.round(760 * sd);
+
+    const mShell = document.querySelector('.mobile-shell');
+    mShell.style.width  = mW + 'px';
+    mShell.style.height = mH + 'px';
+    document.getElementById('mobileFrame').style.transform = `scale(${s})`;
+
+    // Update day/night gradient split
+    const mWrapW = mW + wrapPad;
+    const total  = mWrapW + gap + dW + wrapPad;
+    const splitFromCenter = Math.round(total / 2 - (mWrapW + gap / 2));
+    document.documentElement.style.setProperty('--split-offset', splitFromCenter + 'px');
+  } else {
+    // Desktop only — fill full available space
+    const sH = availH / 760;
+    const sW = (availW - wrapPad) / 1280;
+    sd = Math.min(sH, sW, 1.0);
+    dW = Math.round(1280 * sd); dH = Math.round(760 * sd);
+  }
+
+  const dShell = document.querySelector('.desktop-shell');
+  dShell.style.width  = dW + 'px';
+  dShell.style.height = dH + 'px';
+  document.getElementById('desktopFrame').style.transform = `scale(${sd})`;
+}
+
+fitDevices();
+window.addEventListener('resize', fitDevices);
+
+updateNav();
+
+// Send initial state once iframes finish loading
+window.addEventListener('load', () => {
+  fitDevices();
+  setTimeout(() => goToState(0), 500);
+});
+</script>
+</body>
+</html>

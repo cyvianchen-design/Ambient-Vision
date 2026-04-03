@@ -23,14 +23,14 @@ const ScribeListItem = ({
   isSelected?: boolean;
   onClick?: () => void;
 }) => {
-  const buttonClass = isSelected 
-    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
-    : "hover:bg-[var(--surface-1,#f7f7f7)]";
-    
   return (
-    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+    <div className="content-stretch flex flex-col items-start px-[4px] relative shrink-0 w-[220px]">
       <button 
-        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        className={`content-stretch cursor-pointer flex flex-col gap-[6px] items-start p-[12px] relative rounded-[8px] shrink-0 w-full transition-colors ${
+          isSelected 
+            ? "bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid"
+            : "hover:bg-[var(--surface-transparent-dark-1,rgba(0,0,0,0.01))]"
+        }`}
         onClick={onClick}
       >
         <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
@@ -74,14 +74,14 @@ const PatientListItem = ({
   isSelected?: boolean;
   onClick?: () => void;
 }) => {
-  const buttonClass = isSelected 
-    ? "bg-[var(--surface-semantic-info,#f1f3fe)] border-[var(--shape-brand,#1132ee)] border-r-2 border-solid"
-    : "hover:bg-[var(--surface-1,#f7f7f7)]";
-    
   return (
-    <div className="bg-white content-stretch flex flex-col items-start relative shrink-0 w-[240px]">
+    <div className="content-stretch flex flex-col items-start px-[4px] relative shrink-0 w-[220px]">
       <button 
-        className={`${buttonClass} content-stretch cursor-pointer flex flex-col gap-[6px] items-start pl-[12px] pr-[8px] py-[16px] relative shrink-0 w-[220px] transition-colors`}
+        className={`content-stretch cursor-pointer flex flex-col gap-[6px] items-start p-[12px] relative rounded-[8px] shrink-0 w-full transition-colors ${
+          isSelected 
+            ? "bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid"
+            : "hover:bg-[var(--surface-transparent-dark-1,rgba(0,0,0,0.01))]"
+        }`}
         onClick={onClick}
       >
         <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
@@ -120,7 +120,7 @@ type ChatMessage = {
   }[];
 };
 
-export default function Scribes({ 
+export default function Scribes({
   onNavigateToVisits,
   chatMessages,
   setChatMessages,
@@ -133,8 +133,9 @@ export default function Scribes({
   isLogoHovered,
   setIsLogoHovered,
   logoTooltipPosition,
-  setLogoTooltipPosition
-}: { 
+  setLogoTooltipPosition,
+  demoEmptyNote = false,
+}: {
   onNavigateToVisits?: () => void;
   chatMessages: Record<string, ChatMessage[]>;
   setChatMessages: (messages: Record<string, ChatMessage[]>) => void;
@@ -148,11 +149,12 @@ export default function Scribes({
   setIsLogoHovered: (hovered: boolean) => void;
   logoTooltipPosition: { x: number; y: number } | null;
   setLogoTooltipPosition: (position: { x: number; y: number } | null) => void;
+  demoEmptyNote?: boolean;
 }) {
   const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
   const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [chatInputValue, setChatInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'clinical' | 'transcript' | 'previsit'>('clinical');
+  const [activeTab, setActiveTab] = useState<'clinical' | 'transcript' | 'previsit'>('clinical'); // Updated structure for previsit
   const [selectedScribeIndex, setSelectedScribeIndex] = useState(0);
   const [selectedView, setSelectedView] = useState<'default' | 'highlights' | 'citation'>('default');
   const [activeCitation, setActiveCitation] = useState<{ id: string; number: number } | null>(null);
@@ -255,21 +257,21 @@ export default function Scribes({
   
   // Data source content for each scribe
   const dataSourceContent: Record<string, Record<string, {type: string, date: string, content: string}>> = {
-    "Cem": {
+    "John Smith": {
       "Previsit summary, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**PREVISIT SUMMARY**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
+        content: "**PREVISIT SUMMARY**\n\nPatient: John Smith, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
       },
       "Intake form, today": {
         type: "Form",
         date: "Today",
-        content: "**PATIENT INTAKE FORM**\n\nPatient Name: Cem\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+        content: "**PATIENT INTAKE FORM**\n\nPatient Name: John Smith\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
       },
       "Urgent care visit, 2 weeks ago": {
         type: "Clinical Note",
         date: "2 weeks ago",
-        content: "**URGENT CARE VISIT NOTE**\n\nPatient: Cem, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits.\n\n**EXAMINATION**\nGeneral: Well-appearing\nNeuro: Alert, oriented, no focal deficits\nCardiac: RRR\n\n**ASSESSMENT**\nDizziness, likely related to elevated blood pressure\nHypertension, uncontrolled\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nNo immediate intervention needed\nReturn precautions given"
+        content: "**URGENT CARE VISIT NOTE**\n\nPatient: John Smith, 45M\nDate: 2 weeks ago\nChief Complaint: Dizziness\n\n**VITAL SIGNS**\nBP: 152/92 mmHg (elevated)\nHR: 78 bpm\nTemp: 98.4°F\nO2 Sat: 99%\n\n**HISTORY**\nPatient presents with episode of dizziness while at work. No syncope. Reports recent headaches. No chest pain, shortness of breath, or neurologic deficits.\n\n**EXAMINATION**\nGeneral: Well-appearing\nNeuro: Alert, oriented, no focal deficits\nCardiac: RRR\n\n**ASSESSMENT**\nDizziness, likely related to elevated blood pressure\nHypertension, uncontrolled\n\n**PLAN**\nAdvised to follow up with PCP for BP management\nNo immediate intervention needed\nReturn precautions given"
       },
       "Visit transcript, 00:01:30": {
         type: "Transcript",
@@ -314,27 +316,27 @@ export default function Scribes({
       "ROS documentation, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**REVIEW OF SYSTEMS**\n\nPatient: Cem, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
+        content: "**REVIEW OF SYSTEMS**\n\nPatient: John Smith, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
       },
       "Visit vitals, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**VITAL SIGNS**\n\nPatient: Cem, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
+        content: "**VITAL SIGNS**\n\nPatient: John Smith, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
       },
       "Physical examination, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
+        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: John Smith, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
       },
       "Physical examination (additional BP exam), today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**ADDITIONAL BLOOD PRESSURE EXAMINATION**\n\nPatient: Cem, 45M\nDate: Today\nTime: During visit (after initial exam)\nIndication: Diminished femoral pulses noted on initial exam; elevated BP without clear risk factors\n\n**AMBIENT CLINICAL NUDGE (Triggered)**\n\"Mismatch between upper body symptoms (hypertension, pulsatile headaches) and lower extremity fatigue → recommend checking femoral pulses and comparing upper vs lower extremity blood pressure\"\n\n**BLOOD PRESSURE MEASUREMENTS**\n\n**Upper Extremity (Right Arm):**\n• Patient seated, arm at heart level\n• Appropriate cuff size used\n• Reading: 150/90 mmHg\n• Repeat reading: 150/92 mmHg (consistent)\n\n**Lower Extremity (Right Leg):**\n• Patient positioned prone\n• Large cuff applied to thigh\n• Popliteal artery auscultated\n• Reading: 110/70 mmHg\n\n**FINDINGS**\n• Arm-leg blood pressure gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)\n• **This finding is pathognomonic for coarctation of the aorta**\n• Normal physiologic state: leg BP should be equal to or slightly higher than arm BP\n• Significant gradient confirms vascular obstruction between upper and lower body\n\n**CLINICAL SIGNIFICANCE**\nSignificant arm-leg BP gradient detected. This is a critical finding that narrows the differential diagnosis significantly. Pattern highly suggestive of structural vascular abnormality, specifically coarctation of the aorta."
+        content: "**ADDITIONAL BLOOD PRESSURE EXAMINATION**\n\nPatient: John Smith, 45M\nDate: Today\nTime: During visit (after initial exam)\nIndication: Diminished femoral pulses noted on initial exam; elevated BP without clear risk factors\n\n**AMBIENT CLINICAL NUDGE (Triggered)**\n\"Mismatch between upper body symptoms (hypertension, pulsatile headaches) and lower extremity fatigue → recommend checking femoral pulses and comparing upper vs lower extremity blood pressure\"\n\n**BLOOD PRESSURE MEASUREMENTS**\n\n**Upper Extremity (Right Arm):**\n• Patient seated, arm at heart level\n• Appropriate cuff size used\n• Reading: 150/90 mmHg\n• Repeat reading: 150/92 mmHg (consistent)\n\n**Lower Extremity (Right Leg):**\n• Patient positioned prone\n• Large cuff applied to thigh\n• Popliteal artery auscultated\n• Reading: 110/70 mmHg\n\n**FINDINGS**\n• Arm-leg blood pressure gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)\n• **This finding is pathognomonic for coarctation of the aorta**\n• Normal physiologic state: leg BP should be equal to or slightly higher than arm BP\n• Significant gradient confirms vascular obstruction between upper and lower body\n\n**CLINICAL SIGNIFICANCE**\nSignificant arm-leg BP gradient detected. This is a critical finding that narrows the differential diagnosis significantly. Pattern highly suggestive of structural vascular abnormality, specifically coarctation of the aorta."
       },
       "Physical examination (focused re-exam), today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**FOCUSED CARDIOVASCULAR RE-EXAMINATION**\n\nPatient: Cem, 45M\nDate: Today\nTime: Following BP gradient discovery\nIndication: Re-examine for findings consistent with coarctation of aorta\n\n**AUSCULTATION (Targeted)**\n\n**Cardiac:**\n• Auscultation in supine position with patient breath-held\n• Left infraclavicular area: Grade 1-2/6 systolic ejection murmur appreciated\n• Posterior thorax (between scapulae): Faint systolic murmur heard over thoracic spine\n• These murmurs were subtle and not appreciated on initial routine examination\n\n**Vascular:**\n• Carotid arteries: No bruits\n• Abdominal aorta: No bruits\n• Femoral arteries: Faint continuous murmur appreciated bilaterally (collateral flow)\n\n**PALPATION (Re-assessment)**\n• Radial pulses: 2+ bilaterally, brisk and bounding\n• Brachial pulses: 2+ bilaterally, strong\n• Femoral pulses: 1+ bilaterally, diminished amplitude and delayed compared to radial (\"radial-femoral delay\")\n• Dorsalis pedis: 1+ bilaterally\n• Posterior tibial: 1+ bilaterally\n\n**CLINICAL CORRELATION**\nPhysical examination findings now consistent with coarctation of aorta:\n1. Arm-leg BP gradient (40 mmHg)\n2. Diminished and delayed femoral pulses\n3. Systolic murmur over left infraclavicular area and back (turbulent flow through narrowed aorta)\n4. Bounding upper extremity pulses (pre-stenotic hypertension)\n5. Weak lower extremity pulses (post-stenotic hypoperfusion)\n\nDiagnosis elevated from low probability to high probability based on examination findings."
+        content: "**FOCUSED CARDIOVASCULAR RE-EXAMINATION**\n\nPatient: John Smith, 45M\nDate: Today\nTime: Following BP gradient discovery\nIndication: Re-examine for findings consistent with coarctation of aorta\n\n**AUSCULTATION (Targeted)**\n\n**Cardiac:**\n• Auscultation in supine position with patient breath-held\n• Left infraclavicular area: Grade 1-2/6 systolic ejection murmur appreciated\n• Posterior thorax (between scapulae): Faint systolic murmur heard over thoracic spine\n• These murmurs were subtle and not appreciated on initial routine examination\n\n**Vascular:**\n• Carotid arteries: No bruits\n• Abdominal aorta: No bruits\n• Femoral arteries: Faint continuous murmur appreciated bilaterally (collateral flow)\n\n**PALPATION (Re-assessment)**\n• Radial pulses: 2+ bilaterally, brisk and bounding\n• Brachial pulses: 2+ bilaterally, strong\n• Femoral pulses: 1+ bilaterally, diminished amplitude and delayed compared to radial (\"radial-femoral delay\")\n• Dorsalis pedis: 1+ bilaterally\n• Posterior tibial: 1+ bilaterally\n\n**CLINICAL CORRELATION**\nPhysical examination findings now consistent with coarctation of aorta:\n1. Arm-leg BP gradient (40 mmHg)\n2. Diminished and delayed femoral pulses\n3. Systolic murmur over left infraclavicular area and back (turbulent flow through narrowed aorta)\n4. Bounding upper extremity pulses (pre-stenotic hypertension)\n5. Weak lower extremity pulses (post-stenotic hypoperfusion)\n\nDiagnosis elevated from low probability to high probability based on examination findings."
       },
       "Visit transcript, 00:01:30": {
         type: "Transcript",
@@ -379,27 +381,27 @@ export default function Scribes({
       "ROS documentation, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**REVIEW OF SYSTEMS**\n\nPatient: Cem, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
+        content: "**REVIEW OF SYSTEMS**\n\nPatient: John Smith, 45M\nDate: Today\n\n**CARDIOVASCULAR**\n• Pulsatile headaches (feels heartbeat in head)\n• Elevated blood pressure readings (multiple measurements)\n• No chest pain or pressure\n• No history of angina or MI\n• No palpitations\n• No orthopnea or PND\n\n**NEUROLOGIC**\n• Occasional dizziness (non-positional)\n• No syncope or near-syncope\n• No vision changes\n• No focal weakness or numbness\n• No seizures or loss of consciousness\n\n**MUSCULOSKELETAL**\n• Leg fatigue with exertion (walking, stairs)\n• No calf pain or claudication\n• No joint pain or swelling\n\n**CONSTITUTIONAL**\n• Denies fever, chills, or night sweats\n• No unintentional weight loss or weight gain\n• Energy level generally good\n\n**RESPIRATORY**\n• No shortness of breath at rest\n• Mild dyspnea with heavy exertion (climbing multiple flights)\n• No cough or wheeze\n\n**GASTROINTESTINAL**\n• Normal bowel habits\n• No abdominal pain or discomfort\n\n**GENITOURINARY**\n• Normal urination, no nocturia"
       },
       "Visit vitals, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**VITAL SIGNS**\n\nPatient: Cem, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
+        content: "**VITAL SIGNS**\n\nPatient: John Smith, 45M\nDate: Today\n\n**INITIAL MEASUREMENTS (Check-in)**\nBlood Pressure: 150/92 mmHg (right arm, seated)\nHeart Rate: 76 bpm\nRespiratory Rate: 14 breaths/min\nTemperature: 98.6°F\nO2 Saturation: 98% (room air)\nWeight: 178 lbs\nHeight: 5'10\"\nBMI: 25.5 (overweight)\n\n**NOTES**\nBlood pressure elevated, consistent with recent readings\nHeart rate normal\nNo fever"
       },
       "Physical examination, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: Cem, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
+        content: "**PHYSICAL EXAMINATION (Initial)**\n\nPatient: John Smith, 45M\nDate: Today\nVisit Type: Evaluation of elevated blood pressure and headaches\n\n**GENERAL**\n• Well-appearing, no acute distress\n• Alert and oriented x3\n• Normal body habitus\n\n**HEENT**\n• Normocephalic, atraumatic\n• Pupils equal, round, reactive to light\n• No papilledema on fundoscopic exam\n• No carotid bruits bilaterally\n\n**CARDIOVASCULAR (Initial Examination)**\n• Regular rate and rhythm\n• Normal S1 S2\n• No murmurs appreciated on initial auscultation\n• No chest wall tenderness\n• Radial pulses 2+ bilaterally, symmetric\n\n**RESPIRATORY**\n• Lungs clear to auscultation bilaterally\n• No wheezes, rales, or rhonchi\n• No respiratory distress\n\n**ABDOMINAL**\n• Soft, non-tender, non-distended\n• No masses or organomegaly\n• Bowel sounds present and normal\n• No abdominal bruits\n\n**EXTREMITIES**\n• No edema\n• No cyanosis or clubbing\n\n**PERIPHERAL VASCULAR (Initial)**\n• Radial pulses: 2+ bilaterally, symmetric\n• Femoral pulses: Palpable but slightly diminished bilaterally compared to radial pulses\n• No femoral bruits initially noted\n\n**NEUROLOGIC**\n• Alert and oriented x3\n• Cranial nerves II-XII intact\n• Motor strength 5/5 upper and lower extremities\n• Sensation intact\n• No focal neurologic deficits\n\n**ASSESSMENT**\nWell-appearing patient with elevated blood pressure and diminished femoral pulses - warrants further vascular assessment"
       },
       "CT angiography chest (results), 2 days post-visit": {
         type: "Imaging",
         date: "2 days after visit",
-        content: "**CT ANGIOGRAPHY CHEST - PRELIMINARY REPORT**\n\nPatient: Cem, 45M\nMRN: CM-445821\nExam Date: 2 days after office visit\nStudy: CT angiography chest with IV contrast\n\n**CLINICAL INDICATION**\nElevated blood pressure, arm-leg BP gradient, suspected coarctation of aorta\n\n**TECHNIQUE**\nAxial images obtained through chest with IV contrast during arterial phase. Multiplanar reconstructions performed.\n\n**FINDINGS**\n\nAORTA:\n• **Coarctation of descending thoracic aorta identified**\n• Location: Just distal to left subclavian artery origin (typical location)\n• Narrowing: Focal stenosis with luminal diameter reduced to approximately 6-7mm (normal ~20-25mm at this level)\n• Severity: Severe stenosis (>70% diameter reduction)\n• Pre-stenotic dilatation: Ascending aorta mildly dilated (38mm)\n• Post-stenotic dilatation: Descending aorta mildly dilated distal to coarctation\n• Extensive collateral circulation visible via internal mammary and intercostal arteries\n\nCARDIAC:\n• Left ventricular wall thickness: Mildly increased (concentric hypertrophy secondary to longstanding hypertension)\n• Chamber size: Normal\n• Aortic valve: Appears bicuspid (common associated anomaly with coarctation)\n\nVASCULATURE:\n• Prominent intercostal arteries (collateral circulation)\n• Dilated internal mammary arteries bilaterally\n• Subclavian arteries normal\n\nLUNGS:\n• Clear, no consolidation or nodules\n\nOTHER:\n• No significant chest wall or mediastinal abnormalities\n\n**IMPRESSION**\n1. **Severe coarctation of descending thoracic aorta** (just distal to left subclavian artery), with >70% luminal narrowing\n2. Extensive collateral circulation via internal mammary and intercostal arteries\n3. Left ventricular hypertrophy (secondary to longstanding pressure overload)\n4. Bicuspid aortic valve (associated congenital anomaly)\n5. Pre- and post-stenotic aortic dilatation\n\n**RECOMMENDATION**\nUrgent cardiothoracic surgery consultation for surgical repair vs. catheter-based intervention (stenting). Findings consistent with longstanding coarctation, likely present since birth but previously undiagnosed.\n\n---\n*Report electronically signed by Dr. Radiologist*"
+        content: "**CT ANGIOGRAPHY CHEST - PRELIMINARY REPORT**\n\nPatient: John Smith, 45M\nMRN: JS-445821\nExam Date: 2 days after office visit\nStudy: CT angiography chest with IV contrast\n\n**CLINICAL INDICATION**\nElevated blood pressure, arm-leg BP gradient, suspected coarctation of aorta\n\n**TECHNIQUE**\nAxial images obtained through chest with IV contrast during arterial phase. Multiplanar reconstructions performed.\n\n**FINDINGS**\n\nAORTA:\n• **Coarctation of descending thoracic aorta identified**\n• Location: Just distal to left subclavian artery origin (typical location)\n• Narrowing: Focal stenosis with luminal diameter reduced to approximately 6-7mm (normal ~20-25mm at this level)\n• Severity: Severe stenosis (>70% diameter reduction)\n• Pre-stenotic dilatation: Ascending aorta mildly dilated (38mm)\n• Post-stenotic dilatation: Descending aorta mildly dilated distal to coarctation\n• Extensive collateral circulation visible via internal mammary and intercostal arteries\n\nCARDIAC:\n• Left ventricular wall thickness: Mildly increased (concentric hypertrophy secondary to longstanding hypertension)\n• Chamber size: Normal\n• Aortic valve: Appears bicuspid (common associated anomaly with coarctation)\n\nVASCULATURE:\n• Prominent intercostal arteries (collateral circulation)\n• Dilated internal mammary arteries bilaterally\n• Subclavian arteries normal\n\nLUNGS:\n• Clear, no consolidation or nodules\n\nOTHER:\n• No significant chest wall or mediastinal abnormalities\n\n**IMPRESSION**\n1. **Severe coarctation of descending thoracic aorta** (just distal to left subclavian artery), with >70% luminal narrowing\n2. Extensive collateral circulation via internal mammary and intercostal arteries\n3. Left ventricular hypertrophy (secondary to longstanding pressure overload)\n4. Bicuspid aortic valve (associated congenital anomaly)\n5. Pre- and post-stenotic aortic dilatation\n\n**RECOMMENDATION**\nUrgent cardiothoracic surgery consultation for surgical repair vs. catheter-based intervention (stenting). Findings consistent with longstanding coarctation, likely present since birth but previously undiagnosed.\n\n---\n*Report electronically signed by Dr. Radiologist*"
       },
       "Echocardiogram (results), 1 day post-visit": {
         type: "Imaging",
         date: "1 day after visit",
-        content: "**ECHOCARDIOGRAM REPORT**\n\nPatient: Cem, 45M\nMRN: CM-445821\nExam Date: 1 day after office visit\nStudy: Transthoracic echocardiogram\n\n**CLINICAL INDICATION**\nHypertension, suspected coarctation of aorta, evaluate cardiac function\n\n**MEASUREMENTS**\nLV end-diastolic dimension: 52mm (normal)\nLV end-systolic dimension: 34mm (normal)\nEjection fraction: 60% (normal)\nLeft ventricular wall thickness:\n  - Septum: 13mm (mildly increased, upper limit normal 11mm)\n  - Posterior wall: 12mm (mildly increased)\nLeft atrial size: 38mm (normal)\n\n**FINDINGS**\n\n**Left Ventricle:**\n• Normal chamber size\n• Mild concentric left ventricular hypertrophy (wall thickness 12-13mm)\n• Ejection fraction preserved at 60%\n• No regional wall motion abnormalities\n• Diastolic function: Grade I diastolic dysfunction (impaired relaxation)\n\n**Aortic Valve:**\n• **Bicuspid aortic valve identified** (fusion of right and left coronary cusps)\n• Mild aortic valve thickening\n• No significant aortic stenosis (peak velocity 1.8 m/s)\n• Trace aortic regurgitation\n\n**Aorta:**\n• Ascending aorta: Mildly dilated (38mm, upper limit normal 37mm)\n• Aortic arch: Not well visualized (limited acoustic window)\n• Descending aorta: Turbulent flow noted in descending aorta, consistent with stenosis (seen on color Doppler)\n• **Coarctation suspected** but complete anatomy better defined by CT angiography\n\n**Other Valves:**\n• Mitral valve: Structurally normal, no stenosis or regurgitation\n• Tricuspid valve: Normal\n• Pulmonic valve: Normal\n\n**Right Ventricle:**\n• Normal size and function\n• No pulmonary hypertension\n\n**Pericardium:**\n• No effusion\n\n**IMPRESSION**\n1. **Bicuspid aortic valve** with trace regurgitation, no stenosis\n2. **Mild concentric left ventricular hypertrophy** (secondary to longstanding hypertension)\n3. Preserved left ventricular systolic function (EF 60%)\n4. Grade I diastolic dysfunction\n5. Findings suggestive of **coarctation of descending aorta** (turbulent flow on Doppler) - CT angiography recommended for definitive anatomic assessment\n6. Ascending aortic dilatation (mild, 38mm)\n\n**RECOMMENDATIONS**\n• Cardiothoracic surgery referral for coarctation repair\n• Serial imaging surveillance of ascending aortic dilatation\n• Consider endocarditis prophylaxis given bicuspid aortic valve\n\n---\n*Report electronically signed by Dr. Cardiologist*"
+        content: "**ECHOCARDIOGRAM REPORT**\n\nPatient: John Smith, 45M\nMRN: JS-445821\nExam Date: 1 day after office visit\nStudy: Transthoracic echocardiogram\n\n**CLINICAL INDICATION**\nHypertension, suspected coarctation of aorta, evaluate cardiac function\n\n**MEASUREMENTS**\nLV end-diastolic dimension: 52mm (normal)\nLV end-systolic dimension: 34mm (normal)\nEjection fraction: 60% (normal)\nLeft ventricular wall thickness:\n  - Septum: 13mm (mildly increased, upper limit normal 11mm)\n  - Posterior wall: 12mm (mildly increased)\nLeft atrial size: 38mm (normal)\n\n**FINDINGS**\n\n**Left Ventricle:**\n• Normal chamber size\n• Mild concentric left ventricular hypertrophy (wall thickness 12-13mm)\n• Ejection fraction preserved at 60%\n• No regional wall motion abnormalities\n• Diastolic function: Grade I diastolic dysfunction (impaired relaxation)\n\n**Aortic Valve:**\n• **Bicuspid aortic valve identified** (fusion of right and left coronary cusps)\n• Mild aortic valve thickening\n• No significant aortic stenosis (peak velocity 1.8 m/s)\n• Trace aortic regurgitation\n\n**Aorta:**\n• Ascending aorta: Mildly dilated (38mm, upper limit normal 37mm)\n• Aortic arch: Not well visualized (limited acoustic window)\n• Descending aorta: Turbulent flow noted in descending aorta, consistent with stenosis (seen on color Doppler)\n• **Coarctation suspected** but complete anatomy better defined by CT angiography\n\n**Other Valves:**\n• Mitral valve: Structurally normal, no stenosis or regurgitation\n• Tricuspid valve: Normal\n• Pulmonic valve: Normal\n\n**Right Ventricle:**\n• Normal size and function\n• No pulmonary hypertension\n\n**Pericardium:**\n• No effusion\n\n**IMPRESSION**\n1. **Bicuspid aortic valve** with trace regurgitation, no stenosis\n2. **Mild concentric left ventricular hypertrophy** (secondary to longstanding hypertension)\n3. Preserved left ventricular systolic function (EF 60%)\n4. Grade I diastolic dysfunction\n5. Findings suggestive of **coarctation of descending aorta** (turbulent flow on Doppler) - CT angiography recommended for definitive anatomic assessment\n6. Ascending aortic dilatation (mild, 38mm)\n\n**RECOMMENDATIONS**\n• Cardiothoracic surgery referral for coarctation repair\n• Serial imaging surveillance of ascending aortic dilatation\n• Consider endocarditis prophylaxis given bicuspid aortic valve\n\n---\n*Report electronically signed by Dr. Cardiologist*"
       }
     },
     "Robert Chen": {
@@ -789,7 +791,7 @@ export default function Scribes({
       date: "Thu, Dec 19 (Today)",
       scribes: [
         { 
-          name: "Cem", 
+          name: "John Smith", 
           age: 45, 
           gender: "M", 
           duration: "28m 45s",
@@ -1248,7 +1250,11 @@ export default function Scribes({
     );
   }
 
-  const currentScribe = allScribes[selectedScribeIndex];
+  const currentScribeRaw = allScribes[selectedScribeIndex];
+  // When demoEmptyNote is true, blank out all note content for the "recording starts" demo state
+  const currentScribe = demoEmptyNote
+    ? { ...currentScribeRaw, hpi: '', ros: '', pe: '', mdm: '', chiefComplaint: 'Recording in progress…', nudges: [], diagnosisAndCodes: null, postVisitWorkflows: [] }
+    : currentScribeRaw;
 
   // Helper to check if text should be highlighted for nudges
   const getHighlightMapping = () => {
@@ -2062,7 +2068,7 @@ export default function Scribes({
       {/* Left Sidebar Navigation */}
       <div className="content-stretch flex h-full isolate items-center relative shrink-0">
         <div className="content-stretch flex h-full items-start justify-center relative shrink-0 w-[72px] z-[2]">
-          <div className="bg-[var(--surface-1,#f7f7f7)] border-[var(--shape-outline,rgba(0,0,0,0.1))] border-r border-solid content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
+          <div className="bg-[var(--surface-3,#e6e6e6)] content-stretch flex flex-[1_0_0] flex-col h-full items-center min-h-px min-w-px relative">
             {/* Logo */}
             <div className="content-stretch flex h-[48px] items-center justify-center px-[8px] relative shrink-0 w-full">
               <button 
@@ -2097,11 +2103,13 @@ export default function Scribes({
                   }
                 }}
               >
-                <InlineIcon name={isLogoHovered ? "side_navigation" : "hexagon"} size={isLogoHovered ? 20 : 24} />
+                {isLogoHovered ? (
+                  <InlineIcon name="side_navigation" size={20} />
+                ) : (
+                  <img src="/logo.svg" alt="Logo" width="32" height="32" />
+                )}
               </button>
             </div>
-            
-            <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" />
             
             {/* Nav Items */}
             <div 
@@ -2194,16 +2202,6 @@ export default function Scribes({
               </button>
             </div>
             
-            <div 
-              className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-px shrink-0 w-full" 
-              onMouseEnter={() => {
-                if (isSecondaryNavCollapsed) {
-                  clearNavHoverDelay();
-                  setHoveredPrimaryNav('scribes');
-                }
-              }}
-            />
-            
             {/* Footer */}
             <div 
               className="content-stretch flex flex-col gap-[8px] items-center pb-[24px] pt-[16px] relative shrink-0 w-full"
@@ -2234,9 +2232,9 @@ export default function Scribes({
         
         {/* Scribe List */}
         {!isSecondaryNavCollapsed && (
-        <div className="bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
+        <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col h-full items-start overflow-clip relative shrink-0 w-[220px] z-[1]">
           {/* Header */}
-          <div className="bg-[var(--surface-base,white)] content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
+          <div className="content-stretch flex h-[48px] items-center min-h-[48px] px-[8px] py-[12px] relative shrink-0 w-full">
             <div className="content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative">
               <div className="content-stretch flex gap-[8px] items-center relative shrink-0 w-full">
                 <div className="content-stretch flex flex-[1_0_0] h-[28px] items-center min-h-px min-w-px p-[4px] relative rounded-[6px]">
@@ -2307,7 +2305,7 @@ export default function Scribes({
       {/* Overlay Secondary Nav when collapsed - Visits */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'visits' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('visits');
@@ -2391,7 +2389,7 @@ export default function Scribes({
           
           {/* New Instant Visit Button */}
           <div className="content-stretch flex flex-col items-start relative shrink-0">
-            <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
+            <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[8px] items-end justify-center overflow-clip pb-[24px] pt-[8px] px-[12px] relative shrink-0 w-[220px]">
               <Button 
                 variant="secondary" 
                 size="large"
@@ -2409,7 +2407,7 @@ export default function Scribes({
       {/* Overlay Secondary Nav when collapsed - Scribes */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'scribes' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('scribes');
@@ -2491,7 +2489,7 @@ export default function Scribes({
       {/* Overlay Secondary Nav when collapsed - Customize */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'customize' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('customize');
@@ -2516,7 +2514,7 @@ export default function Scribes({
       {/* Overlay Secondary Nav when collapsed - Assistant */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'assistant' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('assistant');
@@ -2541,7 +2539,7 @@ export default function Scribes({
       {/* Overlay Secondary Nav when collapsed - Admin */}
       {isSecondaryNavCollapsed && hoveredPrimaryNav === 'admin' && (
         <div 
-          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] border-[var(--neutral-200,#ccc)] border-r border-solid content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
+          className="absolute left-[72px] top-0 bg-[var(--surface-base,white)] content-stretch flex flex-col h-full items-start overflow-clip shrink-0 w-[220px] z-[100] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"
           onMouseEnter={() => {
             clearNavHoverDelay();
             setHoveredPrimaryNav('admin');
@@ -2564,69 +2562,69 @@ export default function Scribes({
       )}
       
       {/* Main Content Area */}
-      <div className="content-stretch flex flex-[1_0_0] flex-col h-full items-center justify-center min-h-px min-w-px relative">
-        <div className="content-stretch flex flex-[1_0_0] flex-col items-center min-h-px min-w-px px-[20px] relative w-full">
-          {/* Header */}
-          <div className="content-stretch flex flex-col gap-[6px] max-w-[800px] py-[8px] relative shrink-0 w-full">
-            <div className="content-stretch flex gap-[24px] items-center relative shrink-0 w-full">
-              <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[24px] text-[color:var(--text-default,black)]">
-                {currentScribe.name}
-              </p>
-              <div className="flex flex-[1_0_0]" />
-              {/* Menu Button */}
-              <Button 
-                variant="tertiary" 
-                size="small"
-                onClick={() => {}}
-              >
-                ··· Menu
-              </Button>
-            </div>
+      <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-[1_0_0] flex-col gap-[4px] h-full items-center min-h-px min-w-px pb-[8px] pr-[8px] pt-[4px] relative">
+        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[4px] items-center min-h-px min-w-px relative w-full">
+          {/* Header - on surface-1 background */}
+          <div className="content-stretch flex items-center h-[48px] px-[16px] relative shrink-0 w-full">
+            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[24px] text-[color:var(--text-default,black)]">
+              {currentScribe.name}
+            </p>
             
-            {/* Scribe Info */}
-            <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap">
+            {/* Scribe Info - on same line */}
+            <div className="content-stretch flex font-['Lato',sans-serif] gap-[4px] items-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] whitespace-nowrap ml-[16px]">
               <div className="flex flex-col justify-center overflow-hidden relative shrink-0 text-ellipsis"><p className="leading-[1.4] overflow-hidden">{currentScribe.chiefComplaint}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.age}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.gender}</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
-              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.room}</p></div>
-              <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">·</p></div>
               <div className="flex flex-col justify-center relative shrink-0"><p className="leading-[1.4]">{currentScribe.duration}</p></div>
             </div>
+            
+            <div className="flex flex-[1_0_0]" />
+            
+            {/* Menu Button */}
+            <Button 
+              variant="tertiary" 
+              size="small"
+              onClick={() => {}}
+            >
+              ··· Menu
+            </Button>
           </div>
           
-          {/* Tabs */}
-          <div className="content-stretch flex items-start max-w-[800px] relative shrink-0 w-full">
-            <Tabs
-              variant="primary"
-              tabs={[
-                { id: 'clinical', label: 'Clinical Note' },
-                { id: 'transcript', label: 'Transcript' },
-                { id: 'previsit', label: 'Previsit' }
-              ]}
-              defaultTab={activeTab}
-              onTabChange={(id) => setActiveTab(id as 'clinical' | 'transcript' | 'previsit')}
-              className="w-full"
-            />
-          </div>
-          
-          {/* Main Content */}
-          <div className="content-stretch flex flex-col items-start max-w-[800px] relative shrink-0 w-full overflow-y-auto flex-1 py-[12px]">
+          {/* Content Card - elevated white card containing tabs, content, and actions */}
+          <div className="bg-[var(--surface-base,white)] content-stretch flex flex-col relative shrink-0 w-full flex-1 overflow-hidden rounded-[8px] shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)]">
+            {/* Tabs */}
+            <div className="content-stretch flex items-start relative shrink-0 w-full pt-[8px] px-[16px]">
+              <Tabs
+                variant="primary"
+                tabs={[
+                  { id: 'clinical', label: 'Clinical Note' },
+                  { id: 'transcript', label: 'Transcript' },
+                  { id: 'previsit', label: 'Previsit' }
+                ]}
+                defaultTab={activeTab}
+                onTabChange={(id) => setActiveTab(id as 'clinical' | 'transcript' | 'previsit')}
+                className="w-full"
+              />
+            </div>
+            
+            {/* Main Content */}
+            <div className={`content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1 ${activeTab === 'previsit' ? '' : 'p-[12px]'}`}>
             {activeTab === 'previsit' ? (
-              /* Previsit Content */
+              /* Previsit Content - Updated Structure */
               (() => {
                 // Find the matching patient
                 const matchingPatient = patients.find(p => p.name === currentScribe.name);
                 if (!matchingPatient) {
-                  return <p className="text-[color:var(--text-subheading,#666)]">No previsit information available</p>;
+                  return <p className="text-[color:var(--text-subheading,#666)] px-[20px] py-[20px]">No previsit information available</p>;
                 }
                 
                 return (
-                  <>
+                  <div className="content-stretch flex flex-col gap-[16px] items-start p-[20px] relative shrink-0 w-full">
                     {/* At a Glance Section */}
-                    <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                       <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                         <p className="leading-[1.2]">At a Glance</p>
                       </div>
@@ -2643,25 +2641,9 @@ export default function Scribes({
                       </div>
                     </div>
                     
-                    {/* Details Section */}
-                    <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
-                      <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                        <p className="leading-[1.2]">Details</p>
-                      </div>
-                      <div className="flex flex-col font-['Lato',sans-serif] justify-center leading-[0] relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] w-full">
-                        <ul className="list-disc whitespace-pre-wrap">
-                          {matchingPatient.details.map((item: string, idx: number) => (
-                            <li key={idx} className={idx === 0 ? "mb-0 ms-[22.5px]" : "ms-[22.5px]"}>
-                              <span className="leading-[1.4]">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                    
                     {/* Dynamic Sections */}
-                    {Object.entries(matchingPatient.sections).map(([sectionTitle, items]: [string, any]) => (
-                      <div key={sectionTitle} className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+                    {Object.entries(matchingPatient.sections || {}).map(([sectionTitle, items]: [string, any]) => (
+                      <div key={sectionTitle} className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                         <div className="flex flex-col font-['Lato',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                           <p className="leading-[1.2]">{sectionTitle}</p>
                         </div>
@@ -2678,7 +2660,7 @@ export default function Scribes({
                         </div>
                       </div>
                     ))}
-                  </>
+                  </div>
                 );
               })()
             ) : activeTab === 'transcript' ? (
@@ -2742,11 +2724,11 @@ export default function Scribes({
               <>
             {/* Template Name */}
             <div 
-              className="content-stretch flex items-center relative shrink-0 w-full pb-[32px] pt-[8px]"
+              className="content-stretch flex items-center relative shrink-0 w-full pb-[16px] pt-[8px]"
               data-highlight-id={`${currentScribe.name.toLowerCase().replace(/\s+/g, '-')}-note-header`}
             >
               <p 
-                className={`font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] ${
+                className={`font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[15px] text-[color:var(--text-default,black)] tracking-[0.15px] pl-[8px] ${
                   hoveredNudge?.scribeIndex === selectedScribeIndex && 
                   currentScribe.nudges?.[hoveredNudge.nudgeIndex]?.highlightId === `${currentScribe.name.toLowerCase().replace(/\s+/g, '-')}-note-header`
                     ? 'bg-[#f1f3fe]' 
@@ -3128,7 +3110,7 @@ export default function Scribes({
             </div>
             
             {/* MDM Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+            <div data-demo-id="mdm" className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -3251,20 +3233,18 @@ export default function Scribes({
             </div>
               </>
             )}
-          </div>
-          
-          {/* Floating Toolbar - only show for clinical note */}
-          {activeTab !== 'previsit' && (
-          <div className="sticky bottom-[20px] z-10 flex justify-center w-full max-w-[800px] pointer-events-none">
-            <div className="bg-[var(--surface-base,white)] border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid flex gap-[16px] items-center px-[8px] py-[4px] rounded-[12px] shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)] pointer-events-auto">
-              {/* Button Group with "All Markdowns" - only selected shows label */}
-              <div className="flex items-center shrink-0">
+            </div>
+            
+            {/* Bottom Actions Bar - only show for clinical note */}
+            {activeTab !== 'previsit' && (
+            <div className="border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid border-t content-stretch flex items-center justify-between p-[8px] relative shrink-0 w-full">
+              <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
+                {/* Button Group with "All Markups" */}
                 <div className="bg-[var(--surface-2,#f2f2f2)] flex items-center overflow-clip p-[2px] rounded-[8px] shrink-0">
                   {[
-                    { id: 'all', label: 'All Markdowns', icon: null },
-                    { id: 'icon1', label: '', icon: <InlineIcon name="sparkle" size={16} /> },
-                    { id: 'icon2', label: '', icon: <InlineIcon name="stethoscope" size={16} /> },
-                    { id: 'icon3', label: '', icon: <InlineIcon name="school" size={16} /> },
+                    { id: 'all', label: 'All Markups', icon: null },
+                    { id: 'icon1', label: '', icon: <img src="/icons/outlined/tips_and_updates.svg" alt="Highlights" width="16" height="16" /> },
+                    { id: 'icon2', label: '', icon: <img src="/icons/outlined/Content.svg" alt="Citations" width="16" height="16" /> },
                     { id: 'icon4', label: '', icon: <InlineIcon name="close_small" size={16} /> },
                   ].map((option) => {
                     const isSelected = selectedView === 'default' && option.id === 'all';
@@ -3274,11 +3254,11 @@ export default function Scribes({
                       <button
                         key={option.id}
                         onClick={() => {}}
-                        className={`flex items-center justify-center min-h-[28px] px-[6px] py-[4px] rounded-[6px] shrink-0 transition-all ${
+                        className={`flex items-center justify-center h-[32px] px-[6px] py-[4px] rounded-[6px] shrink-0 transition-all ${
                           isSelected
                             ? 'bg-[var(--surface-base,white)] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.07)]'
                             : 'bg-transparent'
-                        } ${showLabel ? 'gap-[4px]' : ''} ${!showLabel && option.icon ? 'w-[28px]' : ''}`}
+                        } ${showLabel ? 'gap-[4px]' : ''} ${!showLabel && option.icon ? 'w-[32px]' : ''}`}
                       >
                         {option.icon && (
                           <div className="overflow-clip shrink-0 size-[16px]">
@@ -3297,56 +3277,23 @@ export default function Scribes({
                     );
                   })}
                 </div>
-              </div>
-              
-              {/* Smart Edit Button */}
-              <div className="flex items-center py-[4px] shrink-0">
+                
+                {/* Add Context Button */}
                 <Button 
                   variant="tertiary" 
-                  size="small"
+                  size="medium"
                   icon={<InlineIcon name="magic_edit" size={16} />}
                   showPrefix={true}
                   onClick={() => {}}
                 >
-                  Smart Edit
+                  Add Context
                 </Button>
-              </div>
-              
-              {/* Dictate Button */}
-              <div className="flex items-center py-[4px] shrink-0">
-                <Button 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="mic" size={16} />}
-                  showPrefix={true}
-                  onClick={() => {}}
-                >
-                  Dictate
-                </Button>
-              </div>
-              
-              {/* New Letter / Docs Button */}
-              <div className="flex items-center py-[4px] shrink-0">
-                <Button 
-                  variant="tertiary" 
-                  size="small"
-                  icon={<InlineIcon name="description" size={16} />}
-                  showPrefix={true}
-                  onClick={() => {}}
-                >
-                  New Letter / Docs
-                </Button>
-              </div>
-              
-              {/* Divider */}
-              <div className="flex items-center self-stretch shrink-0">
-                <div className="border border-[var(--shape-outline,rgba(0,0,0,0.1))] border-solid h-full w-px" />
               </div>
               
               {/* Sync to EHR Button */}
               <Button 
                 variant="primary" 
-                size="small"
+                size="medium"
                 icon={<InlineIcon name="cloud_upload" size={16} />}
                 showPrefix={true}
                 onClick={() => {}}
@@ -3354,48 +3301,39 @@ export default function Scribes({
                 Sync to EHR
               </Button>
             </div>
+            )}
           </div>
-          )}
         </div>
       </div>
       
       {/* Right Sidebar - For this scribe */}
-      <div className="bg-white border-l border-[var(--neutral-200,#ccc)] content-stretch flex flex-col h-full items-start overflow-hidden relative shrink-0 w-[375px]">
-        {/* Header - hidden when viewing data source */}
+      <div className="bg-[var(--surface-1,#f7f7f7)] content-stretch flex flex-col gap-[4px] h-full items-start overflow-hidden relative shrink-0 w-[375px] pb-[8px] pl-[4px] pr-[8px] pt-[4px]">
+        {/* Tabs - on surface-1 background, outside white card */}
         {!viewingDataSource && (
-          <div className="content-stretch flex items-center px-[20px] pt-[20px] pb-[12px] relative shrink-0 w-full">
-            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[17px] text-[color:var(--text-default,black)] tracking-[0.34px]">
-              For this scribe
-            </p>
+          <div className="content-stretch flex gap-[8px] h-[48px] items-center overflow-clip px-[16px] relative shrink-0 w-full">
+            <Tabs
+              variant="secondary"
+              tabs={[
+                { id: 'actions', label: 'Actions' },
+                { id: 'assistant', label: 'Assistant' },
+                { id: 'sources', label: 'Sources' }
+              ]}
+              defaultTab={rightTab}
+              onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
+              hideBorder={true}
+            />
           </div>
         )}
         
-        {/* Tabs - hidden when viewing data source */}
-        {!viewingDataSource && (
-          <div className="w-full border-b border-[var(--neutral-200,#ccc)]">
-            <div className="px-[20px]">
-              <Tabs
-                variant="primary"
-                tabs={[
-                  { id: 'actions', label: 'Actions' },
-                  { id: 'assistant', label: 'Assistant' },
-                  { id: 'sources', label: 'Sources' }
-                ]}
-                defaultTab={rightTab}
-                onTabChange={(id) => setRightTab(id as 'actions' | 'assistant' | 'sources')}
-                hideBorder={true}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Content Area - Scrollable */}
-        <div className={`content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto relative w-full ${viewingDataSource ? '' : 'py-[20px] px-[20px]'}`}>
+        {/* White Card Content */}
+        <div className="bg-[var(--surface-base,white)] content-stretch flex flex-[1_0_0] flex-col items-start min-h-px min-w-px overflow-clip relative rounded-[8px] shadow-[0px_4px_16px_2px_rgba(0,0,0,0.07)] w-full">
+          {/* Content Area - Scrollable */}
+        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[20px] items-start min-h-px min-w-px overflow-y-auto relative w-full px-[16px] py-[8px]">
           {viewingDataSource ? (
             /* Data Source View */
             <>
-              {/* Back Button - Sticky */}
-              <div className="sticky top-0 z-10 bg-white content-stretch flex items-center shrink-0 w-full px-[20px] pt-[20px] pb-[12px]">
+              {/* Back Button */}
+              <div className="content-stretch flex items-center shrink-0 w-full">
                 <Button
                   variant="tertiary-neutral"
                   size="small"
@@ -3426,7 +3364,7 @@ export default function Scribes({
                 };
                 
                 return (
-                  <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full px-[20px] pb-[20px]">
+                  <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
                     {/* Source Header */}
                     <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                       <div 
@@ -3766,7 +3704,7 @@ export default function Scribes({
             /* Actions View */
             <>
           {/* Improve Scribe */}
-          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+          <div data-demo-id="nudge" className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Improve Scribe
@@ -4188,7 +4126,7 @@ export default function Scribes({
                 
                 {/* Diagnosis and Codes */}
                 {currentScribe.diagnosisAndCodes && (
-                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full mt-[12px] pt-[12px] border-t border-[var(--neutral-200,#e0e0e0)]">
+                  <div data-demo-id="billing" className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                       Diagnosis and Codes
                     </p>
@@ -4241,7 +4179,7 @@ export default function Scribes({
                 
                 {/* Post-Visit Workflows */}
                 {currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 && (
-                  <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full mt-[12px] pt-[12px] border-t border-[var(--neutral-200,#e0e0e0)]">
+                  <div data-demo-id="orders" className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
                     <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                       Post-Visit Workflows
                     </p>
@@ -4299,6 +4237,7 @@ export default function Scribes({
               onVoice={() => console.log('Voice input')}
             />
           </div>
+        </div>
         </div>
       </div>
       
