@@ -136,6 +136,7 @@ export default function Scribes({
   setLogoTooltipPosition,
   demoEmptyNote = false,
   demoStep = 0,
+  isDemoPreview = false,
 }: {
   onNavigateToVisits?: () => void;
   chatMessages: Record<string, ChatMessage[]>;
@@ -152,6 +153,7 @@ export default function Scribes({
   setLogoTooltipPosition: (position: { x: number; y: number } | null) => void;
   demoEmptyNote?: boolean;
   demoStep?: number;
+  isDemoPreview?: boolean;
 }) {
   const [hoveredPrimaryNav, setHoveredPrimaryNav] = useState<'visits' | 'scribes' | 'customize' | 'assistant' | 'admin' | null>(null);
   const navHoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -1259,6 +1261,9 @@ export default function Scribes({
     setRosPePhase('hidden');
     setPePhase('base');
 
+    // Preview mode: show initial step-1 state without starting any timers
+    if (isDemoPreview) return;
+
     // Helper: add/update an MDM section (grey), settle to black after 800ms
     const addMdmSection = (key: MdmKey, text: string) => {
       setLiveMdm(prev => ({ ...prev, [key]: { text, settled: false } }));
@@ -1391,7 +1396,7 @@ export default function Scribes({
       hpiTimersRef.current.forEach(clearTimeout);
       hpiTimersRef.current = [];
     };
-  }, [demoStep]);
+  }, [demoStep, isDemoPreview]);
 
   // Auto-scroll within the note content container (not window-level)
   const scrollNoteToElement = (el: HTMLElement) => {

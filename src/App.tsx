@@ -135,6 +135,7 @@ export default function App() {
   const [isVisitSettingsExpanded, setIsVisitSettingsExpanded] = useState(true);
   const [isMobileRecording, setIsMobileRecording] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
+  const [isDemoPreview, setIsDemoPreview] = useState(false);
   const [isCareNudgesExpanded, setIsCareNudgesExpanded] = useState(true);
   const [editingPrechartSection, setEditingPrechartSection] = useState<'subjective' | 'objective' | 'assessment' | 'plan' | null>(null);
   const [editedPrechartContent, setEditedPrechartContent] = useState<{subjective: string; objective: string; assessment: string; plan: string}>({
@@ -187,6 +188,8 @@ export default function App() {
         setSelectedPatientIndex(0);
         setDemoEmptyNote(false);
         setIsMobileRecording(isMobile);
+        setDemoStep(1);
+        setIsDemoPreview(true);
         return;
       }
 
@@ -205,6 +208,7 @@ export default function App() {
         setSelectedPatientIndex(0);
         setDemoEmptyNote(emptyNote ?? false);
         setIsMobileRecording(!!isMobile);
+        setIsDemoPreview(false);
         setDemoStep(step);
       }
       // ── Post-visit (step 5) ──
@@ -213,6 +217,7 @@ export default function App() {
         setDemoEmptyNote(false);
         setIsMobileRecording(false);
         setRightTab('actions');
+        setIsDemoPreview(false);
         setDemoStep(step);
       }
 
@@ -2231,6 +2236,7 @@ export default function App() {
           setLogoTooltipPosition={setLogoTooltipPosition}
           demoEmptyNote={demoEmptyNote}
           demoStep={demoStep}
+          isDemoPreview={isDemoPreview}
         />
       </>
     );
