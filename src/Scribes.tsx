@@ -163,6 +163,9 @@ export default function Scribes({
   const [isViewsHighlightsExpanded, setIsViewsHighlightsExpanded] = useState(true);
   const [isEditToolsExpanded, setIsEditToolsExpanded] = useState(true);
   const [isImproveScribeExpanded, setIsImproveScribeExpanded] = useState(true);
+  const [isDiagnosisExpanded, setIsDiagnosisExpanded] = useState(true);
+  const [isPostVisitExpanded, setIsPostVisitExpanded] = useState(true);
+  const [activeCode, setActiveCode] = useState<{type: 'diagnosis' | 'cpt', idx: number} | null>(null);
   const [editingSection, setEditingSection] = useState<'hpi' | 'ros' | 'pe' | 'mdm' | null>(null);
   const [editedContent, setEditedContent] = useState<{hpi: string; ros: string; pe: string; mdm: string}>({
     hpi: '',
@@ -261,12 +264,12 @@ export default function Scribes({
       "Previsit summary, today": {
         type: "Clinical Note",
         date: "Today",
-        content: "**PREVISIT SUMMARY**\n\nPatient: John Smith, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• Reports intermittent exercise intolerance (legs get tired quickly)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Elevated blood pressure (persistent, needs diagnostic confirmation)\n• Recurrent headaches (under evaluation)\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity, notes leg fatigue with exertion\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n**Most likely diagnoses:**\n1. Essential hypertension\n2. Stress-related / lifestyle-related BP elevation\n3. Secondary hypertension (renal/endocrine causes)\n\n**Low probability consideration (kept in background):**\n• Congenital structural cause (e.g., coarctation of the aorta)\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Elevated BP → confirm diagnosis with repeat measurements or home BP monitoring\n• Hypertension without clear risk factors → consider secondary causes if persistent\n• Preventive care gap: Colorectal cancer screening due (age 45, no prior screening on file)\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n• Echocardiogram\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• Echo and CT angiography pathways pre-checked\n• In-network cardiology and GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted toward common causes, and preventive care already surfaced."
+        content: "**PREVISIT SUMMARY**\n\nPatient: John Smith, 45M\nDate: Today\nVisit Type: Follow-up / Evaluation of Elevated Blood Pressure\n\n**CHIEF COMPLAINTS**\n• Recurrent headaches\n• Occasional dizziness\n• \"Feels heartbeat in head\" (pulsatile headaches)\n\n**RECENT VITALS (Past 2 weeks)**\n• Urgent Care (2 weeks ago): BP 152/92 mmHg\n• Pharmacy screening (1 week ago): BP 148/88 mmHg\n• Pharmacy screening (3 days ago): BP 155/90 mmHg\n• Today at check-in: BP 150/92 mmHg, HR 76 bpm\n\n**RELEVANT HISTORY**\n• Had high blood pressure noted once as a teenager (not fully worked up)\n• No obesity (BMI 25.5), no diabetes\n• No family history of early hypertension or cardiovascular disease\n\n**ACTIVE PROBLEMS**\n• Hypertension — Stage 2, confirmed across multiple readings and settings\n• Recurrent headaches (under evaluation)\n\n**RECENT LABS (Urgent care, 2 weeks ago)**\n• BMP: Creatinine 0.9 mg/dL, eGFR >90 mL/min — renal function normal\n• Aldosterone: 9.2 ng/dL — within normal range\n• TSH: 2.1 mIU/L — thyroid function normal\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• Elevated BP as teenager (not investigated)\n• No chronic conditions\n• No prior cardiovascular workup\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes or hereditary conditions\n\n**SOCIAL HISTORY**\n• Non-smoker (never)\n• Alcohol: Social (1-2 drinks per week)\n• Employment: Office-based\n• Exercise: Moderate activity (walking, light cardio 2–3x/week)\n\n**CURRENT MEDICATIONS**\nNo regular medications\n\n**CLINICAL REASONING (AMBIENT-GENERATED)**\n• Essential hypertension — Most Likely. Renal and endocrine causes excluded by recent labs; structural cause (coarctation) not yet ruled out.\n• Coarctation of the aorta — Rare. No arm-leg BP differential or cardiac imaging on file.\n\n**PRE-VISIT NUDGES TO PROVIDER**\n• Follow up on elevated BP — recent labs ruled out renal/endocrine causes; structural cause still undetermined\n• Check arm-leg BP differential — coarctation not yet ruled out; no arm-leg BP or cardiac imaging on file\n• Colonoscopy due — age 45, no prior colonoscopy on file\n\n**AMBIENT ORDERS (AUTO-PREPARED, NOT YET SIGNED)**\n• Colonoscopy (screening)\n\n**INSURANCE & LOGISTICS (AUTO-VERIFIED)**\n• Insurance eligibility confirmed\n• Colonoscopy covered under preventive screening\n• In-network GI options identified\n\n**CARE TEAM NOTES**\nProvider enters room with admin work done, differential appropriately weighted, and preventive care already surfaced."
       },
       "Intake form, today": {
         type: "Form",
         date: "Today",
-        content: "**PATIENT INTAKE FORM**\n\nPatient Name: John Smith\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\nLegs get tired pretty quickly when I exercise or climb stairs - always thought I was just out of shape\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
+        content: "**PATIENT INTAKE FORM**\n\nPatient Name: John Smith\nDate: Today\nVisit Type: Follow-up\n\n**CHIEF COMPLAINT**\nHeadaches and high blood pressure\n\n**HISTORY OF PRESENT ILLNESS**\nOnset: Headaches started about 6 months ago\nFrequency: 2-3 times per week\nDuration: A few hours each time\nCharacter: Pounding headaches, sometimes feel heartbeat in head\n\n**BLOOD PRESSURE HISTORY**\nWent to urgent care 2 weeks ago for dizziness - blood pressure was 152/92. Checked at pharmacy twice since then - still high (148/88 and 155/90). Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it.\n\n**OTHER SYMPTOMS**\nOccasional dizziness\n\n**MEDICATIONS**\nNone\n\n**ALLERGIES**\nNo known drug allergies\n\n**PAST MEDICAL HISTORY**\n• High blood pressure noted as teenager (not fully worked up)\n\n**FAMILY HISTORY**\n• No family history of early hypertension\n• No diabetes\n\n**SOCIAL HISTORY**\n• Non-smoker (never smoked)\n• Alcohol: Social (1-2 drinks per week)\n• Exercise: Moderate activity\n• Occupation: Office-based\n\n**PREVENTIVE CARE**\n• No prior colonoscopy"
       },
       "Urgent care visit, 2 weeks ago": {
         type: "Clinical Note",
@@ -276,42 +279,32 @@ export default function Scribes({
       "Visit transcript, 00:01:30": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "Good to see you. I understand your blood pressure has been elevated — can you tell me more about how you've been feeling?" Patient: "I've been getting these headaches… kind of pounding sometimes."`
-      },
-      "Visit transcript, 00:03:15": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "When were you first told your blood pressure might be elevated?" Patient: "Maybe once when I was younger, but no one really followed up."`
+        content: `Provider: "Hey John, I reviewed the labs from your urgent care visit — kidney function, thyroid, and aldosterone all came back normal, which rules out the most common secondary causes for your blood pressure. How have you been feeling?" Patient: "I get these pounding headaches most mornings. And my legs wear out fast — even just walking short distances."`
       },
       "Visit transcript, 00:05:45": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "Do you notice any symptoms with physical activity?" Patient: "Now that you mention it, my legs get tired pretty quickly… I always thought I was just out of shape."`
+        content: `Provider: "I'm going to check your blood pressure in your arms and legs."`
       },
       "Visit transcript, 00:09:20": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "Any cramping pain in your legs when you walk?" Patient: "No, not cramping exactly. Just fatigue. My legs get tired, but it's not pain that makes me stop. More like they feel heavy."`
-      },
-      "Visit transcript, 00:12:40": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "I'm going to conduct an additional blood pressure examination. I want to check your blood pressure in your arms and legs." Patient: "Oh, okay. Is something wrong?"`
+        content: `Provider: "Your arm reads 150 over 90, but your leg is 110 over 70, and your femoral pulses are diminished. That gap isn't normal — I want to order an echo and a CT of your chest."`
       },
       "Visit transcript, 00:16:50": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "That is notable — your blood pressure is significantly lower in your legs compared to your arms, which is not typical. This finding raises concern for a structural vascular cause." Patient: "What does that mean?"`
+        content: `Provider: "John, the imaging shows a narrowing in your aorta. It's called coarctation. You were likely born with it — that's what's been driving your blood pressure and the leg fatigue."`
       },
       "Visit transcript, 00:21:15": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "I would like to obtain imaging to evaluate your blood vessels more closely. An echocardiogram and CT angiography of your chest will help us see what's going on." Patient: "Is this serious?" Provider: "It's something we need to investigate promptly. The good news is that if we confirm what I suspect, there are effective treatments available."`
+        content: `Patient: "Can it be fixed?" Provider: "Yes — I'm referring you to a cardiologist today."`
       },
       "Visit transcript, 00:24:30": {
         type: "Transcript",
         date: "Today",
-        content: `Provider: "Also, since you're 45, you're due for colorectal cancer screening. Have you had a colonoscopy previously?" Patient: "No, I haven't." Provider: "We'll arrange that as well, as it's recommended starting at age 45. We can schedule both the imaging and the colonoscopy."`
+        content: `Provider: "One more thing — you're due for a colonoscopy. We already have it flagged, let's get that scheduled too." Patient: "Ok, sounds good."`
       },
       "ROS documentation, today": {
         type: "Clinical Note",
@@ -337,31 +330,6 @@ export default function Scribes({
         type: "Clinical Note",
         date: "Today",
         content: "**FOCUSED CARDIOVASCULAR RE-EXAMINATION**\n\nPatient: John Smith, 45M\nDate: Today\nTime: Following BP gradient discovery\nIndication: Re-examine for findings consistent with coarctation of aorta\n\n**AUSCULTATION (Targeted)**\n\n**Cardiac:**\n• Auscultation in supine position with patient breath-held\n• Left infraclavicular area: Grade 1-2/6 systolic ejection murmur appreciated\n• Posterior thorax (between scapulae): Faint systolic murmur heard over thoracic spine\n• These murmurs were subtle and not appreciated on initial routine examination\n\n**Vascular:**\n• Carotid arteries: No bruits\n• Abdominal aorta: No bruits\n• Femoral arteries: Faint continuous murmur appreciated bilaterally (collateral flow)\n\n**PALPATION (Re-assessment)**\n• Radial pulses: 2+ bilaterally, brisk and bounding\n• Brachial pulses: 2+ bilaterally, strong\n• Femoral pulses: 1+ bilaterally, diminished amplitude and delayed compared to radial (\"radial-femoral delay\")\n• Dorsalis pedis: 1+ bilaterally\n• Posterior tibial: 1+ bilaterally\n\n**CLINICAL CORRELATION**\nPhysical examination findings now consistent with coarctation of aorta:\n1. Arm-leg BP gradient (40 mmHg)\n2. Diminished and delayed femoral pulses\n3. Systolic murmur over left infraclavicular area and back (turbulent flow through narrowed aorta)\n4. Bounding upper extremity pulses (pre-stenotic hypertension)\n5. Weak lower extremity pulses (post-stenotic hypoperfusion)\n\nDiagnosis elevated from low probability to high probability based on examination findings."
-      },
-      "Visit transcript, 00:01:30": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "Good to see you. I understand your blood pressure has been elevated — can you tell me more about how you've been feeling?" Patient: "I've been getting these headaches… kind of pounding sometimes."`
-      },
-      "Visit transcript, 00:03:15": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "When were you first told your blood pressure might be elevated?" Patient: "Maybe once when I was younger, but no one really followed up."`
-      },
-      "Visit transcript, 00:05:45": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "Do you notice any symptoms with physical activity?" Patient: "Now that you mention it, my legs get tired pretty quickly… I always thought I was just out of shape."`
-      },
-      "Visit transcript, 00:09:20": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "Any cramping pain in your legs when you walk?" Patient: "No, not cramping exactly. Just fatigue. My legs get tired, but it's not pain that makes me stop. More like they feel heavy."`
-      },
-      "Visit transcript, 00:12:40": {
-        type: "Transcript",
-        date: "Today",
-        content: `Provider: "I'm going to conduct an additional blood pressure examination. I want to check your blood pressure in your arms and legs." Patient: "Oh, okay. Is something wrong?" Provider: "I want to be thorough. I noticed your pulses feel a bit different between your arms and legs."`
       },
       "Visit transcript, 00:16:50": {
         type: "Transcript",
@@ -795,17 +763,17 @@ export default function Scribes({
           age: 45, 
           gender: "M", 
           duration: "28m 45s",
-          chiefComplaint: "Headaches / Elevated Blood Pressure",
+          chiefComplaint: "Follow-up: Elevated BP",
           room: "Room 215",
           templateName: "Complex Diagnostic Evaluation Note",
-          hpi: "45-year-old male presenting with recurrent headaches{{1}} and persistently elevated blood pressure{{2}}. Headaches began 6 months ago, pulsatile in quality, patient describes sensation of \"feeling heartbeat in head\"{{3}}, occurring 2-3 times per week, lasting several hours. Also reports occasional dizziness{{4}}. BP persistently elevated: urgent care 152/92 mmHg two weeks ago{{5}}, pharmacy screenings 148/88 and 155/90{{6}}, today's check-in 150/92{{7}}. Patient reports high blood pressure noted once as teenager, never fully investigated{{8}}. No traditional cardiovascular risk factors: non-obese (BMI 25.5){{9}}, no diabetes, no family history of early hypertension{{10}}. Reports intermittent exercise intolerance with leg fatigue during exertion{{11}}, previously attributed to deconditioning. No current medications{{12}}.",
+          hpi: "45-year-old male presenting for follow-up evaluation of persistently elevated blood pressure{{2}}. Pre-visit workup from urgent care (2 weeks prior) showed normal renal function, aldosterone, and TSH{{27}}, largely excluding renal and endocrine secondary causes. Patient reports pounding headaches most mornings{{1}}, pulsatile in quality{{3}}, 2–3 times per week, lasting several hours. Also reports leg fatigue with exertion{{11}} — legs tire quickly even walking short distances, spontaneously attributed to deconditioning — and occasional dizziness{{4}}. BP persistently elevated across multiple settings: urgent care 152/92 mmHg two weeks ago{{5}}, pharmacy screenings 148/88 and 155/90{{6}}, today's check-in 150/92{{7}}. History of elevated BP noted once as teenager, never investigated{{8}}. No traditional cardiovascular risk factors: BMI 25.5{{9}}, no diabetes, no family history of early hypertension{{10}}. No current medications{{12}}.",
           ros: "Cardiovascular: Pulsatile headaches; elevated BP readings; no chest pain{{13}}.\nNeurologic: Occasional dizziness; no syncope, vision changes, or focal deficits{{14}}.\nMusculoskeletal: Leg fatigue with exertion; no claudication pain{{15}}.\nConstitutional: Denies fever, weight loss, or night sweats{{16}}.\nRespiratory: No shortness of breath at rest{{17}}.",
-          pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F{{18}}.\nHEENT: Normocephalic; no bruits over carotids{{19}}.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated{{20}}.\nLungs: Clear to auscultation bilaterally{{21}}.\nExtremities: Femoral pulses slightly diminished bilaterally{{22}}.\n\n**Additional Blood Pressure Examination (Performed During Visit):**\nUpper extremity BP (right arm): 150/90 mmHg{{23}}\nLower extremity BP (right leg): 110/70 mmHg{{24}}\n**Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference){{25}}**\n\nCardiovascular (re-examination): Faint systolic murmur appreciated over left infraclavicular area and posterior thorax{{26}}.",
-          mdm: "Assessment: Coarctation of the aorta (congenital aortic narrowing). This is a rare but important diagnosis in an adult presenting with hypertension. Clinical presentation highly suspicious: persistent hypertension without traditional risk factors, pulsatile headaches (upper body hypertension), exercise-induced leg fatigue (lower body hypoperfusion), history of elevated BP as teenager (undiagnosed congenital lesion), and critical physical exam finding of significant arm-leg BP gradient with diminished femoral pulses.\n\nAmbient Clinical Reasoning Evolution:\n• Initial differential favored essential hypertension (most common)\n• Pattern recognition triggered by: young age + no risk factors + exertional leg symptoms\n• Ambient nudge prompted thorough vascular exam\n• Arm-leg BP gradient (40 mmHg) is pathognomonic for coarctation\n• Diagnosis transitioned from broad to targeted based on real-time findings\n\nComplexity: High. Rare congenital cardiovascular diagnosis in adult patient requiring immediate advanced imaging, specialty referral, and coordination of care. Diagnosis often missed in adults; carries significant morbidity if untreated (heart failure, stroke, aortic dissection). Requires expedited cardiology evaluation and surgical planning.\n\nData Reviewed: Previsit summary with BP trend, intake form, urgent care visit record, physical examination findings including specialized BP measurements, ambient clinical reasoning output.\n\nManagement Plan:\n• **Imaging (Stat Orders):**\n  - Echocardiogram (urgent) - assess cardiac function, aortic valve, and coarctation severity\n  - CT angiography chest (urgent) - definitive anatomic imaging of aortic narrowing location and severity\n• **Specialty Referral:** Cardiology referral (expedited) - discuss surgical vs. catheter-based intervention options\n• **Preventive Care:** Colonoscopy screening (age 45, no prior screening) - order placed, will coordinate scheduling\n  - GI referral for screening colonoscopy\n• **Patient Education:** Discussed diagnosis, explained congenital nature, treatment options (surgical repair vs. stent), prognosis with treatment\n• **Follow-up:** Cardiology appointment expedited (within 1 week); imaging to be completed within 48 hours; follow-up call after imaging results\n• **Activity:** No strenuous exercise until cardiology evaluation\n• **Monitoring:** Home BP monitoring not indicated (diagnosis established)\n\nPost-Visit Coordination (Ambient-Automated):\n• Insurance authorization for imaging completed in real-time\n• Colonoscopy eligibility verified and scheduling options sent\n• Cardiology referral placed with priority flagging\n• Cost estimates generated for procedures\n• Patient-friendly explanation of condition and next steps generated\n• Referral letters auto-generated for cardiology and GI",
+          pe: "General: Well-appearing, no acute distress.\nVitals (initial): BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F{{18}}.\nHEENT: Normocephalic; no bruits over carotids{{19}}.\nCardiovascular: Regular rate and rhythm; no murmurs initially appreciated{{20}}.\nLungs: Clear to auscultation bilaterally{{21}}.\nExtremities: Femoral pulses slightly diminished bilaterally{{22}}.\n\n**Additional Blood Pressure Examination (Performed During Visit):**\nUpper extremity BP: 150/90 mmHg{{23}}\nLower extremity BP: 110/70 mmHg{{24}}\n**Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference){{25}}**\n\nCardiovascular (re-examination): Faint systolic murmur appreciated over left infraclavicular area and posterior thorax{{26}}.",
+          mdm: "Assessment: Coarctation of the aorta (congenital aortic narrowing). This is a rare but important diagnosis in an adult presenting with hypertension. Clinical presentation highly suspicious: persistent hypertension without traditional risk factors, pulsatile headaches (upper body hypertension), exercise-induced leg fatigue (lower body hypoperfusion), history of elevated BP as teenager (undiagnosed congenital lesion), and critical physical exam finding of significant arm-leg BP gradient with diminished femoral pulses.\n\nAmbient Clinical Reasoning Evolution:\n• Pre-visit labs (BMP, aldosterone, TSH) had excluded renal and endocrine secondary causes\n• Visit-start differential: essential hypertension most likely, coarctation low probability\n• Pattern recognition triggered by spontaneously reported exertional leg fatigue in a young patient without traditional risk factors\n• Arm-leg BP differential check ordered based on clinical suspicion\n• Arm-leg BP gradient (40 mmHg) is pathognomonic for coarctation\n• Diagnosis elevated from low probability to confirmed based on real-time exam findings\n\nComplexity: High. Rare congenital cardiovascular diagnosis in adult patient requiring immediate advanced imaging, specialty referral, and coordination of care. Diagnosis often missed in adults; carries significant morbidity if untreated (heart failure, stroke, aortic dissection). Requires expedited cardiology evaluation and surgical planning.\n\nData Reviewed: Previsit summary with BP trend, intake form, urgent care visit record, physical examination findings including specialized BP measurements, ambient clinical reasoning output.\n\nManagement Plan:\n• **Imaging (Stat Orders):**\n  - Echocardiogram (urgent) - assess cardiac function, aortic valve, and coarctation severity\n  - CT angiography chest (urgent) - definitive anatomic imaging of aortic narrowing location and severity\n• **Specialty Referral:** Cardiology referral (expedited) - discuss surgical vs. catheter-based intervention options\n• **Preventive Care:** Colonoscopy screening (age 45, no prior screening) - order placed, will coordinate scheduling\n  - GI referral for screening colonoscopy\n• **Patient Education:** Discussed diagnosis, explained congenital nature, treatment options (surgical repair vs. stent), prognosis with treatment\n• **Follow-up:** Cardiology appointment expedited (within 1 week); imaging to be completed within 48 hours; follow-up call after imaging results\n• **Activity:** No strenuous exercise until cardiology evaluation\n• **Monitoring:** Home BP monitoring not indicated (diagnosis established)\n\nPost-Visit Coordination (Ambient-Automated):\n• Insurance authorization for imaging completed in real-time\n• Colonoscopy eligibility verified and scheduling options sent\n• Cardiology referral placed with priority flagging\n• Cost estimates generated for procedures\n• Patient-friendly explanation of condition and next steps generated\n• Referral letters auto-generated for cardiology and GI",
           citations: [
-            { number: 1, citedText: "recurrent headaches", quote: "I've been getting these headaches that feel like pounding in my head", source: "Intake form, today" },
+            { number: 1, citedText: "pounding headaches most mornings", quote: "Pounding headaches, sometimes feel heartbeat in head — 2-3 times per week, lasting several hours", source: "Intake form, today" },
             { number: 2, citedText: "persistently elevated blood pressure", quote: "Recent vitals: BP 152/92, 148/88, 155/90", source: "Previsit summary, today" },
-            { number: 3, citedText: "feeling heartbeat in head", quote: "I've been getting these headaches... kind of pounding sometimes", source: "Visit transcript, 00:01:30" },
+            { number: 3, citedText: "feeling heartbeat in head", quote: "I get these pounding headaches most mornings", source: "Visit transcript, 00:01:30" },
             { number: 4, citedText: "occasional dizziness", quote: "I went to urgent care because of dizziness and they said my blood pressure was really high", source: "Intake form, today" },
             { number: 5, citedText: "urgent care 152/92 mmHg", quote: "Urgent Care visit (2 weeks ago): BP 152/92 mmHg", source: "Previsit summary, today" },
             { number: 6, citedText: "pharmacy screenings 148/88 and 155/90", quote: "Pharmacy screening (1 week ago): BP 148/88 mmHg; Pharmacy screening (3 days ago): BP 155/90 mmHg", source: "Previsit summary, today" },
@@ -813,11 +781,11 @@ export default function Scribes({
             { number: 8, citedText: "high blood pressure noted once as teenager", quote: "Someone told me when I was a teenager that my blood pressure was high but no one ever followed up on it", source: "Intake form, today" },
             { number: 9, citedText: "BMI 25.5", quote: "Height: 5'10\" (177.8 cm), Weight: 178 lbs (80.7 kg), BMI: 25.5", source: "Visit vitals, today" },
             { number: 10, citedText: "no family history of early hypertension", quote: "Family History: No family history of early hypertension, no diabetes", source: "Previsit summary, today" },
-            { number: 11, citedText: "leg fatigue during exertion", quote: "My legs get tired pretty quickly when I exercise or climb stairs - I always thought I was just out of shape", source: "Intake form, today" },
+            { number: 11, citedText: "leg fatigue during exertion", quote: "My legs wear out fast — even just walking short distances", source: "Visit transcript, 00:01:30" },
             { number: 12, citedText: "No current medications", quote: "Current Medications: None", source: "Intake form, today" },
             { number: 13, citedText: "no chest pain", quote: "No chest pain or pressure. No history of angina", source: "ROS documentation, today" },
             { number: 14, citedText: "no syncope, vision changes, or focal deficits", quote: "No loss of consciousness, no vision changes, no weakness or numbness", source: "ROS documentation, today" },
-            { number: 15, citedText: "no claudication pain", quote: "Leg fatigue but no cramping pain with walking that forces me to stop", source: "Visit transcript, 00:09:20" },
+            { number: 15, citedText: "no claudication pain", quote: "Leg fatigue with exertion; no calf pain or claudication", source: "ROS documentation, today" },
             { number: 16, citedText: "Denies fever, weight loss, or night sweats", quote: "No constitutional symptoms: fever, chills, night sweats, or unintentional weight loss", source: "ROS documentation, today" },
             { number: 17, citedText: "No shortness of breath at rest", quote: "No dyspnea at rest. Some mild shortness of breath with heavy exertion", source: "ROS documentation, today" },
             { number: 18, citedText: "BP 150/92 (right arm, seated), HR 76, RR 14, Temp 98.6°F", quote: "Blood pressure 150/92 mmHg (right arm, seated), heart rate 76 bpm, respiratory rate 14, temperature 98.6°F", source: "Visit vitals, today" },
@@ -828,25 +796,45 @@ export default function Scribes({
             { number: 23, citedText: "Upper extremity BP (right arm): 150/90 mmHg", quote: "Repeat blood pressure measurement, right arm, seated: 150/90 mmHg", source: "Physical examination (additional BP exam), today" },
             { number: 24, citedText: "Lower extremity BP (right leg): 110/70 mmHg", quote: "Blood pressure measurement, right lower extremity (popliteal artery, patient prone): 110/70 mmHg", source: "Physical examination (additional BP exam), today" },
             { number: 25, citedText: "Significant arm-leg blood pressure gradient detected (40 mmHg systolic difference)", quote: "Arm-leg BP gradient: 40 mmHg systolic difference (150 mmHg arm vs 110 mmHg leg)", source: "Physical examination (additional BP exam), today" },
-            { number: 26, citedText: "Faint systolic murmur appreciated over left infraclavicular area and posterior thorax", quote: "Cardiac re-examination: Grade 1-2/6 systolic ejection murmur heard over left infraclavicular region and posteriorly over thoracic spine", source: "Physical examination (focused re-exam), today" }
+            { number: 26, citedText: "Faint systolic murmur appreciated over left infraclavicular area and posterior thorax", quote: "Cardiac re-examination: Grade 1-2/6 systolic ejection murmur heard over left infraclavicular region and posteriorly over thoracic spine", source: "Physical examination (focused re-exam), today" },
+            { number: 27, citedText: "normal renal function, aldosterone, and TSH", quote: "BMP: Creatinine 0.9 mg/dL, eGFR >90 mL/min — renal function normal; Aldosterone: 9.2 ng/dL — normal range; TSH: 2.1 mIU/L — thyroid function normal", source: "Lab results, 2 weeks ago" }
           ],
           hccItems: [],
           nudges: [
-            { 
-              type: "Clinical Insight", 
-              description: "Mismatch between upper body symptoms and lower extremity fatigue → recommend checking femoral pulses and comparing upper vs lower extremity blood pressure.",
-              highlightId: "cem-ambient-nudge"
+            {
+              type: "Specify missing laterality - upper extremity",
+              highlightId: "john-smith-pe-arm",
+              options: [
+                { id: 'left', label: 'Left', type: 'single-select' },
+                { id: 'right', label: 'Right', type: 'single-select' },
+                { id: 'bilateral', label: 'Bilateral', type: 'single-select' }
+              ],
+              previewText: (selected: string[]) => selected.length > 0 ? ` (${selected[0] === 'bilateral' ? 'bilateral' : selected[0].toLowerCase() + ' arm'})` : '',
+              insertLocation: 'pe',
+              insertAfter: 'Upper extremity BP'
+            },
+            {
+              type: "Specify missing laterality - lower extremity",
+              highlightId: "john-smith-pe-leg",
+              options: [
+                { id: 'left', label: 'Left', type: 'single-select' },
+                { id: 'right', label: 'Right', type: 'single-select' },
+                { id: 'bilateral', label: 'Bilateral', type: 'single-select' }
+              ],
+              previewText: (selected: string[]) => selected.length > 0 ? ` (${selected[0] === 'bilateral' ? 'bilateral' : selected[0].toLowerCase() + ' leg'})` : '',
+              insertLocation: 'pe',
+              insertAfter: 'Lower extremity BP'
             }
           ],
           diagnosisAndCodes: {
             diagnoses: [
-              { code: "Q25.1", description: "Coarctation of aorta" },
-              { code: "I10", description: "Essential (primary) hypertension (secondary to coarctation)" },
-              { code: "R51.9", description: "Headache, unspecified" }
+              { code: "Q25.1", description: "Coarctation of aorta", highlightTexts: ["Coarctation of the aorta", "Significant arm-leg blood pressure gradient detected", "Femoral pulses slightly diminished"] },
+              { code: "I10", description: "Essential (primary) hypertension (secondary to coarctation)", highlightTexts: ["persistently elevated blood pressure", "persistent hypertension without traditional risk factors"] },
+              { code: "R51.9", description: "Headache, unspecified", highlightTexts: ["pounding headaches most mornings", "pulsatile headaches (upper body hypertension)"] }
             ],
             cptCodes: [
-              { code: "99215", description: "Office visit, established patient, high complexity (40-54 minutes)" },
-              { code: "93000", description: "Electrocardiogram, routine ECG with interpretation" }
+              { code: "99215", description: "Office visit, established patient, high complexity (40-54 minutes)", highlightTexts: ["Complexity: High"] },
+              { code: "93000", description: "Electrocardiogram, routine ECG with interpretation", highlightTexts: ["Faint systolic murmur appreciated"] }
             ]
           },
           postVisitWorkflows: [
@@ -885,11 +873,10 @@ export default function Scribes({
             "Previsit summary, today",
             "Intake form, today",
             "Urgent care visit, 2 weeks ago",
+            "Lab results, 2 weeks ago",
             "Visit transcript, 00:01:30",
-            "Visit transcript, 00:03:15",
             "Visit transcript, 00:05:45",
             "Visit transcript, 00:09:20",
-            "Visit transcript, 00:12:40",
             "Visit transcript, 00:16:50",
             "Visit transcript, 00:21:15",
             "Visit transcript, 00:24:30",
@@ -1211,6 +1198,7 @@ export default function Scribes({
       const scribeIndex = allScribes.findIndex(scribe => scribe.name === selectedPatientName);
       if (scribeIndex !== -1) {
         setSelectedScribeIndex(scribeIndex);
+        setActiveCode(null);
       }
     }
   }, [selectedPatientName, allScribes]);
@@ -1259,6 +1247,8 @@ export default function Scribes({
   // Helper to check if text should be highlighted for nudges
   const getHighlightMapping = () => {
     return {
+      "john-smith-pe-arm": "Upper extremity BP",
+      "john-smith-pe-leg": "Lower extremity BP",
       "cem-ambient-nudge": "intermittent exercise intolerance with leg fatigue",
       "maria-garcia-hpi-laterality": "lower lumbar region",
       "maria-garcia-hpi-mechanism": "Pain started after moving furniture",
@@ -1282,14 +1272,14 @@ export default function Scribes({
     
     // Severe/alarming patterns - match the phrase that contains these keywords
     const severePatterns = [
-      /\b(severe(?:ly)?)\b[^.!?]*/gi,
-      /\b(critical(?:ly)?)\b[^.!?]*/gi,
-      /\b(acute(?:ly)?)\b[^.!?]*/gi,
-      /\b(emergency)\b[^.!?]*/gi,
-      /\b(urgent(?:ly)?)\b[^.!?]*/gi,
-      /\b(alarming)\b[^.!?]*/gi,
-      /\b(life-threatening)\b[^.!?]*/gi,
-      /\b(dangerous(?:ly)?)\b[^.!?]*/gi,
+      /\b(severe(?:ly)?)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(critical(?:ly)?)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(acute(?:ly)?)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(emergency)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(urgent(?:ly)?)(?![ \t]+care\b)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(alarming)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(life-threatening)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(dangerous(?:ly)?)(?:[ \t]+[^\s.!?]+){0,2}/gi,
     ];
     
     severePatterns.forEach(pattern => {
@@ -1303,21 +1293,21 @@ export default function Scribes({
     
     // Abnormal findings patterns
     const abnormalPatterns = [
-      /\b(abnormal(?:ly)?)\b[^.!?]*/gi,
-      /\b(elevated)\b[^.!?]*/gi,
-      /\b(high)\s+\w+/gi,
-      /\b(low)\s+\w+/gi,
-      /\b(decreased)\b[^.!?]*/gi,
-      /\b(increased)\b[^.!?]*/gi,
-      /\b(irregular(?:ly)?)\b[^.!?]*/gi,
-      /\b(worse|worsening)\b[^.!?]*/gi,
-      /\[H\][^.!?]*/gi,  // High lab values
-      /\[L\][^.!?]*/gi,  // Low lab values
+      /\b(abnormal(?:ly)?)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(elevated)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(high)[ \t]+\w+/gi,
+      /\b(low)[ \t]+\w+/gi,
+      /\b(decreased)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(increased)(?:[ \t]+[^\s.!?]+){0,3}/gi,
+      /\b(irregular(?:ly)?)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\b(worse|worsening)(?:[ \t]+[^\s.!?]+){0,2}/gi,
+      /\[H\][ \t]*\S+/gi,  // High lab values
+      /\[L\][ \t]*\S+/gi,  // Low lab values
       /\d+\/\d+\s*mmHg/gi,  // Blood pressure values
-      /above\s+(goal|target|normal|range)/gi,
-      /below\s+(goal|target|normal|range)/gi,
-      /\bup from\b[^.!?]*/gi,  // Trending up
-      /\bdown from\b[^.!?]*/gi,  // Could be good or bad depending on context
+      /above[ \t]+(goal|target|normal|range)/gi,
+      /below[ \t]+(goal|target|normal|range)/gi,
+      /\bup from\b(?:[ \t]+[^\s.!?]+){0,3}/gi,  // Trending up
+      /\bdown from\b(?:[ \t]+[^\s.!?]+){0,3}/gi,  // Could be good or bad depending on context
     ];
     
     // Only add abnormal patterns if not already caught by severe patterns
@@ -1338,7 +1328,7 @@ export default function Scribes({
   };
 
   // Helper to render text with citation numbers and nudge highlighting
-  const renderTextWithCitations = (text: string, section: 'hpi' | 'ros' | 'pe') => {
+  const renderTextWithCitations = (text: string, section: 'hpi' | 'ros' | 'pe' | 'mdm') => {
     // Check if there's a preview for this section
     const activePreview = Object.entries(nudgePreviews).find(([_, preview]) => preview.location === section);
     let displayText = text;
@@ -1420,6 +1410,17 @@ export default function Scribes({
       });
     }
     
+    // Collect active code highlight texts
+    const activeCodeHighlightTexts: string[] = [];
+    if (activeCode && currentScribe.diagnosisAndCodes) {
+      const codeItem = activeCode.type === 'diagnosis'
+        ? currentScribe.diagnosisAndCodes.diagnoses?.[activeCode.idx]
+        : currentScribe.diagnosisAndCodes.cptCodes?.[activeCode.idx];
+      if (codeItem?.highlightTexts) {
+        activeCodeHighlightTexts.push(...codeItem.highlightTexts);
+      }
+    }
+
     if (isNudgeHovered && hoveredNudge) {
       const nudge = currentScribe.nudges?.[hoveredNudge.nudgeIndex];
       // Use highlightId mapping for all nudges
@@ -1649,6 +1650,25 @@ export default function Scribes({
         }
       }
       
+      // Add active code green highlights
+      if (activeCodeHighlightTexts.length > 0 && part) {
+        activeCodeHighlightTexts.forEach(codeText => {
+          let searchStart = 0;
+          let foundIndex;
+          const searchLower = part.toLowerCase();
+          const targetLower = codeText.toLowerCase();
+          while ((foundIndex = searchLower.indexOf(targetLower, searchStart)) !== -1) {
+            allHighlights.push({
+              start: foundIndex,
+              end: foundIndex + codeText.length,
+              color: '#DCEFDD',
+              priority: -1
+            });
+            searchStart = foundIndex + 1;
+          }
+        });
+      }
+
       // Add default view nudge highlights (insertion points)
       // Only highlight first occurrence of each nudge's text to maintain 1:1 relationship
       if (shouldShowNudgeHighlights && nudgeHighlights.length > 0 && part) {
@@ -2289,7 +2309,7 @@ export default function Scribes({
                           key={globalIndex} 
                           {...scribe} 
                           isSelected={globalIndex === selectedScribeIndex}
-                          onClick={() => setSelectedScribeIndex(globalIndex)}
+                          onClick={() => { setSelectedScribeIndex(globalIndex); setActiveCode(null); }}
                         />
                       );
                     })}
@@ -2611,7 +2631,7 @@ export default function Scribes({
             </div>
             
             {/* Main Content */}
-            <div className={`content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1 ${activeTab === 'previsit' ? '' : 'p-[12px]'}`}>
+            <div data-demo-id="note-content" className={`content-stretch flex flex-col items-start relative shrink-0 w-full overflow-y-auto flex-1 ${activeTab === 'previsit' ? '' : 'p-[12px]'}`}>
             {activeTab === 'previsit' ? (
               /* Previsit Content - Updated Structure */
               (() => {
@@ -2741,7 +2761,7 @@ export default function Scribes({
             </div>
             
             {/* HPI Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/hpi">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -2756,78 +2776,38 @@ export default function Scribes({
                 >
                   HPI
                 </p>
-                <div className="flex gap-[4px] items-center shrink-0">
-                  {editingSection === 'hpi' ? (
-                    <>
-                      <div className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]">
-                        <InlineIcon name="mic" size={16} />
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Dictate
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => {
-                          updateScribeContent('hpi', editedContent.hpi);
-                          setEditingSection(null);
-                        }}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Save
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => setEditingSection(null)}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Cancel
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="edit" size={16} />}
-                      onClick={() => {
-                        setEditedContent({ ...editedContent, hpi: currentScribe.hpi.replace(/\{\{(\d+)\}\}/g, '') });
-                        setEditingSection('hpi');
-                      }}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="mic" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="school" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="docs_add_on" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <Button
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="content_copy" size={16} />}
-                      onClick={() => {}}
-                    >
-                      Copy
-                    </Button>
-                    </>
-                  )}
+                <div className="flex gap-[4px] items-center shrink-0 opacity-0 group-hover/hpi:opacity-100 transition-opacity">
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="edit" size={16} />}
+                    onClick={() => {
+                      setEditedContent({ ...editedContent, hpi: currentScribe.hpi.replace(/\{\{(\d+)\}\}/g, '') });
+                      setEditingSection('hpi');
+                    }}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="mic" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="school" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="docs_add_on" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
                 </div>
               </div>
               
@@ -2841,6 +2821,10 @@ export default function Scribes({
                     onChange={(e) => {
                       setEditedContent({ ...editedContent, hpi: e.target.value });
                       adjustTextareaHeight(e.target);
+                    }}
+                    onBlur={() => {
+                      updateScribeContent('hpi', editedContent.hpi);
+                      setEditingSection(null);
                     }}
                     className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[#111827] tracking-[0.15px] w-full p-[8px] rounded-[6px] resize-none overflow-hidden border-0 outline-none bg-transparent"
                     style={{ minHeight: 'auto' }}
@@ -2864,7 +2848,7 @@ export default function Scribes({
             </div>
             
             {/* ROS Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/ros">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -2879,78 +2863,38 @@ export default function Scribes({
                 >
                   ROS
                 </p>
-                <div className="flex gap-[4px] items-center shrink-0">
-                  {editingSection === 'ros' ? (
-                    <>
-                      <div className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]">
-                        <InlineIcon name="mic" size={16} />
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Dictate
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => {
-                          updateScribeContent('ros', editedContent.ros);
-                          setEditingSection(null);
-                        }}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Save
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => setEditingSection(null)}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Cancel
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="edit" size={16} />}
-                      onClick={() => {
-                        setEditedContent({ ...editedContent, ros: currentScribe.ros.replace(/\{\{(\d+)\}\}/g, '') });
-                        setEditingSection('ros');
-                      }}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="mic" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="school" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="docs_add_on" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <Button
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="content_copy" size={16} />}
-                      onClick={() => {}}
-                    >
-                      Copy
-                    </Button>
-                    </>
-                  )}
+                <div className="flex gap-[4px] items-center shrink-0 opacity-0 group-hover/ros:opacity-100 transition-opacity">
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="edit" size={16} />}
+                    onClick={() => {
+                      setEditedContent({ ...editedContent, ros: currentScribe.ros.replace(/\{\{(\d+)\}\}/g, '') });
+                      setEditingSection('ros');
+                    }}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="mic" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="school" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="docs_add_on" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
                 </div>
               </div>
               
@@ -2964,6 +2908,10 @@ export default function Scribes({
                     onChange={(e) => {
                       setEditedContent({ ...editedContent, ros: e.target.value });
                       adjustTextareaHeight(e.target);
+                    }}
+                    onBlur={() => {
+                      updateScribeContent('ros', editedContent.ros);
+                      setEditingSection(null);
                     }}
                     className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[#111827] tracking-[0.15px] w-full p-[8px] rounded-[6px] resize-none overflow-hidden border-0 outline-none bg-transparent"
                     style={{ minHeight: 'auto' }}
@@ -2987,7 +2935,7 @@ export default function Scribes({
             </div>
             
             {/* PE Section */}
-            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+            <div className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/pe">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -3002,78 +2950,38 @@ export default function Scribes({
                 >
                   PE
                 </p>
-                <div className="flex gap-[4px] items-center shrink-0">
-                  {editingSection === 'pe' ? (
-                    <>
-                      <div className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]">
-                        <InlineIcon name="mic" size={16} />
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Dictate
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => {
-                          updateScribeContent('pe', editedContent.pe);
-                          setEditingSection(null);
-                        }}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Save
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => setEditingSection(null)}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Cancel
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="edit" size={16} />}
-                      onClick={() => {
-                        setEditedContent({ ...editedContent, pe: currentScribe.pe.replace(/\{\{(\d+)\}\}/g, '') });
-                        setEditingSection('pe');
-                      }}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="mic" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="school" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="docs_add_on" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <Button
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="content_copy" size={16} />}
-                      onClick={() => {}}
-                    >
-                      Copy
-                    </Button>
-                    </>
-                  )}
+                <div className="flex gap-[4px] items-center shrink-0 opacity-0 group-hover/pe:opacity-100 transition-opacity">
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="edit" size={16} />}
+                    onClick={() => {
+                      setEditedContent({ ...editedContent, pe: currentScribe.pe.replace(/\{\{(\d+)\}\}/g, '') });
+                      setEditingSection('pe');
+                    }}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="mic" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="school" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="docs_add_on" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
                 </div>
               </div>
               
@@ -3087,6 +2995,10 @@ export default function Scribes({
                     onChange={(e) => {
                       setEditedContent({ ...editedContent, pe: e.target.value });
                       adjustTextareaHeight(e.target);
+                    }}
+                    onBlur={() => {
+                      updateScribeContent('pe', editedContent.pe);
+                      setEditingSection(null);
                     }}
                     className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[#111827] tracking-[0.15px] w-full p-[8px] rounded-[6px] resize-none overflow-hidden border-0 outline-none bg-transparent"
                     style={{ minHeight: 'auto' }}
@@ -3110,7 +3022,7 @@ export default function Scribes({
             </div>
             
             {/* MDM Section */}
-            <div data-demo-id="mdm" className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full">
+            <div data-demo-id="mdm" className="content-stretch flex flex-col gap-[4px] items-start py-[12px] relative shrink-0 w-full group/mdm">
               {/* Section Title & CTAs */}
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <p 
@@ -3125,78 +3037,38 @@ export default function Scribes({
                 >
                   MDM
                 </p>
-                <div className="flex gap-[4px] items-center shrink-0">
-                  {editingSection === 'mdm' ? (
-                    <>
-                      <div className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]">
-                        <InlineIcon name="mic" size={16} />
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Dictate
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => {
-                          updateScribeContent('mdm', editedContent.mdm);
-                          setEditingSection(null);
-                        }}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Save
-                        </p>
-                      </div>
-                      <div 
-                        className="content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[10px] py-[6px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[var(--surface-1,#f7f7f7)]"
-                        onClick={() => setEditingSection(null)}
-                      >
-                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-brand,#1132ee)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                          Cancel
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="edit" size={16} />}
-                      onClick={() => {
-                        setEditedContent({ ...editedContent, mdm: currentScribe.mdm?.replace(/\{\{(\d+)\}\}/g, '') || '' });
-                        setEditingSection('mdm');
-                      }}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="mic" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="school" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <IconButton
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="docs_add_on" size={16} />}
-                      onClick={() => {}}
-                      className="text-[color:var(--text-brand,#1132ee)]"
-                    />
-                    <Button
-                      variant="tertiary"
-                      size="small"
-                      icon={<InlineIcon name="content_copy" size={16} />}
-                      onClick={() => {}}
-                    >
-                      Copy
-                    </Button>
-                    </>
-                  )}
+                <div className="flex gap-[4px] items-center shrink-0 opacity-0 group-hover/mdm:opacity-100 transition-opacity">
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="edit" size={16} />}
+                    onClick={() => {
+                      setEditedContent({ ...editedContent, mdm: currentScribe.mdm?.replace(/\{\{(\d+)\}\}/g, '') || '' });
+                      setEditingSection('mdm');
+                    }}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="mic" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="school" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
+                  <IconButton
+                    variant="tertiary"
+                    size="small"
+                    icon={<InlineIcon name="docs_add_on" size={16} />}
+                    onClick={() => {}}
+                    className="text-[color:var(--text-brand,#1132ee)]"
+                  />
                 </div>
               </div>
               
@@ -3210,6 +3082,10 @@ export default function Scribes({
                     onChange={(e) => {
                       setEditedContent({ ...editedContent, mdm: e.target.value });
                       adjustTextareaHeight(e.target);
+                    }}
+                    onBlur={() => {
+                      updateScribeContent('mdm', editedContent.mdm);
+                      setEditingSection(null);
                     }}
                     className="font-['Lato',sans-serif] leading-[1.4] text-[15px] text-[#111827] tracking-[0.15px] w-full p-[8px] rounded-[6px] resize-none overflow-hidden border-0 outline-none bg-transparent"
                     style={{ minHeight: 'auto' }}
@@ -3704,7 +3580,7 @@ export default function Scribes({
             /* Actions View */
             <>
           {/* Improve Scribe */}
-          <div data-demo-id="nudge" className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+          <div data-demo-id="nudge" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Improve Scribe
@@ -3787,11 +3663,6 @@ export default function Scribes({
                       {/* Options and Actions */}
                       {hasOptions && (
                         <div className="flex flex-col gap-[12px] items-start w-full">
-                          {/* Instruction text */}
-                          <p className="font-['Lato',sans-serif] leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                            {isSingleSelect ? 'Select option to update this note:' : 'Select all applicable options to update this note:'}
-                          </p>
-                          
                           {/* Options */}
                           <div className="flex flex-wrap gap-[8px] w-full">
                             {nudge.options.map((option) => {
@@ -4124,96 +3995,179 @@ export default function Scribes({
                   </div>
                 )}
                 
-                {/* Diagnosis and Codes */}
-                {currentScribe.diagnosisAndCodes && (
-                  <div data-demo-id="billing" className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                    <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                      Diagnosis and Codes
-                    </p>
-                    
-                    <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                      {/* ICD-10 Diagnoses */}
-                      {currentScribe.diagnosisAndCodes.diagnoses && currentScribe.diagnosisAndCodes.diagnoses.length > 0 && (
-                        <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                          <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                            ICD-10 Diagnoses
-                          </p>
-                          <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
-                            {currentScribe.diagnosisAndCodes.diagnoses.map((diagnosis: any, idx: number) => (
-                              <div key={idx} className="flex gap-[8px] items-start w-full">
-                                <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] shrink-0" style={{ fontFeatureSettings: "'ss07'" }}>
-                                  {diagnosis.code}
-                                </span>
-                                <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] flex-1">
-                                  {diagnosis.description}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* CPT Codes */}
-                      {currentScribe.diagnosisAndCodes.cptCodes && currentScribe.diagnosisAndCodes.cptCodes.length > 0 && (
-                        <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                          <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                            CPT Codes
-                          </p>
-                          <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
-                            {currentScribe.diagnosisAndCodes.cptCodes.map((cpt: any, idx: number) => (
-                              <div key={idx} className="flex gap-[8px] items-start w-full">
-                                <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px] shrink-0" style={{ fontFeatureSettings: "'ss07'" }}>
-                                  {cpt.code}
-                                </span>
-                                <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px] flex-1">
-                                  {cpt.description}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Post-Visit Workflows */}
-                {currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 && (
-                  <div data-demo-id="orders" className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                    <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                      Post-Visit Workflows
-                    </p>
-                    
-                    <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
-                      {currentScribe.postVisitWorkflows.map((workflow: any, idx: number) => (
-                        <div 
-                          key={idx}
-                          className="border border-[var(--neutral-200,#ccc)] flex items-center gap-[8px] p-[12px] relative rounded-[6px] w-full"
-                        >
-                          <input 
-                            type="checkbox" 
-                            className="shrink-0 w-[16px] h-[16px] cursor-pointer"
-                            checked={workflow.status === 'completed'}
-                            onChange={() => {
-                              // Handle checkbox change if needed
-                            }}
-                          />
-                          <div className="flex flex-col gap-[4px] items-start flex-1">
-                            <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
-                              {workflow.type}
-                            </p>
-                            <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
-                              {workflow.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
+
+          {/* Diagnosis and Codes */}
+          {currentScribe.diagnosisAndCodes && (
+            <div data-demo-id="billing" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
+              <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
+                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                  Diagnosis and Codes
+                </p>
+                <IconButton
+                  variant="tertiary"
+                  size="small"
+                  icon={<InlineIcon name={isDiagnosisExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
+                  onClick={() => setIsDiagnosisExpanded(!isDiagnosisExpanded)}
+                  className="text-[color:var(--text-subheading,#666)]"
+                />
+              </div>
+
+              {isDiagnosisExpanded && (
+                <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
+                  {currentScribe.diagnosisAndCodes.diagnoses && currentScribe.diagnosisAndCodes.diagnoses.length > 0 && (
+                    <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
+                        ICD-10 Diagnoses
+                      </p>
+                      <div className="content-stretch flex flex-col gap-[2px] relative shrink-0 w-full">
+                        {currentScribe.diagnosisAndCodes.diagnoses.map((diagnosis: any, idx: number) => {
+                          const isActive = activeCode?.type === 'diagnosis' && activeCode.idx === idx;
+                          return (
+                            <div
+                              key={idx}
+                              className={`grid w-full rounded-[6px] px-[6px] py-[3px] cursor-pointer transition-colors ${isActive ? 'bg-[var(--surface-1,#f7f7f7)]' : 'hover:bg-[var(--surface-1,#f7f7f7)]'}`}
+                              style={{ gridTemplateColumns: '48px 1fr' }}
+                              onClick={() => {
+                                if (isActive) {
+                                  setActiveCode(null);
+                                } else {
+                                  setActiveCode({ type: 'diagnosis', idx });
+                                  if (diagnosis.highlightTexts?.length > 0) {
+                                    setTimeout(() => {
+                                      const noteArea = document.querySelector('[data-demo-id="note-content"]') as HTMLElement;
+                                      if (!noteArea) return;
+                                      const walker = document.createTreeWalker(noteArea, NodeFilter.SHOW_TEXT);
+                                      let node;
+                                      while ((node = walker.nextNode())) {
+                                        const text = node.textContent || '';
+                                        for (const ht of diagnosis.highlightTexts) {
+                                          if (text.toLowerCase().includes(ht.toLowerCase())) {
+                                            const el = node.parentElement;
+                                            if (el) {
+                                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                              return;
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }, 50);
+                                  }
+                                }
+                              }}
+                            >
+                              <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                {diagnosis.code}
+                              </span>
+                              <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                                {diagnosis.description}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {currentScribe.diagnosisAndCodes.cptCodes && currentScribe.diagnosisAndCodes.cptCodes.length > 0 && (
+                    <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
+                      <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[11px] text-[color:var(--text-subheading,#666)] tracking-[0.11px]">
+                        CPT Codes
+                      </p>
+                      <div className="content-stretch flex flex-col gap-[2px] relative shrink-0 w-full">
+                        {currentScribe.diagnosisAndCodes.cptCodes.map((cpt: any, idx: number) => {
+                          const isActive = activeCode?.type === 'cpt' && activeCode.idx === idx;
+                          return (
+                            <div
+                              key={idx}
+                              className={`grid w-full rounded-[6px] px-[6px] py-[3px] cursor-pointer transition-colors ${isActive ? 'bg-[var(--surface-1,#f7f7f7)]' : 'hover:bg-[var(--surface-1,#f7f7f7)]'}`}
+                              style={{ gridTemplateColumns: '48px 1fr' }}
+                              onClick={() => {
+                                if (isActive) {
+                                  setActiveCode(null);
+                                } else {
+                                  setActiveCode({ type: 'cpt', idx });
+                                  if (cpt.highlightTexts?.length > 0) {
+                                    setTimeout(() => {
+                                      const noteArea = document.querySelector('[data-demo-id="note-content"]') as HTMLElement;
+                                      if (!noteArea) return;
+                                      const walker = document.createTreeWalker(noteArea, NodeFilter.SHOW_TEXT);
+                                      let node;
+                                      while ((node = walker.nextNode())) {
+                                        const text = node.textContent || '';
+                                        for (const ht of cpt.highlightTexts) {
+                                          if (text.toLowerCase().includes(ht.toLowerCase())) {
+                                            const el = node.parentElement;
+                                            if (el) {
+                                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                              return;
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }, 50);
+                                  }
+                                }
+                              }}
+                            >
+                              <span className="font-['Lato',sans-serif] font-bold leading-[1.4] text-[13px] text-[color:var(--text-default,black)] tracking-[0.065px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                                {cpt.code}
+                              </span>
+                              <span className="font-['Lato',sans-serif] leading-[1.4] text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                                {cpt.description}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Post-Visit Workflows */}
+          {currentScribe.postVisitWorkflows && currentScribe.postVisitWorkflows.length > 0 && (
+            <div data-demo-id="orders" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
+              <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
+                <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                  Post-Visit Workflows
+                </p>
+                <IconButton
+                  variant="tertiary"
+                  size="small"
+                  icon={<InlineIcon name={isPostVisitExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} size={16} />}
+                  onClick={() => setIsPostVisitExpanded(!isPostVisitExpanded)}
+                  className="text-[color:var(--text-subheading,#666)]"
+                />
+              </div>
+
+              {isPostVisitExpanded && (
+                <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
+                  {currentScribe.postVisitWorkflows.map((workflow: any, idx: number) => (
+                    <div key={idx} className="border border-[var(--neutral-200,#ccc)] flex items-center gap-[8px] p-[12px] relative rounded-[6px] w-full">
+                      <input
+                        type="checkbox"
+                        className="shrink-0 w-[16px] h-[16px] cursor-pointer"
+                        checked={workflow.status === 'completed'}
+                        onChange={() => {}}
+                      />
+                      <div className="flex flex-col gap-[4px] items-start flex-1">
+                        <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
+                          {workflow.type}
+                        </p>
+                        <p className="font-['Lato',sans-serif] leading-[1.4] not-italic text-[13px] text-[color:var(--text-subheading,#666)] tracking-[0.065px]">
+                          {workflow.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
             </>
           )}
         </div>

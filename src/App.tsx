@@ -180,8 +180,8 @@ export default function App() {
       if (e.data?.type !== 'DEMO_STATE') return;
       const { step, scrollTo, spotlight, emptyNote, isMobile } = e.data;
 
-      // ── Pre-visit (steps 0–2) ──
-      if (step <= 2) {
+      // ── Pre-visit (step 0) ──
+      if (step === 0) {
         setCurrentView('visits');
         setActiveTab('previsit');
         setSelectedPatientIndex(0);
@@ -189,19 +189,19 @@ export default function App() {
         setDemoEmptyNote(false);
         setIsMobileRecording(false);
       }
-      // ── During visit (steps 3–6) ──
-      else if (step <= 6) {
+      // ── During visit (steps 1–4) ──
+      else if (step <= 4) {
         setCurrentView('scribes');
         setSelectedPatientIndex(0);
-        setDemoEmptyNote(emptyNote ?? (step <= 5));
+        setDemoEmptyNote(emptyNote ?? false);
         setIsMobileRecording(!!isMobile);
       }
-      // ── Post-visit (steps 7–9) ──
+      // ── Post-visit (step 5) ──
       else {
         setCurrentView('scribes');
         setDemoEmptyNote(false);
         setIsMobileRecording(false);
-        if (step === 8) setRightTab('actions');
+        setRightTab('actions');
       }
 
       // Spotlight overlay
@@ -2107,7 +2107,7 @@ export default function App() {
     useEffect(() => {
       if (!demoSpotlight) { setRect(null); return; }
       const labelMap: Record<string, string> = {
-        'reasoning':    'AI-ranked differential diagnoses',
+        'reasoning':    'Latest research, rare conditions, new treatments',
         'action-items': 'Care gaps & nudges surfaced automatically',
         'mdm':          'Diagnosis & code — auto-generated',
         'nudge':        'Location-aware clinical insight',
@@ -2144,11 +2144,12 @@ export default function App() {
           boxShadow: '0 0 0 9999px rgba(0,0,0,0.55), 0 0 0 4px rgba(17,50,238,0.2), 0 0 28px rgba(17,50,238,0.4)',
           animation: 'demo-pulse 2s ease-in-out infinite',
         }} />
-        {/* Label callout */}
+        {/* Label callout — above the ring */}
         {label && (
           <div style={{
             position: 'absolute',
-            top: t + h + 10,
+            top: t - 10,
+            transform: 'translateY(-100%)',
             left: l,
             background: '#1132ee',
             color: 'white',
@@ -3810,7 +3811,7 @@ export default function App() {
           
           {/* Clinical Reasoning Card - Show on mobile and when on actions tab on desktop */}
           {patients[selectedPatientIndex].clinicalReasoning && (
-          <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+          <div data-demo-id="reasoning" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Clinical Reasoning
@@ -3866,7 +3867,7 @@ export default function App() {
           )}
           
           {/* Care Suggestions Card */}
-          <div data-demo-id="action-items" className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
+          <div data-demo-id="action-items" className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0 w-full">
             <div className="content-stretch flex items-center justify-between relative shrink-0 w-full">
               <p className="font-['Lato',sans-serif] font-bold leading-[1.2] not-italic relative shrink-0 text-[13px] text-[color:var(--text-default,black)] tracking-[0.13px]" style={{ fontFeatureSettings: "'ss07'" }}>
                 Care Suggestions
